@@ -23,6 +23,11 @@ export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void 
       target: '#profile-tab'
     },
     {
+      label: 'Study Groups',
+      icon: <Users className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: '#study-groups-tab'
+    },
+    {
       label: 'Barter',
       icon: <Repeat className="w-5 h-5 mr-3 text-neutral-400" />,
       target: '#barter-tab'
