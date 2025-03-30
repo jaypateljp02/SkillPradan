@@ -37,19 +37,15 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   
-  // Other user is the person you're exchanging with (not you)
-  const otherUser = isCurrentUserTeacher 
-    ? exchange.studentUser 
-    : exchange.teacherUser;
+  // Get additional data from exchange relationships
+  const { teacherUser, studentUser, teacherSkill, studentSkill } = exchange;
+
+  // Get data about the other user (the person user is exchanging with)
+  const otherUser = isCurrentUserTeacher ? studentUser : teacherUser;
   
-  // Skills being exchanged
-  const teachingSkill = isCurrentUserTeacher 
-    ? exchange.teacherSkill 
-    : exchange.studentSkill;
-  
-  const learningSkill = isCurrentUserTeacher 
-    ? exchange.studentSkill 
-    : exchange.teacherSkill;
+  // Get data about the skills being exchanged
+  const teachingSkill = isCurrentUserTeacher ? teacherSkill : studentSkill;
+  const learningSkill = isCurrentUserTeacher ? studentSkill : teacherSkill;
   
   // Update exchange status mutation
   const updateExchangeMutation = useMutation({

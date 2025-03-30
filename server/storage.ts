@@ -257,6 +257,32 @@ export class MemStorage implements IStorage {
         isTeaching: false
       });
       
+      // Create a third user with matching skills - wants to teach Python and learn JavaScript
+      const matchUser = await this.createUser({
+        username: "matchuser",
+        password: testPassword,
+        name: "Match User",
+        email: "match@example.com",
+        university: "Match University",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=matchuser"
+      });
+      
+      console.log("Created match test user:", matchUser.id);
+      
+      await this.createSkill({
+        userId: matchUser.id,
+        name: "Python",
+        proficiencyLevel: "expert",
+        isTeaching: true
+      });
+      
+      await this.createSkill({
+        userId: matchUser.id,
+        name: "JavaScript",
+        proficiencyLevel: "beginner",
+        isTeaching: false
+      });
+      
       console.log("Added skills to test users");
     } catch (error) {
       console.error("Error creating test users:", error);

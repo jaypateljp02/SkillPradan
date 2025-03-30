@@ -117,6 +117,12 @@ export function BarterSection() {
       teacherSkillId: match.teachingSkill.id,
       studentSkillId: parseInt(teachingSkillId)
     });
+    
+    // Also show a toast for better UX
+    toast({
+      title: "Requesting exchange...",
+      description: `Sending request to ${match.name} to exchange ${match.teachingSkill.name} for your ${teachingSkills.find(s => s.id.toString() === teachingSkillId)?.name}`,
+    });
   };
 
   return (

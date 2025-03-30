@@ -316,7 +316,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // If session status changed to completed, update exchange sessions completed count
     if (req.body.status === "completed" && session.status !== "completed") {
-      const sessionsCompleted = exchange.sessionsCompleted + 1;
+      const currentCompleted = exchange.sessionsCompleted || 0;
+      const sessionsCompleted = currentCompleted + 1;
       const updatedExchange = await storage.updateExchange(exchange.id, {
         sessionsCompleted
       });
@@ -430,7 +431,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userId = req.user!.id;
     const userChallengeId = parseInt(req.params.id);
     
-    const userChallenge = await storage.userChallenges.get(userChallengeId);
+    // Get all user challenges and find the one we need
+    const userChallenges = await storage.getUserChallenges(userId);
+    const userChallenge = userChallenges.find(uc => uc.id === userChallengeId);
     if (!userChallenge) return res.status(404).send("User challenge not found");
     
     if (userChallenge.userId !== userId) {
@@ -486,6 +489,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(review);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
+    }
+  });
+  
+  // Skill Matches endpoint
+  app.post("/api/skill-matches", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const { teachingSkillId, learningSkillId } = req.body;
+    
+    if (!teachingSkillId || !learningSkillId) {
+      return res.status(400).send("Both teachingSkillId and learningSkillId are required");
+    }
+    
+    try {
+      const matches = await storage.findSkillMatches(teachingSkillId, learningSkillId);
+      res.json(matches);
+    } catch (error) {
+      res.status(500).json({ error: (error as Error).message });
     }
   });
   
