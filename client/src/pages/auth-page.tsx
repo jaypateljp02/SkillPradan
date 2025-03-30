@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { AuthForm } from "@/components/auth-form";
 import { Redirect } from "wouter";
 import { GraduationCap, Repeat, Award } from "lucide-react";
+import logoImage from "../assets/logo.png";
 
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
@@ -15,23 +16,6 @@ export default function AuthPage() {
   return (
     <div className="flex min-h-screen bg-neutral-50">
       <div className="flex flex-col md:flex-row w-full">
-        {/* Form Column */}
-        <div className="w-full md:w-1/2 p-8 flex items-center justify-center">
-          <div className="w-full max-w-md">
-            <div className="text-center mb-8">
-              <div className="flex items-center justify-center">
-                <svg className="h-10 w-10 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                </svg>
-                <h1 className="ml-2 text-2xl font-bold text-neutral-800">SkillSwap</h1>
-              </div>
-              <p className="mt-2 text-neutral-600">Exchange skills, earn points, learn together</p>
-            </div>
-            
-            <AuthForm />
-          </div>
-        </div>
-        
         {/* Illustration Column - Hidden on mobile */}
         <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-primary-900 to-primary-700 text-white p-8 flex-col justify-center">
           <div className="max-w-md mx-auto">
@@ -71,6 +55,21 @@ export default function AuthPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Form Column - Centered */}
+        <div className="w-full md:w-1/2 p-8 flex items-center justify-center">
+          <div className="w-full max-w-md">
+            <div className="text-center mb-8">
+              <div className="flex flex-col items-center justify-center">
+                <img src={logoImage} alt="Skill प्रदान Logo" className="h-24 w-24 mb-4" />
+                <h1 className="text-3xl font-bold text-primary">Skill प्रदान</h1>
+              </div>
+              <p className="mt-2 text-neutral-600">Exchange skills, earn points, learn together</p>
+            </div>
+            
+            <AuthForm />
           </div>
         </div>
       </div>

@@ -28,6 +28,7 @@ import {
   Star 
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import logoImage from "../assets/logo.png";
 
 export default function HomePage() {
   const { user, logoutMutation } = useAuth();
@@ -53,10 +54,8 @@ export default function HomePage() {
               <div className="flex">
                 <div className="flex-shrink-0 flex items-center">
                   <div className="flex items-center">
-                    <svg className="h-8 w-8 text-primary" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                    </svg>
-                    <span className="ml-2 text-xl font-bold text-neutral-800">SkillSwap</span>
+                    <img src={logoImage} alt="Skill प्रदान Logo" className="h-10 w-10" />
+                    <span className="ml-2 text-xl font-bold text-primary">Skill प्रदान</span>
                   </div>
                 </div>
               </div>

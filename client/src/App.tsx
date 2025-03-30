@@ -8,6 +8,7 @@ import AuthPage from "@/pages/auth-page";
 import VideoSession from "@/pages/video-session";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
+import logoImage from "./assets/logo.png";
 
 function Router() {
   return (
