@@ -23,7 +23,7 @@ export default function AuthPage() {
               Skill Pradan
             </h1>
           </div>
-          <p className="mt-2 text-neutral-600">Exchange skills, earn points, learn together</p>
+          <p className="mt-2 text-neutral-600">Connect.Collaborate.Create</p>
         </div>
         
         <AuthForm />
