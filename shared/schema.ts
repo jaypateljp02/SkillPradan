@@ -191,5 +191,56 @@ export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
 export type UserChallenge = typeof userChallenges.$inferSelect;
 export type InsertUserChallenge = z.infer<typeof insertUserChallengeSchema>;
 
+export const groups = pgTable("groups", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  isPrivate: boolean("is_private").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  createdById: integer("created_by_id").notNull(),
+});
+
+export const groupMembers = pgTable("group_members", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull(),
+  userId: integer("user_id").notNull(),
+  role: text("role").default("member"), // member, admin, moderator
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+export const groupEvents = pgTable("group_events", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  createdById: integer("created_by_id").notNull(),
+});
+
+export const groupFiles = pgTable("group_files", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // pdf, code, etc
+  url: text("url").notNull(),
+  uploadedById: integer("uploaded_by_id").notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
+export const groupMessages = pgTable("group_messages", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull(),
+  userId: integer("user_id").notNull(),
+  content: text("content").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+});
+
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+export type Group = typeof groups.$inferSelect;
+export type GroupMember = typeof groupMembers.$inferSelect;
+export type GroupEvent = typeof groupEvents.$inferSelect;
+export type GroupFile = typeof groupFiles.$inferSelect;
+export type GroupMessage = typeof groupMessages.$inferSelect;

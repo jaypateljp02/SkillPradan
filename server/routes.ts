@@ -528,6 +528,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(validUsers);
   });
   
+  // Groups
+  app.get("/api/groups", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    const groups = await storage.getAllGroups();
+    res.json(groups);
+  });
+
+  app.post("/api/groups", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    const userId = req.user!.id;
+    const group = await storage.createGroup({
+      ...req.body,
+      createdById: userId
+    });
+    
+    // Add creator as admin
+    await storage.addGroupMember({
+      groupId: group.id,
+      userId,
+      role: "admin"
+    });
+    
+    res.status(201).json(group);
+  });
+
+  app.post("/api/groups/:groupId/join", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const member = await storage.addGroupMember({
+      groupId,
+      userId,
+      role: "member"
+    });
+    
+    res.status(201).json(member);
+  });
+
+  app.post("/api/groups/:groupId/files", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const file = await storage.addGroupFile({
+      groupId,
+      uploadedById: userId,
+      ...req.body
+    });
+    
+    res.status(201).json(file);
+  });
+
+  app.post("/api/groups/:groupId/events", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const event = await storage.createGroupEvent({
+      groupId,
+      createdById: userId,
+      ...req.body
+    });
+    
+    res.status(201).json(event);
+  });
+
+  app.post("/api/groups/:groupId/messages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const message = await storage.createGroupMessage({
+      groupId,
+      userId,
+      content: req.body.content
+    });
+    
+    res.status(201).json(message);
+  });
+
   // Create the HTTP server
   const httpServer = createServer(app);
   
