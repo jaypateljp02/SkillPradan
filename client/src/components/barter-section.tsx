@@ -112,17 +112,23 @@ export function BarterSection() {
   
   // Handle requesting an exchange
   const handleRequestExchange = (match: any) => {
-    createExchangeMutation.mutate({
-      teacherId: match.userId,
-      studentId: user!.id,
-      teacherSkillId: match.teachingSkill.id,
-      studentSkillId: parseInt(teachingSkillId)
-    });
+    // In this scenario:
+    // 1. Current user wants to learn matched user's teaching skill
+    // 2. Current user wants to teach their selected skill (teachingSkillId)
+    // 3. Matched user wants to learn the current user's teaching skill
+    const exchangeData = {
+      teacherId: user!.id,               // Current user as teacher
+      studentId: match.userId,           // Matched user as student
+      teacherSkillId: parseInt(teachingSkillId),  // Current user's teaching skill
+      studentSkillId: match.learningSkill.id      // Matched user's learning skill (same as current user's teaching)
+    };
+    
+    createExchangeMutation.mutate(exchangeData);
     
     // Also show a toast for better UX
     toast({
       title: "Requesting exchange...",
-      description: `Sending request to ${match.name} to exchange ${match.teachingSkill.name} for your ${teachingSkills.find(s => s.id.toString() === teachingSkillId)?.name}`,
+      description: `Sending request to ${match.name} to teach them ${teachingSkills.find(s => s.id.toString() === teachingSkillId)?.name} in exchange for learning ${match.teachingSkill.name}`,
     });
   };
 
