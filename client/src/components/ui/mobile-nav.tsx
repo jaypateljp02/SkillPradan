@@ -13,6 +13,11 @@ export function MobileNav({ setActiveTab, activeTab }: MobileNavProps) {
       target: 'profile-tab'
     },
     {
+      label: 'Community',
+      icon: <Users className="text-lg" />,
+      target: 'community-tab'
+    },
+    {
       label: 'Barter',
       icon: <Repeat className="text-lg" />,
       target: 'barter-tab'
