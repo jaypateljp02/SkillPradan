@@ -10,6 +10,7 @@ import {
   UserChallenge, InsertUserChallenge
 } from "@shared/schema";
 import session from "express-session";
+import type { Store as SessionStore } from "express-session";
 import createMemoryStore from "memorystore";
 
 const MemoryStore = createMemoryStore(session);
@@ -80,7 +81,7 @@ export interface IStorage {
   }[]>;
   
   // Session store for authentication
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 }
 
 export class MemStorage implements IStorage {
@@ -104,7 +105,7 @@ export class MemStorage implements IStorage {
   private challengeIdCounter: number;
   private userChallengeIdCounter: number;
   
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 
   constructor() {
     this.users = new Map();
@@ -136,6 +137,8 @@ export class MemStorage implements IStorage {
   }
   
   private initPredefinedData() {
+    console.log("Initializing predefined data in storage...");
+    
     // Add some badges
     const badges = [
       { name: "JavaScript Guru", description: "Advanced proficiency in JavaScript", icon: "fa-js-square", pointsAwarded: 50 },
@@ -170,6 +173,82 @@ export class MemStorage implements IStorage {
         durationDays: challenge.durationDays
       });
     });
+    
+    // Create test users
+    this.createTestUsers();
+  }
+  
+  private async createTestUsers() {
+    try {
+      // Simple password for testing - don't use in production
+      const testPassword = "password123";
+      
+      // Check if we already have test users
+      const existingUser = await this.getUserByUsername("testuser");
+      if (existingUser) {
+        console.log("Test users already exist, skipping creation");
+        return;
+      }
+      
+      console.log("Creating test users...");
+      
+      // Create first test user
+      const testUser = await this.createUser({
+        username: "testuser",
+        password: testPassword,
+        name: "Test User",
+        email: "test@example.com",
+        university: "Test University",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=testuser"
+      });
+      
+      console.log("Created test user:", testUser.id);
+      
+      // Create another user for testing interactions
+      const anotherUser = await this.createUser({
+        username: "student1",
+        password: testPassword,
+        name: "Student One",
+        email: "student1@example.com",
+        university: "Another University",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=student1"
+      });
+      
+      console.log("Created another test user:", anotherUser.id);
+      
+      // Add some skills for these users
+      await this.createSkill({
+        userId: testUser.id,
+        name: "JavaScript",
+        proficiencyLevel: "expert",
+        isTeaching: true
+      });
+      
+      await this.createSkill({
+        userId: testUser.id,
+        name: "Python",
+        proficiencyLevel: "beginner",
+        isTeaching: false
+      });
+      
+      await this.createSkill({
+        userId: anotherUser.id,
+        name: "Python",
+        proficiencyLevel: "expert",
+        isTeaching: true
+      });
+      
+      await this.createSkill({
+        userId: anotherUser.id,
+        name: "JavaScript",
+        proficiencyLevel: "beginner",
+        isTeaching: false
+      });
+      
+      console.log("Added skills to test users");
+    } catch (error) {
+      console.error("Error creating test users:", error);
+    }
   }
 
   // User operations

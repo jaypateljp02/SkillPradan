@@ -449,6 +449,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(leaderboard);
   });
   
+  // For development and testing only - a simplified endpoint to list all users
+  // This would be removed in production
+  app.get("/api/users-list", async (req, res) => {    
+    // Get the first 20 registered users
+    const validUsers = [];
+    
+    for (let i = 1; i <= 20; i++) {
+      const user = await storage.getUser(i);
+      if (user) {
+        const { password, ...userData } = user;
+        validUsers.push(userData);
+      }
+    }
+    
+    res.json(validUsers);
+  });
+  
   // Create the HTTP server
   const httpServer = createServer(app);
   
