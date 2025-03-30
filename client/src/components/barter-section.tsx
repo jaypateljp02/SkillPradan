@@ -112,6 +112,15 @@ export function BarterSection() {
   
   // Handle requesting an exchange
   const handleRequestExchange = (match: any) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to request exchanges",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // In this scenario:
     // 1. Current user wants to learn matched user's teaching skill
     // 2. Current user wants to teach their selected skill (teachingSkillId)
