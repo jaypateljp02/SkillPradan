@@ -449,6 +449,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(leaderboard);
   });
   
+  // Reviews
+  app.get("/api/users/:userId/reviews", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = parseInt(req.params.userId);
+    const reviews = await storage.getReviewsByUser(userId);
+    res.json(reviews);
+  });
+  
+  app.get("/api/users/:userId/rating", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = parseInt(req.params.userId);
+    const rating = await storage.getUserRating(userId);
+    res.json(rating);
+  });
+  
+  app.post("/api/reviews", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const reviewerId = req.user!.id;
+    
+    // Make sure the user can't review themselves
+    if (reviewerId === req.body.reviewedUserId) {
+      return res.status(400).send("You cannot review yourself");
+    }
+    
+    // Create the review
+    try {
+      const review = await storage.createReview({
+        ...req.body,
+        reviewerId
+      });
+      
+      res.status(201).json(review);
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+  
   // For development and testing only - a simplified endpoint to list all users
   // This would be removed in production
   app.get("/api/users-list", async (req, res) => {    

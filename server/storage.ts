@@ -7,7 +7,8 @@ import {
   Badge, InsertBadge,
   UserBadge, InsertUserBadge,
   Challenge, InsertChallenge,
-  UserChallenge, InsertUserChallenge
+  UserChallenge, InsertUserChallenge,
+  Review, InsertReview
 } from "@shared/schema";
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
@@ -65,6 +66,12 @@ export interface IStorage {
   createUserChallenge(userChallenge: InsertUserChallenge): Promise<UserChallenge>;
   updateUserChallenge(id: number, data: Partial<UserChallenge>): Promise<UserChallenge | undefined>;
   
+  // Review operations
+  getReview(id: number): Promise<Review | undefined>;
+  getReviewsByUser(userId: number): Promise<Review[]>;
+  createReview(review: InsertReview): Promise<Review>;
+  getUserRating(userId: number): Promise<{ rating: number, count: number }>;
+  
   // Leaderboard
   getLeaderboard(): Promise<{id: number, name: string, university: string, exchanges: number, points: number, avatar: string}[]>;
   
@@ -95,6 +102,7 @@ export class MemStorage implements IStorage {
   private userBadges: Map<number, UserBadge>;
   private challenges: Map<number, Challenge>;
   private userChallenges: Map<number, UserChallenge>;
+  private reviews: Map<number, Review>;
   
   private userIdCounter: number;
   private skillIdCounter: number;
@@ -105,6 +113,7 @@ export class MemStorage implements IStorage {
   private userBadgeIdCounter: number;
   private challengeIdCounter: number;
   private userChallengeIdCounter: number;
+  private reviewIdCounter: number;
   
   sessionStore: SessionStore;
 
@@ -118,6 +127,7 @@ export class MemStorage implements IStorage {
     this.userBadges = new Map();
     this.challenges = new Map();
     this.userChallenges = new Map();
+    this.reviews = new Map();
     
     this.userIdCounter = 1;
     this.skillIdCounter = 1;
@@ -128,6 +138,7 @@ export class MemStorage implements IStorage {
     this.userBadgeIdCounter = 1;
     this.challengeIdCounter = 1;
     this.userChallengeIdCounter = 1;
+    this.reviewIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000
@@ -518,6 +529,50 @@ export class MemStorage implements IStorage {
     return updatedUserChallenge;
   }
   
+  // Review operations
+  async getReview(id: number): Promise<Review | undefined> {
+    return this.reviews.get(id);
+  }
+  
+  async getReviewsByUser(userId: number): Promise<Review[]> {
+    return Array.from(this.reviews.values()).filter(
+      (review) => review.reviewedUserId === userId
+    );
+  }
+  
+  async createReview(review: InsertReview): Promise<Review> {
+    const id = this.reviewIdCounter++;
+    const now = new Date();
+    const newReview: Review = { ...review, id, createdAt: now };
+    this.reviews.set(id, newReview);
+    
+    // Add an activity for the person being reviewed
+    await this.createActivity({
+      userId: review.reviewedUserId,
+      type: "review",
+      description: `Received a ${review.rating}-star review`,
+      pointsEarned: 5 // Small points bonus for getting reviewed
+    });
+    
+    return newReview;
+  }
+  
+  async getUserRating(userId: number): Promise<{ rating: number, count: number }> {
+    const reviews = await this.getReviewsByUser(userId);
+    
+    if (reviews.length === 0) {
+      return { rating: 0, count: 0 };
+    }
+    
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = totalRating / reviews.length;
+    
+    return { 
+      rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
+      count: reviews.length 
+    };
+  }
+  
   // Leaderboard
   async getLeaderboard(): Promise<{id: number, name: string, university: string, exchanges: number, points: number, avatar: string}[]> {
     // Get all users
@@ -606,11 +661,8 @@ export class MemStorage implements IStorage {
           // This ensures the same match always shows the same percentage
           const matchPercentage = 70 + (otherUser.id * 7) % 25; // 70% to 95% based on user ID
           
-          // Calculate a consistent rating based on user ID
-          // This ensures the same user always has the same rating
-          const baseRating = 4.0;
-          const userSpecificRating = ((otherUser.id * 10) % 10) / 10; // 0.0 to 0.9 based on user ID
-          const rating = baseRating + userSpecificRating;
+          // Get actual rating from reviews
+          const { rating } = await this.getUserRating(otherUser.id);
           
           matches.push({
             userId: otherUser.id,
@@ -618,7 +670,7 @@ export class MemStorage implements IStorage {
             name: otherUser.name,
             avatar: otherUser.avatar || "",
             university: otherUser.university || "",
-            rating: rating, // Consistent rating between 4.0 and 4.9
+            rating: rating, // Rating based on user reviews
             teachingSkill: {
               id: theirTeachingSkill.id,
               name: theirTeachingSkill.name

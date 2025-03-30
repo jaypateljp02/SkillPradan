@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -40,6 +40,12 @@ export function ProfileHeader() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Fetch user rating
+  const { data: userRating } = useQuery<{ rating: number, count: number }>({
+    queryKey: [`/api/users/${user?.id}/rating`],
+    enabled: !!user,
+  });
   
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -97,7 +103,15 @@ export function ProfileHeader() {
         <div className="mt-2 flex items-center">
           <div className="flex items-center">
             <Star className="h-5 w-5 text-yellow-400 fill-current" />
-            <span className="ml-1 text-sm text-neutral-500 font-medium">4.9 (23 reviews)</span>
+            <span className="ml-1 text-sm text-neutral-500 font-medium">
+              {userRating ? (
+                <>
+                  {userRating.rating.toFixed(1)} ({userRating.count} {userRating.count === 1 ? 'review' : 'reviews'})
+                </>
+              ) : (
+                'No reviews yet'
+              )}
+            </span>
           </div>
           <span className="mx-2 text-neutral-300">|</span>
           <div className="flex items-center">

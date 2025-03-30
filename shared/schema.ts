@@ -91,6 +91,16 @@ export const userChallenges = pgTable("user_challenges", {
   completedAt: timestamp("completed_at"),
 });
 
+export const reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  exchangeId: integer("exchange_id").notNull(),
+  reviewerId: integer("reviewer_id").notNull(),
+  reviewedUserId: integer("reviewed_user_id").notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Define zod schemas for inserts
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -145,6 +155,14 @@ export const insertUserChallengeSchema = createInsertSchema(userChallenges).pick
   challengeId: true,
 });
 
+export const insertReviewSchema = createInsertSchema(reviews).pick({
+  exchangeId: true,
+  reviewerId: true,
+  reviewedUserId: true,
+  rating: true,
+  comment: true,
+});
+
 // Define export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -172,3 +190,6 @@ export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
 
 export type UserChallenge = typeof userChallenges.$inferSelect;
 export type InsertUserChallenge = z.infer<typeof insertUserChallengeSchema>;
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;

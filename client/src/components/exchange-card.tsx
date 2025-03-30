@@ -1,10 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Button } from "@/components/ui/button";
 import { SkillTag } from "@/components/ui/skill-tag";
 import { 
-  useDialog, 
   Dialog, 
   DialogContent, 
   DialogHeader, 
@@ -14,13 +13,14 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { CalendarIcon, Clock, MessageSquare } from "lucide-react";
+import { CalendarIcon, Clock, MessageSquare, Star } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
+import { ReviewDialog } from "@/components/review-dialog";
 
 interface ExchangeCardProps {
   exchange: any;
@@ -33,8 +33,9 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
   const [time, setTime] = useState<string>("12:00");
   const [duration, setDuration] = useState<string>("60");
   
-  // For dialog
+  // For dialogs
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   
   // Other user is the person you're exchanging with (not you)
   const otherUser = isCurrentUserTeacher 
@@ -240,6 +241,12 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
     );
   };
 
+  // Get the other user's ID for review purposes
+  const otherUserId = otherUser?.id;
+
+  // For checking if the exchange is completed
+  const isExchangeCompleted = exchange.status === "completed";
+  
   return (
     <div className="bg-white border border-neutral-200 rounded-lg p-4">
       <div className="flex items-start">
@@ -251,11 +258,26 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
           />
         </div>
         <div className="ml-4 flex-1">
-          <h4 className="text-md font-medium text-neutral-900">
-            With {otherUser?.name || "User"}
-          </h4>
+          <div className="flex justify-between items-center">
+            <h4 className="text-md font-medium text-neutral-900">
+              With {otherUser?.name || "User"}
+            </h4>
+            
+            {/* Show rating if available */}
+            <div className="flex items-center">
+              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+              <span className="ml-1 text-xs text-neutral-500">
+                {otherUser?.rating?.toFixed(1) || "New"}
+              </span>
+            </div>
+          </div>
+          
           <p className="mt-1 text-sm text-neutral-500">
-            Exchange {exchange.status === "pending" ? "requested" : "started"} {" "}
+            Exchange {exchange.status === "pending" 
+              ? "requested" 
+              : exchange.status === "completed"
+                ? "completed"
+                : "started"} {" "}
             {new Date(exchange.createdAt).toLocaleDateString()}
           </p>
           
@@ -330,6 +352,29 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
                   </Link>
                 </Button>
               </>
+            )}
+            
+            {isExchangeCompleted && otherUserId && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex items-center"
+                onClick={() => setReviewOpen(true)}
+              >
+                <Star className="h-4 w-4 mr-1 text-yellow-400" />
+                Review {otherUser?.name}
+              </Button>
+            )}
+            
+            {/* Review Dialog */}
+            {otherUserId && (
+              <ReviewDialog
+                open={reviewOpen}
+                onOpenChange={setReviewOpen}
+                userId={otherUserId}
+                exchangeId={exchange.id}
+                userName={otherUser?.name || "User"}
+              />
             )}
           </div>
         </div>
