@@ -3,6 +3,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Button } from "@/components/ui/button";
 import { SkillTag } from "@/components/ui/skill-tag";
+import { Input } from "@/components/ui/input";
 import { 
   Dialog, 
   DialogContent, 
@@ -12,8 +13,8 @@ import {
   DialogFooter 
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
-import { CalendarIcon, Clock, MessageSquare, Star } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { CalendarIcon, Clock, MessageSquare, Star, Send } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 import { ReviewDialog } from "@/components/review-dialog";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ExchangeCardProps {
   exchange: any;
@@ -36,6 +38,14 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
   // For dialogs
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  
+  // WebSocket connection
+  const wsRef = useRef<WebSocket | null>(null);
   
   // Get additional data from exchange relationships
   const { teacherUser, studentUser, teacherSkill, studentSkill } = exchange;
@@ -243,6 +253,154 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
   // For checking if the exchange is completed
   const isExchangeCompleted = exchange.status === "completed";
   
+  // Handle WebSocket connection for chat
+  useEffect(() => {
+    if (chatOpen && !wsRef.current) {
+      // Create WebSocket connection
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      wsRef.current = new WebSocket(wsUrl);
+      
+      wsRef.current.onopen = () => {
+        console.log("WebSocket connected");
+        
+        // Join the exchange session
+        if (wsRef.current && user) {
+          wsRef.current.send(JSON.stringify({
+            type: 'join-session',
+            payload: {
+              sessionId: exchange.id,
+              userId: user.id
+            }
+          }));
+        }
+      };
+      
+      wsRef.current.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'chat-message' && data.payload.sessionId === exchange.id) {
+          setChatMessages(prev => [...prev, {
+            message: data.payload.message,
+            user: data.payload.userData,
+            timestamp: data.payload.timestamp
+          }]);
+        }
+      };
+      
+      wsRef.current.onclose = () => {
+        console.log("WebSocket disconnected");
+        wsRef.current = null;
+      };
+    }
+    
+    return () => {
+      // Clean up WebSocket connection when dialog closes
+      if (!chatOpen && wsRef.current) {
+        if (user) {
+          wsRef.current.send(JSON.stringify({
+            type: 'leave-session',
+            payload: {
+              sessionId: exchange.id,
+              userId: user.id
+            }
+          }));
+        }
+        
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [chatOpen, exchange.id, user]);
+  
+  // Scroll to bottom of chat when new messages come in
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages]);
+  
+  // Handle sending a chat message
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !wsRef.current || !user) return;
+    
+    wsRef.current.send(JSON.stringify({
+      type: 'chat-message',
+      payload: {
+        sessionId: exchange.id,
+        message: newMessage,
+        userId: user.id
+      }
+    }));
+    
+    setNewMessage("");
+  };
+  
+  // Render the chat dialog
+  const renderChatDialog = () => (
+    <Dialog open={chatOpen} onOpenChange={setChatOpen}>
+      <DialogContent className="sm:max-w-[500px] h-[600px] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Chat with {otherUser?.name}</DialogTitle>
+          <DialogDescription>
+            Discuss your skill exchange and schedule sessions
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 my-2 border border-gray-100 rounded-md bg-gray-50">
+          {chatMessages.length === 0 ? (
+            <div className="text-center text-neutral-400 my-8">
+              <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-20" />
+              <p>No messages yet. Start the conversation!</p>
+            </div>
+          ) : (
+            chatMessages.map((msg, index) => (
+              <div 
+                key={index} 
+                className={`flex ${msg.user.id === user?.id ? 'justify-end' : 'justify-start'}`}
+              >
+                <div 
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    msg.user.id === user?.id 
+                      ? 'bg-primary text-white rounded-br-none' 
+                      : 'bg-white border border-gray-200 rounded-bl-none'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2 mb-1">
+                    <span className={`text-xs font-medium ${msg.user.id === user?.id ? 'text-white/80' : 'text-neutral-500'}`}>
+                      {msg.user.name}
+                    </span>
+                    <span className={`text-xs ${msg.user.id === user?.id ? 'text-white/60' : 'text-neutral-400'}`}>
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className={`text-sm ${msg.user.id === user?.id ? 'text-white' : 'text-neutral-900'}`}>{msg.message}</p>
+                </div>
+              </div>
+            ))
+          )}
+          <div ref={chatEndRef} />
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Input
+            placeholder="Type your message..."
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+          />
+          <Button 
+            type="button" 
+            size="icon"
+            onClick={handleSendMessage}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+  
   return (
     <div className="bg-white border border-neutral-200 rounded-lg p-4">
       <div className="flex items-start">
@@ -324,14 +482,28 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
             </div>
           </div>
           
-          <div className="mt-4 flex items-center">
+          <div className="mt-4 flex items-center space-x-2 flex-wrap">
             {renderPendingActions()}
+            
+            {(exchange.status === "active" || exchange.status === "completed") && (
+              <Button 
+                size="sm" 
+                variant="outline"
+                className="flex items-center"
+                onClick={() => setChatOpen(true)}
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Chat
+              </Button>
+            )}
+            
+            {renderChatDialog()}
             
             {exchange.status === "active" && (
               <>
                 <Button 
                   size="sm"
-                  className="mr-3"
+                  className="mr-1"
                   onClick={() => setScheduleOpen(true)}
                 >
                   Schedule Next Session
