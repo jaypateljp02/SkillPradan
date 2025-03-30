@@ -56,7 +56,7 @@ export default function HomePage() {
                   <div className="flex items-center">
                     <img src={logoImage} alt="Skill प्रदान Logo" className="h-8 w-8" />
                     <span className="ml-2 text-xl font-bold text-gray-800">
-                      <span className="text-primary">Skill</span> प्रदान
+                      Skill Pradan
                     </span>
                   </div>
                 </div>
