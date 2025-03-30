@@ -138,7 +138,7 @@ export function SkillsSection() {
                       onValueChange={(value) => field.onChange(value === "teaching")}
                       defaultValue={field.value ? "teaching" : "learning"}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white text-neutral-900">
                         <SelectValue placeholder="Select skill type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -163,7 +163,7 @@ export function SkillsSection() {
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white text-neutral-900">
                           <SelectValue placeholder="Select proficiency level" />
                         </SelectTrigger>
                         <SelectContent>

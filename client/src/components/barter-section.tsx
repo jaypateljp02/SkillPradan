@@ -140,12 +140,11 @@ export function BarterSection() {
               <SelectTrigger className="mt-1 bg-white text-neutral-900">
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-2 border-gray-200">
+              <SelectContent>
                 {teachingSkills.map(skill => (
                   <SelectItem 
                     key={skill.id} 
-                    value={skill.id.toString()} 
-                    className="text-black font-medium hover:bg-gray-100"
+                    value={skill.id.toString()}
                   >
                     {skill.name}
                   </SelectItem>
@@ -159,12 +158,11 @@ export function BarterSection() {
               <SelectTrigger className="mt-1 bg-white text-neutral-900">
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-2 border-gray-200">
+              <SelectContent>
                 {learningSkills.map(skill => (
                   <SelectItem 
                     key={skill.id} 
-                    value={skill.id.toString()} 
-                    className="text-black font-medium hover:bg-gray-100"
+                    value={skill.id.toString()}
                   >
                     {skill.name}
                   </SelectItem>
