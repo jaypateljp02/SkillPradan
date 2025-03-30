@@ -602,8 +602,15 @@ export class MemStorage implements IStorage {
         // Get the other user
         const otherUser = await this.getUser(theirUserId);
         if (otherUser) {
-          // Calculate a match percentage (simplified for demo)
-          const matchPercentage = Math.floor(Math.random() * 30) + 65; // 65% to 95%
+          // Calculate a stable match percentage based on user ID
+          // This ensures the same match always shows the same percentage
+          const matchPercentage = 70 + (otherUser.id * 7) % 25; // 70% to 95% based on user ID
+          
+          // Calculate a consistent rating based on user ID
+          // This ensures the same user always has the same rating
+          const baseRating = 4.0;
+          const userSpecificRating = ((otherUser.id * 10) % 10) / 10; // 0.0 to 0.9 based on user ID
+          const rating = baseRating + userSpecificRating;
           
           matches.push({
             userId: otherUser.id,
@@ -611,7 +618,7 @@ export class MemStorage implements IStorage {
             name: otherUser.name,
             avatar: otherUser.avatar || "",
             university: otherUser.university || "",
-            rating: 4.5 + (Math.random() * 0.5), // 4.5 to 5.0 rating
+            rating: rating, // Consistent rating between 4.0 and 4.9
             teachingSkill: {
               id: theirTeachingSkill.id,
               name: theirTeachingSkill.name
