@@ -34,7 +34,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string>("12:00");
   const [duration, setDuration] = useState<string>("60");
-  
+
   // For dialogs
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -43,20 +43,20 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
   const [newMessage, setNewMessage] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  
+
   // WebSocket connection
   const wsRef = useRef<WebSocket | null>(null);
-  
+
   // Get additional data from exchange relationships
   const { teacherUser, studentUser, teacherSkill, studentSkill } = exchange;
 
   // Get data about the other user (the person user is exchanging with)
   const otherUser = isCurrentUserTeacher ? studentUser : teacherUser;
-  
+
   // Get data about the skills being exchanged
   const teachingSkill = isCurrentUserTeacher ? teacherSkill : studentSkill;
   const learningSkill = isCurrentUserTeacher ? studentSkill : teacherSkill;
-  
+
   // Update exchange status mutation
   const updateExchangeMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number, status: string }) => {
@@ -78,7 +78,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
       });
     }
   });
-  
+
   // Schedule session mutation
   const scheduleSessionMutation = useMutation({
     mutationFn: async (data: { exchangeId: number, scheduledTime: string, duration: number }) => {
@@ -102,12 +102,12 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
       });
     }
   });
-  
+
   // Handle accepting or declining exchange
   const handleChangeStatus = (status: string) => {
     updateExchangeMutation.mutate({ id: exchange.id, status });
   };
-  
+
   // Handle scheduling a session
   const handleScheduleSession = () => {
     if (!date) {
@@ -118,19 +118,19 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
       });
       return;
     }
-    
+
     // Combine date and time
     const [hours, minutes] = time.split(':').map(Number);
     const scheduledDateTime = new Date(date);
     scheduledDateTime.setHours(hours, minutes);
-    
+
     scheduleSessionMutation.mutate({
       exchangeId: exchange.id,
       scheduledTime: scheduledDateTime.toISOString(),
       duration: parseInt(duration)
     });
   };
-  
+
   // Render the scheduling dialog
   const renderScheduleDialog = () => (
     <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
@@ -141,7 +141,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
             Schedule your next learning session with {otherUser?.name}
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <label className="text-sm font-medium text-neutral-700">Date</label>
@@ -168,7 +168,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
               </PopoverContent>
             </Popover>
           </div>
-          
+
           <div className="grid gap-2">
             <label className="text-sm font-medium text-neutral-700">Time</label>
             <Select defaultValue={time} onValueChange={setTime}>
@@ -184,7 +184,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="grid gap-2">
             <label className="text-sm font-medium text-neutral-700">Duration (minutes)</label>
             <Select defaultValue={duration} onValueChange={setDuration}>
@@ -201,7 +201,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
             </Select>
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button 
             onClick={handleScheduleSession}
@@ -213,38 +213,41 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
       </DialogContent>
     </Dialog>
   );
-  
+
   // Render pending exchange actions
   const renderPendingActions = () => {
-    if (exchange.status !== "pending") return null;
-    
-    // If the current user is not the teacher, they're waiting for acceptance
-    if (!isCurrentUserTeacher) {
+    // Only show accept/decline buttons to the recipient (student)
+    if (exchange.status === "pending" && exchange.studentId === user?.id) {
       return (
-        <p className="text-sm text-amber-600">Waiting for acceptance</p>
+        <>
+          <Button
+            size="sm"
+            className="mr-1"
+            onClick={() => updateExchangeMutation.mutate({ 
+              id: exchange.id, 
+              status: "active" 
+            })}
+          >
+            Accept
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => updateExchangeMutation.mutate({ 
+              id: exchange.id, 
+              status: "declined" 
+            })}
+          >
+            Decline
+          </Button>
+        </>
+      );
+    } else if (exchange.status === "pending") {
+      return (
+        <p className="text-sm text-neutral-500">Waiting for response...</p>
       );
     }
-    
-    // Current user is the teacher and needs to accept/decline
-    return (
-      <div className="flex space-x-2">
-        <Button 
-          size="sm" 
-          onClick={() => handleChangeStatus("active")}
-          disabled={updateExchangeMutation.isPending}
-        >
-          Accept
-        </Button>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => handleChangeStatus("cancelled")}
-          disabled={updateExchangeMutation.isPending}
-        >
-          Decline
-        </Button>
-      </div>
-    );
+    return null;
   };
 
   // Get the other user's ID for review purposes
@@ -252,7 +255,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
 
   // For checking if the exchange is completed
   const isExchangeCompleted = exchange.status === "completed";
-  
+
   // Handle WebSocket connection for chat
   useEffect(() => {
     if (chatOpen && !wsRef.current) {
@@ -260,10 +263,10 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = `${protocol}//${window.location.host}/ws`;
       wsRef.current = new WebSocket(wsUrl);
-      
+
       wsRef.current.onopen = () => {
         console.log("WebSocket connected");
-        
+
         // Join the exchange session
         if (wsRef.current && user) {
           wsRef.current.send(JSON.stringify({
@@ -275,10 +278,10 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
           }));
         }
       };
-      
+
       wsRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        
+
         if (data.type === 'chat-message' && data.payload.sessionId === exchange.id) {
           setChatMessages(prev => [...prev, {
             message: data.payload.message,
@@ -287,13 +290,13 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
           }]);
         }
       };
-      
+
       wsRef.current.onclose = () => {
         console.log("WebSocket disconnected");
         wsRef.current = null;
       };
     }
-    
+
     return () => {
       // Clean up WebSocket connection when dialog closes
       if (!chatOpen && wsRef.current) {
@@ -306,24 +309,24 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
             }
           }));
         }
-        
+
         wsRef.current.close();
         wsRef.current = null;
       }
     };
   }, [chatOpen, exchange.id, user]);
-  
+
   // Scroll to bottom of chat when new messages come in
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatMessages]);
-  
+
   // Handle sending a chat message
   const handleSendMessage = () => {
     if (!newMessage.trim() || !wsRef.current || !user) return;
-    
+
     wsRef.current.send(JSON.stringify({
       type: 'chat-message',
       payload: {
@@ -332,10 +335,10 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
         userId: user.id
       }
     }));
-    
+
     setNewMessage("");
   };
-  
+
   // Render the chat dialog
   const renderChatDialog = () => (
     <Dialog open={chatOpen} onOpenChange={setChatOpen}>
@@ -346,7 +349,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
             Discuss your skill exchange and schedule sessions
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-y-auto p-4 space-y-4 my-2 border border-gray-100 rounded-md bg-gray-50">
           {chatMessages.length === 0 ? (
             <div className="text-center text-neutral-400 my-8">
@@ -381,7 +384,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
           )}
           <div ref={chatEndRef} />
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Type your message..."
@@ -400,7 +403,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
       </DialogContent>
     </Dialog>
   );
-  
+
   return (
     <div className="bg-white border border-neutral-200 rounded-lg p-4">
       <div className="flex items-start">
@@ -416,7 +419,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
             <h4 className="text-md font-medium text-neutral-900">
               With {otherUser?.name || "User"}
             </h4>
-            
+
             {/* Show rating if available */}
             <div className="flex items-center">
               <Star className="h-4 w-4 text-yellow-400 fill-current" />
@@ -425,7 +428,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
               </span>
             </div>
           </div>
-          
+
           <p className="mt-1 text-sm text-neutral-500">
             Exchange {exchange.status === "pending" 
               ? "requested" 
@@ -434,7 +437,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
                 : "started"} {" "}
             {new Date(exchange.createdAt).toLocaleDateString()}
           </p>
-          
+
           <div className="mt-3 grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-neutral-500">You're teaching:</p>
@@ -481,10 +484,10 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
               </div>
             </div>
           </div>
-          
+
           <div className="mt-4 flex items-center space-x-2 flex-wrap">
             {renderPendingActions()}
-            
+
             {(exchange.status === "active" || exchange.status === "completed") && (
               <Button 
                 size="sm" 
@@ -496,9 +499,9 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
                 Chat
               </Button>
             )}
-            
+
             {renderChatDialog()}
-            
+
             {exchange.status === "active" && (
               <>
                 <Button 
@@ -509,7 +512,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
                   Schedule Next Session
                 </Button>
                 {renderScheduleDialog()}
-                
+
                 <Button 
                   size="sm" 
                   variant="outline"
@@ -521,7 +524,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
                 </Button>
               </>
             )}
-            
+
             {isExchangeCompleted && otherUserId && (
               <Button
                 size="sm"
@@ -533,7 +536,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
                 Review {otherUser?.name}
               </Button>
             )}
-            
+
             {/* Review Dialog */}
             {otherUserId && (
               <ReviewDialog
