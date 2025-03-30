@@ -82,8 +82,8 @@ export function AuthForm() {
           </TabsList>
           <CardDescription className="pt-4">
             {activeTab === "login" 
-              ? "Sign in to your SkillSwap account"
-              : "Create a new SkillSwap account"}
+              ? "Sign in to your Skill Pradan account"
+              : "Create a new Skill Pradan account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
