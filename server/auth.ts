@@ -15,29 +15,28 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
+export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  // Check if the stored password contains a salt (has a period delimiter)
-  if (stored.includes('.')) {
-    // Handle properly hashed passwords with salt
-    const [hashed, salt] = stored.split(".");
-    if (!salt) {
-      console.error("Invalid stored password format - salt missing");
-      return false;
-    }
-    const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
-  } else {
-    // For test users with simplified passwords (just for development/testing)
-    console.log("Using simplified password check (development only)");
-    return stored === supplied;
+  // The stored password should contain a salt (has a period delimiter)
+  if (!stored.includes('.')) {
+    console.error("Invalid stored password format - no salt found");
+    return false;
   }
+  
+  const [hashed, salt] = stored.split(".");
+  if (!salt) {
+    console.error("Invalid stored password format - salt missing");
+    return false;
+  }
+  
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+  return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 export function setupAuth(app: Express) {

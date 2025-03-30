@@ -12,6 +12,7 @@ import {
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
 import createMemoryStore from "memorystore";
+import { hashPassword } from "./auth";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -180,8 +181,8 @@ export class MemStorage implements IStorage {
   
   private async createTestUsers() {
     try {
-      // Simple password for testing - don't use in production
-      const testPassword = "password123";
+      // Secure password for testing
+      const testPassword = await hashPassword("password123");
       
       // Check if we already have test users
       const existingUser = await this.getUserByUsername("testuser");
