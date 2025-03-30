@@ -86,7 +86,7 @@ export function ProfileHeader() {
     <div className="flex flex-col sm:flex-row">
       <div className="flex-shrink-0">
         <UserAvatar 
-          src={user.avatar} 
+          src={user.avatar ? user.avatar : undefined} 
           name={user.name} 
           size="lg" 
         />
