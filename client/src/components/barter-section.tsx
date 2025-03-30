@@ -136,12 +136,12 @@ export function BarterSection() {
           <div>
             <label className="block text-sm font-medium text-neutral-700">I can teach:</label>
             <Select onValueChange={(value) => setTeachingSkillId(value)}>
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-white text-neutral-900">
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
               <SelectContent>
                 {teachingSkills.map(skill => (
-                  <SelectItem key={skill.id} value={skill.id.toString()}>
+                  <SelectItem key={skill.id} value={skill.id.toString()} className="text-neutral-900">
                     {skill.name}
                   </SelectItem>
                 ))}
@@ -151,12 +151,12 @@ export function BarterSection() {
           <div>
             <label className="block text-sm font-medium text-neutral-700">I want to learn:</label>
             <Select onValueChange={(value) => setLearningSkillId(value)}>
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="mt-1 bg-white text-neutral-900">
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
               <SelectContent>
                 {learningSkills.map(skill => (
-                  <SelectItem key={skill.id} value={skill.id.toString()}>
+                  <SelectItem key={skill.id} value={skill.id.toString()} className="text-neutral-900">
                     {skill.name}
                   </SelectItem>
                 ))}
