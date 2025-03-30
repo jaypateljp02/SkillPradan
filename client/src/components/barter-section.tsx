@@ -13,6 +13,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 export function BarterSection() {
@@ -139,9 +140,13 @@ export function BarterSection() {
               <SelectTrigger className="mt-1 bg-white text-neutral-900">
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-2 border-gray-200">
                 {teachingSkills.map(skill => (
-                  <SelectItem key={skill.id} value={skill.id.toString()} className="text-neutral-900">
+                  <SelectItem 
+                    key={skill.id} 
+                    value={skill.id.toString()} 
+                    className="text-black font-medium hover:bg-gray-100"
+                  >
                     {skill.name}
                   </SelectItem>
                 ))}
@@ -154,9 +159,13 @@ export function BarterSection() {
               <SelectTrigger className="mt-1 bg-white text-neutral-900">
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white border-2 border-gray-200">
                 {learningSkills.map(skill => (
-                  <SelectItem key={skill.id} value={skill.id.toString()} className="text-neutral-900">
+                  <SelectItem 
+                    key={skill.id} 
+                    value={skill.id.toString()} 
+                    className="text-black font-medium hover:bg-gray-100"
+                  >
                     {skill.name}
                   </SelectItem>
                 ))}
