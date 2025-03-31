@@ -101,7 +101,7 @@ export function StudyGroupSection() {
       // Get all groups and filter on client side
       const allGroups = await response.json();
       return allGroups.filter((group: GroupItem) => 
-        activeTab === 'team-projects' ? group.isTeamProject : !group.isTeamProject
+        activeTab === 'team-projects' ? group.isTeamProject === true : group.isTeamProject !== true
       );
     },
     enabled: !!user,
@@ -132,7 +132,7 @@ export function StudyGroupSection() {
       // Get all user groups and filter on client side
       const allUserGroups = await response.json();
       return allUserGroups.filter((group: GroupItem) => 
-        activeTab === 'team-projects' ? group.isTeamProject : !group.isTeamProject
+        activeTab === 'team-projects' ? group.isTeamProject === true : group.isTeamProject !== true
       );
     },
     enabled: !!user,
@@ -271,6 +271,15 @@ export function StudyGroupSection() {
     }
     
     joinGroupMutation.mutate(groupId);
+  };
+  
+  // Placeholder function for showing features in development
+  const handleFeatureInDevelopment = (featureName: string) => {
+    toast({
+      title: "Coming Soon",
+      description: `The ${featureName} feature is currently in development.`,
+      variant: "default",
+    });
   };
 
   const selectedGroupData = groups.find((group: GroupItem) => group.id === selectedGroup);
@@ -483,15 +492,27 @@ export function StudyGroupSection() {
               
               <div className="p-4">
                 <div className="flex space-x-4">
-                  <Button variant="outline" className="flex-1 flex items-center justify-center">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 flex items-center justify-center"
+                    onClick={() => handleFeatureInDevelopment("Group Chat")}
+                  >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Group Chat
                   </Button>
-                  <Button variant="outline" className="flex-1 flex items-center justify-center">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 flex items-center justify-center"
+                    onClick={() => handleFeatureInDevelopment("Video Session")}
+                  >
                     <Video className="h-4 w-4 mr-2" />
                     Start Session
                   </Button>
-                  <Button variant="outline" className="flex-1 flex items-center justify-center">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 flex items-center justify-center"
+                    onClick={() => handleFeatureInDevelopment("File Sharing")}
+                  >
                     <FolderUp className="h-4 w-4 mr-2" />
                     Share Files
                   </Button>
@@ -514,7 +535,12 @@ export function StudyGroupSection() {
                       </div>
                       <span className="text-xs text-neutral-500">Shared 1 week ago</span>
                     </div>
-                    <Button variant="ghost" size="sm" className="mt-2 text-primary">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="mt-2 text-primary"
+                      onClick={() => handleFeatureInDevelopment("File Upload")}
+                    >
                       <Plus className="h-4 w-4 mr-1" />
                       Upload New File
                     </Button>
@@ -725,7 +751,12 @@ export function StudyGroupSection() {
                     placeholder="Type your message..." 
                     className="flex-1 py-2 px-3 border border-neutral-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
                   />
-                  <Button className="rounded-l-none">Send</Button>
+                  <Button 
+                    className="rounded-l-none"
+                    onClick={() => handleFeatureInDevelopment("Chat Messaging")}
+                  >
+                    Send
+                  </Button>
                 </div>
                 
                 <div className="mt-6">
@@ -745,7 +776,12 @@ export function StudyGroupSection() {
                       </div>
                       <span className="text-xs text-neutral-500">Shared 2 days ago</span>
                     </div>
-                    <Button variant="ghost" size="sm" className="mt-2 text-primary">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="mt-2 text-primary"
+                      onClick={() => handleFeatureInDevelopment("Resource Sharing")}
+                    >
                       <Plus className="h-4 w-4 mr-1" />
                       Share New Resource
                     </Button>
