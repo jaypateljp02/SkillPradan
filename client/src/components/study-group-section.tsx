@@ -95,10 +95,18 @@ export function StudyGroupSection() {
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createGroupSchema>) => {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        throw new Error('You must be logged in to create a group');
+      }
+      
       return await fetch('/api/groups', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           ...data,
@@ -130,10 +138,18 @@ export function StudyGroupSection() {
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        throw new Error('You must be logged in to join a group');
+      }
+      
       return await fetch(`/api/groups/${groupId}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
       }).then(res => {
         if (!res.ok) throw new Error('Failed to join group');
