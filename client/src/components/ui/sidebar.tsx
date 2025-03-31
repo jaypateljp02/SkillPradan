@@ -70,13 +70,13 @@ export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void 
             <div className="bg-white rounded-lg shadow p-4">
               <h3 className="text-sm font-medium text-neutral-700">Weekly Challenge</h3>
               <p className="mt-1 text-xs text-neutral-500">Complete 3 skill exchanges this week</p>
-              <div className="mt-3 relative pt-1">
-                <div className="overflow-hidden h-2 text-xs flex rounded bg-neutral-200">
-                  <div className="w-2/3 shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-amber-500"></div>
-                </div>
-                <div className="flex justify-between text-xs mt-1">
+              <div className="mt-3">
+                <div className="flex justify-between text-xs mb-1">
                   <span className="text-neutral-500">2/3 completed</span>
-                  <span className="text-amber-500 font-medium">+200 points</span>
+                  <span className="text-primary font-medium">+200 points</span>
+                </div>
+                <div className="h-2 bg-neutral-100 rounded-full">
+                  <div className="h-full w-2/3 bg-primary rounded-full transition-all duration-300 ease-in-out"></div>
                 </div>
               </div>
             </div>
