@@ -1,3 +1,6 @@
+
+import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 import { Home, Users, BarChart2, MessageSquare, Calendar, UserPlus } from "lucide-react";
 
 const routes = [
@@ -9,6 +12,22 @@ const routes = [
   { path: "/sessions", label: "Sessions", icon: <Calendar className="h-4 w-4" /> },
 ];
 
-// ... rest of the code (assuming the routes array is used in a navigation component) ...
-
-export default routes; //Example export, adjust as needed based on the original code
+export function Navigation() {
+  return (
+    <nav className="flex items-center space-x-4 lg:space-x-6">
+      {routes.map((route) => (
+        <Link
+          key={route.path}
+          href={route.path}
+          className={cn(
+            "text-sm font-medium transition-colors hover:text-primary",
+            "flex items-center gap-2"
+          )}
+        >
+          {route.icon}
+          {route.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
