@@ -1,3 +1,4 @@
+
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,17 +9,15 @@ import AuthPage from "@/pages/auth-page";
 import VideoSession from "@/pages/video-session";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
-import logoImage from "./assets/logo.png";
-import GroupsPage from "./pages/groups-page"; // Added import statement
-
+import GroupsPage from "@/pages/groups-page";
 
 function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/session/:id" component={VideoSession} />
+      <ProtectedRoute path="/groups" component={GroupsPage} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/groups" component={GroupsPage} /> {/* Added Groups route */}
       <Route component={NotFound} />
     </Switch>
   );
