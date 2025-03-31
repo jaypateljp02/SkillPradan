@@ -42,15 +42,15 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "skill_swap_session_secret",
-    resave: false,
-    saveUninitialized: true, // Set to true to ensure cookie is set on first request
+    resave: true,
+    saveUninitialized: true,
     store: storage.sessionStore,
     name: "skillpradaan.sid", // Custom cookie name
     cookie: {
+      path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
-      secure: false, // Set to false for development
-      sameSite: "none" // Allow cross-site cookie in development
+      secure: false
     }
   };
   
@@ -157,9 +157,19 @@ export function setupAuth(app: Express) {
           return next(loginErr);
         }
         
-        console.log("User authenticated successfully:", user.username);
-        const { password, ...userData } = user as SelectUser;
-        return res.status(200).json(userData);
+        // Make sure the session is saved before responding
+        req.session.save((err) => {
+          if (err) {
+            console.error("Session save error:", err);
+            return next(err);
+          }
+          
+          console.log("User authenticated successfully:", user.username);
+          console.log("Session saved with ID:", req.sessionID);
+          
+          const { password, ...userData } = user as SelectUser;
+          return res.status(200).json(userData);
+        });
       });
     })(req, res, next);
   });

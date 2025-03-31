@@ -24,7 +24,7 @@ export async function apiRequest(
       },
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include", // This includes cookies in the request
-      mode: "cors",
+      mode: "same-origin", // Use same-origin for better cookie handling
       cache: "no-cache",
     });
     
@@ -36,6 +36,13 @@ export async function apiRequest(
     
     // Log what cookies we have
     console.log("Current cookies:", document.cookie || "None");
+    
+    // Check if we need to redirect to login
+    if (res.status === 401 && url !== "/api/login") {
+      console.log("Received 401, user not authenticated");
+      window.location.href = "/auth";
+      throw new Error("User not authenticated");
+    }
     
     await throwIfResNotOk(res);
     return res;
@@ -58,7 +65,7 @@ export const getQueryFn: <T>(options: {
       const res = await fetch(queryKey[0] as string, {
         credentials: "include", // This includes cookies in the request
         cache: "no-cache",
-        mode: "cors",
+        mode: "same-origin", // Use same-origin for better cookie handling
       });
       
       console.log(`Received query response from ${queryKey[0]}:`, {
@@ -70,9 +77,18 @@ export const getQueryFn: <T>(options: {
       // Log what cookies we have after the response
       console.log("Current cookies after response:", document.cookie || "None");
 
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-        console.log("Returning null due to 401 status");
-        return null;
+      // Redirect to login page if unauthorized and path is not already auth-related
+      if (res.status === 401 && !String(queryKey[0]).includes('/api/login') && !String(queryKey[0]).includes('/api/register')) {
+        if (unauthorizedBehavior === "returnNull") {
+          console.log("Returning null due to 401 status");
+          
+          // Only redirect if we're fetching the user data
+          if (String(queryKey[0]) === '/api/user') {
+            console.log("Redirecting to auth page due to unauthenticated user");
+            window.location.href = "/auth";
+          }
+          return null;
+        }
       }
 
       await throwIfResNotOk(res);

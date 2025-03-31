@@ -33,8 +33,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      try {
+        console.log("Attempting login with credentials:", credentials.username);
+        const res = await apiRequest("POST", "/api/login", credentials);
+        const userData = await res.json();
+        console.log("Login successful, received user data:", userData);
+        
+        // Wait for session cookie to be properly set
+        const verifySession = async () => {
+          try {
+            const checkRes = await fetch("/api/debug/session", {
+              credentials: "include",
+              cache: "no-cache",
+              mode: "same-origin",
+            });
+            
+            const sessionData = await checkRes.json();
+            console.log("Session verification data:", sessionData);
+            
+            if (!sessionData.authenticated) {
+              console.error("Session not authenticated after login!");
+            }
+          } catch (e) {
+            console.error("Failed to verify session after login:", e);
+          }
+        };
+        
+        await verifySession();
+        return userData;
+      } catch (error) {
+        console.error("Login mutation function error:", error);
+        throw error;
+      }
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
@@ -44,18 +74,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       // Force query cache invalidation to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries();
       
       // Add a slight delay to ensure state is updated before redirect
       setTimeout(() => {
         // Redirect to the groups page after successful login
         window.location.href = "/groups";
-      }, 100);
+      }, 500);
     },
     onError: (error: Error) => {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: error.message,
+        description: error.message || "Please check your username and password",
         variant: "destructive",
       });
     },
@@ -63,29 +94,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      try {
+        console.log("Attempting registration for:", credentials.username);
+        const res = await apiRequest("POST", "/api/register", credentials);
+        const userData = await res.json();
+        console.log("Registration successful, received user data:", userData);
+        
+        // Verify session was created after registration
+        const verifySession = async () => {
+          try {
+            const checkRes = await fetch("/api/debug/session", {
+              credentials: "include",
+              cache: "no-cache",
+              mode: "same-origin",
+            });
+            
+            const sessionData = await checkRes.json();
+            console.log("Session verification data after registration:", sessionData);
+            
+            if (!sessionData.authenticated) {
+              console.error("Session not authenticated after registration!");
+            }
+          } catch (e) {
+            console.error("Failed to verify session after registration:", e);
+          }
+        };
+        
+        await verifySession();
+        return userData;
+      } catch (error) {
+        console.error("Registration mutation function error:", error);
+        throw error;
+      }
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
         title: "Account created",
-        description: `Welcome to SkillSwap, ${user.name}!`,
+        description: `Welcome to Skill प्रदान, ${user.name}!`,
       });
       
       // Force query cache invalidation to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries();
       
       // Add a slight delay to ensure state is updated before redirect
       setTimeout(() => {
         // Redirect to the groups page after successful registration
         window.location.href = "/groups";
-      }, 100);
+      }, 500);
     },
     onError: (error: Error) => {
+      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: error.message || "Please try again with different credentials",
         variant: "destructive",
       });
     },
@@ -93,11 +155,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      try {
+        console.log("Attempting to log out");
+        await apiRequest("POST", "/api/logout");
+        
+        // Clear client-side cache completely
+        queryClient.clear();
+        
+        // Verify session was cleared after logout
+        const verifySession = async () => {
+          try {
+            const checkRes = await fetch("/api/debug/session", {
+              credentials: "include",
+              cache: "no-cache",
+              mode: "same-origin",
+            });
+            
+            const sessionData = await checkRes.json();
+            console.log("Session verification data after logout:", sessionData);
+            
+            if (sessionData.authenticated) {
+              console.error("Session still authenticated after logout!");
+            }
+          } catch (e) {
+            console.error("Failed to verify session after logout:", e);
+          }
+        };
+        
+        await verifySession();
+      } catch (error) {
+        console.error("Logout mutation function error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      // Update local cache state
       queryClient.setQueryData(["/api/user"], null);
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
       toast({
         title: "Logged out",
@@ -107,12 +200,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect to login page after logout
       setTimeout(() => {
         window.location.href = "/auth";
-      }, 100);
+      }, 300);
     },
     onError: (error: Error) => {
+      console.error("Logout error:", error);
       toast({
         title: "Logout failed",
-        description: error.message,
+        description: error.message || "Please try again",
         variant: "destructive",
       });
     },
