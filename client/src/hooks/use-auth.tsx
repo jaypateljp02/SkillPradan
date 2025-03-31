@@ -43,8 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Logged in as ${user.name}`,
       });
       
-      // Redirect to the groups page after successful login
-      window.location.href = "/groups";
+      // Force query cache invalidation to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
+      // Add a slight delay to ensure state is updated before redirect
+      setTimeout(() => {
+        // Redirect to the groups page after successful login
+        window.location.href = "/groups";
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -67,8 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: `Welcome to SkillSwap, ${user.name}!`,
       });
       
-      // Redirect to the groups page after successful registration
-      window.location.href = "/groups";
+      // Force query cache invalidation to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
+      // Add a slight delay to ensure state is updated before redirect
+      setTimeout(() => {
+        // Redirect to the groups page after successful registration
+        window.location.href = "/groups";
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -85,10 +97,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      
       toast({
         title: "Logged out",
         description: "Come back soon!",
       });
+      
+      // Redirect to login page after logout
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 100);
     },
     onError: (error: Error) => {
       toast({

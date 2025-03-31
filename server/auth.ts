@@ -42,16 +42,19 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "skill_swap_session_secret",
-    resave: true,
-    saveUninitialized: true,
+    resave: false,
+    saveUninitialized: true, // Set to true to ensure cookie is set on first request
     store: storage.sessionStore,
+    name: "skillpradaan.sid", // Custom cookie name
     cookie: {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
       secure: false, // Set to false for development
-      sameSite: "lax"
+      sameSite: "none" // Allow cross-site cookie in development
     }
   };
+  
+  console.log("Session cookie settings:", sessionSettings.cookie);
   
   console.log("Session store initialized:", storage.sessionStore ? "Successfully" : "Failed");
 
@@ -71,9 +74,19 @@ export function setupAuth(app: Express) {
     }),
   );
 
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user, done) => {
+    console.log("Serializing user:", user.id);
+    done(null, user.id);
+  });
+  
   passport.deserializeUser(async (id: number, done) => {
+    console.log("Deserializing user with ID:", id);
     const user = await storage.getUser(id);
+    if (!user) {
+      console.log("User not found during deserialization");
+      return done(null, false);
+    }
+    console.log("User deserialized successfully:", user.username);
     done(null, user);
   });
 
@@ -171,5 +184,28 @@ export function setupAuth(app: Express) {
     const { password, ...userData } = req.user as SelectUser;
     console.log("Returning user data for:", userData.username);
     res.json(userData);
+  });
+  
+  // Debug endpoint to check session data
+  app.get("/api/debug/session", (req, res) => {
+    console.log("Debug session endpoint called");
+    console.log("Session ID:", req.sessionID);
+    console.log("Session:", req.session);
+    console.log("Is authenticated:", req.isAuthenticated());
+    
+    if (req.user) {
+      const { password, ...userData } = req.user as SelectUser;
+      return res.json({
+        sessionId: req.sessionID,
+        authenticated: req.isAuthenticated(),
+        user: userData
+      });
+    } else {
+      return res.json({
+        sessionId: req.sessionID,
+        authenticated: req.isAuthenticated(),
+        user: null
+      });
+    }
   });
 }
