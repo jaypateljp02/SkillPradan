@@ -19,6 +19,7 @@ import { AchievementStats } from "@/components/achievement-stats";
 import { BadgesSection } from "@/components/badges-section";
 import { ChallengeCard } from "@/components/challenge-card";
 import { Leaderboard } from "@/components/leaderboard";
+import { StudyGroupSection } from "@/components/study-group-section";
 import { 
   GraduationCap, 
   ExternalLink,
@@ -34,8 +35,24 @@ export default function HomePage() {
   const { user, logoutMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("profile-tab");
   
+  // Define challenge type
+  interface Challenge {
+    id: number;
+    title: string;
+    description: string;
+    targetCount: number;
+    type: string;
+    pointsRewarded: number;
+    durationDays: number;
+    userProgress?: {
+      currentCount: number;
+      startedAt: string;
+      completedAt: string | null;
+    } | null;
+  }
+  
   // Get challenges for the user
-  const { data: challenges = [] } = useQuery({
+  const { data: challenges = [] as Challenge[] } = useQuery<Challenge[]>({
     queryKey: ["/api/challenges"],
   });
   
@@ -65,7 +82,7 @@ export default function HomePage() {
                 <div className="flex space-x-2 items-center bg-neutral-100 rounded-full px-3 py-1">
                   <CreditCard className="h-5 w-5 text-amber-500" />
                   <span className="text-sm font-semibold text-neutral-700">
-                    {user?.points.toLocaleString()} Points
+                    {user?.points?.toLocaleString() || 0} Points
                   </span>
                 </div>
 
@@ -76,7 +93,7 @@ export default function HomePage() {
                     onClick={handleLogout}
                   >
                     <UserAvatar 
-                      src={user?.avatar} 
+                      src={user?.avatar || undefined} 
                       name={user?.name || ''} 
                       size="sm"
                     />
@@ -309,6 +326,21 @@ export default function HomePage() {
 
                     {/* Leaderboard */}
                     <Leaderboard />
+                  </div>
+                </div>
+
+                {/* Study Group Tab */}
+                <div 
+                  id="study-group-tab"
+                  className={`bg-white shadow rounded-lg ${activeTab !== 'study-group-tab' ? 'hidden' : ''}`}
+                >
+                  <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+                    <h3 className="text-lg font-medium leading-6 text-neutral-900">Study Groups</h3>
+                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">Create and join study groups with peers</p>
+                  </div>
+
+                  <div className="p-6">
+                    <StudyGroupSection />
                   </div>
                 </div>
               </div>

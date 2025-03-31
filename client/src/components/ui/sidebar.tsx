@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { 
-  User, Repeat, Settings, CreditCard, GraduationCap, Trophy
+  User, Repeat, Settings, CreditCard, GraduationCap, Trophy, Users
 } from 'lucide-react';
 
 interface NavItem {
@@ -41,6 +41,11 @@ export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void 
       label: 'Achievements',
       icon: <Trophy className="w-5 h-5 mr-3 text-neutral-400" />,
       target: '#achievements-tab'
+    },
+    {
+      label: 'Study Group',
+      icon: <Users className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: '#study-group-tab'
     }
   ];
 

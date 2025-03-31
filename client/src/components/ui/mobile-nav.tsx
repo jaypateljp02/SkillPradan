@@ -1,4 +1,4 @@
-import { User, Repeat, CreditCard, GraduationCap, Trophy } from 'lucide-react';
+import { User, Repeat, CreditCard, GraduationCap, Trophy, Users } from 'lucide-react';
 
 interface MobileNavProps {
   setActiveTab: (tab: string) => void;
@@ -31,6 +31,11 @@ export function MobileNav({ setActiveTab, activeTab }: MobileNavProps) {
       label: 'Badges',
       icon: <Trophy className="text-lg" />,
       target: 'achievements-tab'
+    },
+    {
+      label: 'Groups',
+      icon: <Users className="text-lg" />,
+      target: 'study-group-tab'
     }
   ];
 
