@@ -3,23 +3,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Flame, Award } from "lucide-react";
 import { formatDistanceToNow, addDays } from "date-fns";
-
-interface ChallengeCardProps {
-  challenge: {
-    id: number;
-    title: string;
-    description: string;
-    targetCount: number;
-    type: string;
-    pointsRewarded: number;
-    durationDays: number;
-    userProgress?: {
-      currentCount: number;
-      startedAt: string;
-      completedAt: string | null;
-    } | null;
-  };
-}
+import { Challenge, ChallengeCardProps } from "@/types/challenge";
 
 export function ChallengeCard({ challenge }: ChallengeCardProps) {
   const { toast } = useToast();

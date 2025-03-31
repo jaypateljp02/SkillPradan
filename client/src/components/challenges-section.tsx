@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChallengeCard } from "@/components/ui/challenge-card";
+import { Challenge } from "@/types/challenge";
 
-interface Challenge {
+interface ApiChallenge {
   id: number;
   title: string;
   description: string;
@@ -19,14 +20,26 @@ interface UserChallenge {
   progress: number;
   completed: boolean;
   completedAt?: string;
-  challenge: Challenge;
+  challenge: ApiChallenge;
 }
 
 export function ChallengesSection() {
   // Fetch user challenges
-  const { data: challenges = [], isLoading } = useQuery<Challenge[]>({
+  const { data: apiChallenges = [], isLoading } = useQuery<ApiChallenge[]>({
     queryKey: ["/api/challenges"],
   });
+  
+  // Convert API challenges to our Challenge type
+  const challenges = apiChallenges.map(c => ({
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    targetCount: c.totalRequired || 3,
+    type: c.type || "exchange",
+    pointsRewarded: c.pointsReward,
+    durationDays: 7,
+    userProgress: null
+  }));
   
   // Fetch user's progress on challenges
   const { data: userChallenges = [] } = useQuery<UserChallenge[]>({
@@ -56,13 +69,14 @@ export function ChallengesSection() {
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {weeklyChallenge && (
           <ChallengeCard
-            title={weeklyChallenge.title}
-            description={weeklyChallenge.description}
-            progress={{ 
-              current: 2, 
-              total: weeklyChallenge.totalRequired || 3
+            challenge={{
+              ...weeklyChallenge,
+              userProgress: {
+                currentCount: 2,
+                startedAt: new Date().toISOString(),
+                completedAt: null
+              }
             }}
-            points={weeklyChallenge.pointsReward}
           />
         )}
         
@@ -70,16 +84,36 @@ export function ChallengesSection() {
         {challenges.length === 0 && (
           <>
             <ChallengeCard
-              title="Weekly Challenge"
-              description="Complete 3 skill exchanges this week"
-              progress={{ current: 2, total: 3 }}
-              points={200}
+              challenge={{
+                id: 1,
+                title: "Weekly Challenge",
+                description: "Complete 3 skill exchanges this week",
+                targetCount: 3,
+                type: "exchange",
+                pointsRewarded: 200,
+                durationDays: 7,
+                userProgress: {
+                  currentCount: 2,
+                  startedAt: new Date().toISOString(),
+                  completedAt: null
+                }
+              }}
             />
             <ChallengeCard
-              title="Mentor Challenge"
-              description="Help 5 students with their skills"
-              progress={{ current: 1, total: 5 }}
-              points={300}
+              challenge={{
+                id: 2,
+                title: "Mentor Challenge",
+                description: "Help 5 students with their skills",
+                targetCount: 5,
+                type: "mentor",
+                pointsRewarded: 300,
+                durationDays: 14,
+                userProgress: {
+                  currentCount: 1,
+                  startedAt: new Date().toISOString(),
+                  completedAt: null
+                }
+              }}
             />
           </>
         )}

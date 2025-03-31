@@ -15,10 +15,11 @@ import { LearningTools } from "@/components/learning-tools";
 import { SessionHistory } from "@/components/session-history";
 import { AchievementStats } from "@/components/achievement-stats";
 import { BadgesSection } from "@/components/badges-section";
-import { ChallengeCard } from "@/components/ui/challenge-card";
+import { ChallengeCard } from "@/components/challenge-card";
 import { ChallengesSection } from "@/components/challenges-section";
 import { Leaderboard } from "@/components/leaderboard";
 import { StudyGroupSection } from "@/components/study-group-section";
+import { Challenge } from "@/types/challenge";
 import { 
   GraduationCap, 
   ExternalLink,
@@ -37,21 +38,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("profile-tab");
   
-  // Define challenge type
-  interface Challenge {
-    id: number;
-    title: string;
-    description: string;
-    targetCount: number;
-    type: string;
-    pointsRewarded: number;
-    durationDays: number;
-    userProgress?: {
-      currentCount: number;
-      startedAt: string;
-      completedAt: string | null;
-    } | null;
-  }
+  // Use Challenge type from import at the top
   
   // Get challenges for the user
   const { data: challenges = [] as Challenge[] } = useQuery<Challenge[]>({
