@@ -15,7 +15,8 @@ import { LearningTools } from "@/components/learning-tools";
 import { SessionHistory } from "@/components/session-history";
 import { AchievementStats } from "@/components/achievement-stats";
 import { BadgesSection } from "@/components/badges-section";
-import { ChallengeCard } from "@/components/challenge-card";
+import { ChallengeCard } from "@/components/ui/challenge-card";
+import { ChallengesSection } from "@/components/challenges-section";
 import { Leaderboard } from "@/components/leaderboard";
 import { StudyGroupSection } from "@/components/study-group-section";
 import { 
@@ -120,19 +121,22 @@ export default function HomePage() {
                   
                   <div className="mt-auto pt-6">
                     <div className="px-4">
-                      <div className="bg-white rounded-lg shadow p-4">
-                        <h3 className="text-sm font-medium text-neutral-700">Weekly Challenge</h3>
-                        <p className="mt-1 text-xs text-neutral-500">Complete 3 skill exchanges this week</p>
-                        <div className="mt-3">
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="text-neutral-500">2/3 completed</span>
-                            <span className="text-primary font-medium">+200 points</span>
-                          </div>
-                          <div className="h-2 bg-neutral-100 rounded-full">
-                            <div className="h-full w-2/3 bg-primary rounded-full transition-all duration-300 ease-in-out"></div>
-                          </div>
-                        </div>
-                      </div>
+                      <ChallengeCard 
+                        challenge={{
+                          id: 999, // Temporary ID
+                          title: "Weekly Challenge",
+                          description: "Complete 3 skill exchanges this week",
+                          targetCount: 3,
+                          type: "exchange",
+                          pointsRewarded: 200,
+                          durationDays: 7,
+                          userProgress: {
+                            currentCount: 2,
+                            startedAt: new Date().toISOString(),
+                            completedAt: null
+                          }
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -319,24 +323,7 @@ export default function HomePage() {
                     <BadgesSection />
 
                     {/* Current Challenges */}
-                    <div className="mt-8">
-                      <h4 className="text-md font-medium text-neutral-900">Current Challenges</h4>
-                      
-                      <div className="mt-4 space-y-4">
-                        {challenges.length === 0 ? (
-                          <div className="bg-neutral-50 p-4 rounded-md text-center">
-                            <p className="text-neutral-500">No active challenges</p>
-                          </div>
-                        ) : (
-                          challenges.map((challenge) => (
-                            <ChallengeCard 
-                              key={challenge.id}
-                              challenge={challenge}
-                            />
-                          ))
-                        )}
-                      </div>
-                    </div>
+                    <ChallengesSection />
 
                     {/* Leaderboard */}
                     <Leaderboard />
