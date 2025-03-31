@@ -568,26 +568,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Group routes
   // =========================================
   app.get("/api/groups", isAuthenticated, async (req, res) => {
-    const userId = req.user!.id;
-    const all = req.query.all === 'true';
-    
-    let groups;
-    if (all) {
-      groups = await storage.getAllGroups();
-    } else {
-      groups = await storage.getGroupsByUser(userId);
+    try {
+      const groups = await storage.getAllGroups();
+      
+      // For each group, get the member count
+      const enrichedGroups = await Promise.all(groups.map(async (group) => {
+        const members = await storage.getGroupMembers(group.id);
+        return {
+          ...group,
+          memberCount: members.length
+        };
+      }));
+      
+      res.json(enrichedGroups);
+    } catch (error) {
+      console.error("Error fetching groups:", error);
+      res.status(500).json({ message: "Failed to fetch groups" });
     }
-    
-    // For each group, get the member count
-    const enrichedGroups = await Promise.all(groups.map(async (group) => {
-      const members = await storage.getGroupMembers(group.id);
-      return {
-        ...group,
-        memberCount: members.length
-      };
-    }));
-    
-    res.json(enrichedGroups);
+  });
+  
+  app.get("/api/groups/user", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const allGroups = await storage.getAllGroups();
+      
+      // For each group, get the members and check if current user is a member
+      const userGroups = [];
+      for (const group of allGroups) {
+        const members = await storage.getGroupMembers(group.id);
+        const isMember = members.some(member => member.userId === userId);
+        
+        if (isMember) {
+          userGroups.push({
+            ...group,
+            memberCount: members.length
+          });
+        }
+      }
+      
+      res.json(userGroups);
+    } catch (error) {
+      console.error("Error fetching user groups:", error);
+      res.status(500).json({ message: "Failed to fetch user groups" });
+    }
   });
   
   app.get("/api/groups/:id", isAuthenticated, async (req, res) => {
@@ -717,6 +740,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedGroup);
   });
   
+  // Route for joining a group
+  app.post("/api/groups/:id/join", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.id);
+    
+    // Make sure group exists
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if already a member
+    const members = await storage.getGroupMembers(groupId);
+    const existingMember = members.find(member => member.userId === userId);
+    
+    if (existingMember) {
+      return res.status(400).json({ message: "Already a member of this group" });
+    }
+    
+    try {
+      // For private groups, join requests would need admin approval
+      // For now we allow direct joining
+      const role = 'member';
+      
+      // Add user as a member
+      const member = await storage.addGroupMember({
+        groupId,
+        userId,
+        role
+      });
+      
+      // Get user data to return
+      const user = await storage.getUser(userId);
+      if (user) {
+        const { password, ...userData } = user;
+        res.status(201).json({
+          ...member,
+          user: userData,
+          group
+        });
+      } else {
+        res.status(201).json(member);
+      }
+    } catch (error) {
+      console.error("Error joining group:", error);
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+  
   // =========================================
   // Group Member routes
   // =========================================
@@ -785,10 +855,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // Validate with Zod schema
+      // Ensure role is always a string
+      const role = targetUserId === userId ? 'member' : (req.body.role || 'member');
+      
       const validatedData = insertGroupMemberSchema.parse({
         groupId,
         userId: targetUserId,
-        role: targetUserId === userId ? 'member' : (req.body.role || 'member')
+        role
       });
       
       // Add the member
@@ -988,11 +1061,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // Validate with Zod schema
-      const validatedData = insertGroupEventSchema.parse({
+      // Prepare event data with proper types
+      const eventData: {
+        groupId: number,
+        createdById: number,
+        title: string,
+        description?: string,
+        startTime: Date,
+        endTime?: Date
+      } = {
         ...req.body,
         groupId,
-        createdById: userId
-      });
+        createdById: userId,
+        // Handle nullable fields correctly
+        description: req.body.description || undefined,
+        endTime: req.body.endTime || undefined
+      };
+      
+      const validatedData = insertGroupEventSchema.parse(eventData);
       
       // Create the event
       const event = await storage.createGroupEvent(validatedData);
