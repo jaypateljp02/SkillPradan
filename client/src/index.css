@@ -3,11 +3,24 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --primary-purple: 272 60% 43%;
+    --purple-button: 272 60% 50%;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+
+  .btn-purple {
+    @apply bg-[hsl(var(--purple-button))] text-white hover:bg-[hsl(var(--purple-button)/0.9)] px-4 py-2 rounded-md;
+  }
+
+  .text-purple {
+    @apply text-[hsl(var(--primary-purple))];
   }
 }
