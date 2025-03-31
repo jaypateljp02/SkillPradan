@@ -16,17 +16,26 @@ export async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [storedHash, salt] = stored.split(":");
-  
-  const suppliedBuf = Buffer.from(
-    createHash("sha256")
+  try {
+    const [storedHash, salt] = stored.split(":");
+    
+    if (!storedHash || !salt) {
+      console.log("Invalid stored password format, missing hash or salt");
+      return false;
+    }
+    
+    // Get the hash of the supplied password using the same salt
+    const suppliedHash = createHash("sha256")
       .update(supplied + salt)
-      .digest("hex")
-  );
-  
-  const hashedBuf = Buffer.from(storedHash);
-  
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+      .digest("hex");
+    
+    // Compare the hashes directly instead of using timingSafeEqual
+    // This avoids potential buffer length issues
+    return suppliedHash === storedHash;
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
 }
 
 // Generate a random token

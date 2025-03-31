@@ -14,7 +14,7 @@ import {
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
 import createMemoryStore from "memorystore";
-import { hashPassword } from "./auth";
+import { hashPassword } from "./token-auth";
 
 const MemoryStore = createMemoryStore(session);
 
