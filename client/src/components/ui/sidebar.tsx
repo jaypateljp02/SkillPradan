@@ -12,10 +12,10 @@ interface NavItem {
 
 export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   const [location] = useLocation();
-
+  
   // Only render this component on the home page
   if (location !== '/') return null;
-
+  
   const navItems: NavItem[] = [
     {
       label: 'Profile',
@@ -64,7 +64,7 @@ export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void 
             </button>
           ))}
         </nav>
-
+        
         <div className="mt-auto pt-6">
           <div className="px-4">
             <div className="bg-white rounded-lg shadow p-4">
