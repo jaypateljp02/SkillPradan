@@ -57,7 +57,7 @@ export async function apiRequest(
     });
     
     // Check if we need to redirect to login
-    if (res.status === 401 && url !== "/api/login") {
+    if (res.status === 401 && url !== "/api/login" && window.location.pathname !== '/auth') {
       console.log("Received 401, user not authenticated");
       removeToken(); // Clear invalid token
       window.location.href = "/auth";
@@ -110,8 +110,8 @@ export const getQueryFn: <T>(options: {
             removeToken();
           }
           
-          // Only redirect if we're fetching the user data
-          if (String(queryKey[0]) === '/api/user') {
+          // Only redirect if we're fetching the user data and we're not already on the auth page
+          if (String(queryKey[0]) === '/api/user' && window.location.pathname !== '/auth') {
             console.log("Redirecting to auth page due to unauthenticated user");
             window.location.href = "/auth";
           }
@@ -145,6 +145,12 @@ export const queryClient = new QueryClient({
 // Initialize auth state from local storage when app loads
 // This allows users to stay logged in across page refreshes
 export function initializeAuthFromStorage(): void {
+  // Don't try to initialize auth on the auth page to avoid infinite redirects
+  if (window.location.pathname === '/auth') {
+    console.log("On auth page - skipping auth initialization");
+    return;
+  }
+
   const token = getToken();
   if (token) {
     console.log("Found existing auth token in local storage");
