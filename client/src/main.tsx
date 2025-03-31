@@ -17,5 +17,10 @@ window.process = {
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { initializeAuthFromStorage } from "./lib/queryClient";
+
+// Initialize auth from local storage before rendering the app
+// This ensures that if a token exists, the user stays logged in
+initializeAuthFromStorage();
 
 createRoot(document.getElementById("root")!).render(<App />);

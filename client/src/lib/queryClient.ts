@@ -132,7 +132,7 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "returnNull" }),
       refetchInterval: false,
-      refetchOnWindowFocus: true, // Enable refetching on window focus to keep session state fresh
+      refetchOnWindowFocus: true, // Enable refetching on window focus to keep token state fresh
       staleTime: 5 * 60 * 1000, // Data is considered fresh for 5 minutes
       retry: 1, // Retry once if query fails
     },
@@ -141,3 +141,32 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Initialize auth state from local storage when app loads
+// This allows users to stay logged in across page refreshes
+export function initializeAuthFromStorage(): void {
+  const token = getToken();
+  if (token) {
+    console.log("Found existing auth token in local storage");
+    // Check token validity immediately to clean up any invalid tokens
+    fetch("/api/user", {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    }).then(async res => {
+      if (res.ok) {
+        console.log("Token is valid, user is authenticated");
+        const userData = await res.json();
+        queryClient.setQueryData(["/api/user"], userData);
+      } else {
+        console.log("Token is invalid, clearing local storage");
+        removeToken();
+      }
+    }).catch(() => {
+      console.log("Error checking token, clearing local storage");
+      removeToken();
+    });
+  } else {
+    console.log("No auth token found in local storage");
+  }
+}

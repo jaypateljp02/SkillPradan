@@ -25,10 +25,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(skills);
   });
   
-  app.post("/api/skills", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = req.user!.id;
+  app.post("/api/skills", isAuthenticated, async (req, res) => {
+    const userId = req.user.id;
     const { name, isTeaching, proficiencyLevel, isVerified } = req.body;
     
     // Create skill
@@ -43,10 +41,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(skill);
   });
   
-  app.put("/api/skills/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = req.user!.id;
+  app.put("/api/skills/:id", isAuthenticated, async (req, res) => {
+    const userId = req.user.id;
     const skillId = parseInt(req.params.id);
     
     const skill = await storage.getSkill(skillId);
@@ -58,10 +54,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // User profile
-  app.get("/api/profile", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = req.user!.id;
+  app.get("/api/profile", isAuthenticated, async (req, res) => {
+    const userId = req.user.id;
     const user = await storage.getUser(userId);
     
     // Don't return password
@@ -73,10 +67,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/profile", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = req.user!.id;
+  app.put("/api/profile", isAuthenticated, async (req, res) => {
+    const userId = req.user.id;
     const { name, email, university, avatar } = req.body;
     
     const updatedUser = await storage.updateUser(userId, {

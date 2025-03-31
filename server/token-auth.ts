@@ -34,6 +34,23 @@ function generateToken(): string {
   return randomBytes(32).toString('hex');
 }
 
+// Add interfaces for authenticated Request
+declare global {
+  namespace Express {
+    interface User extends SelectUser {} 
+    
+    interface Request {
+      user: User; 
+      isAuthenticated(): boolean;
+    }
+  }
+}
+
+// Create a custom interface for authenticated requests
+interface AuthenticatedRequest extends Request {
+  user: SelectUser;
+}
+
 // Authentication middleware
 export const isAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -56,7 +73,13 @@ export const isAuthenticated = async (req: Request, res: Response, next: NextFun
   }
   
   // Add user to request
-  (req as any).user = user;
+  (req as AuthenticatedRequest).user = user;
+  
+  // Add isAuthenticated method to maintain backwards compatibility
+  req.isAuthenticated = function(this: AuthenticatedRequest): this is AuthenticatedRequest {
+    return true;
+  };
+  
   next();
 };
 
@@ -162,7 +185,7 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", isAuthenticated, (req, res) => {
-    const user = (req as any).user;
+    const user = (req as AuthenticatedRequest).user;
     console.log("User data requested for:", user.username);
     
     const { password, ...userData } = user;
@@ -172,19 +195,12 @@ export function setupAuth(app: Express) {
   
   // Debug endpoint to check token data
   app.get("/api/debug/token", isAuthenticated, (req, res) => {
-    const user = (req as any).user;
+    const user = (req as AuthenticatedRequest).user;
     
-    if (user) {
-      const { password, ...userData } = user;
-      return res.json({
-        authenticated: true,
-        user: userData
-      });
-    } else {
-      return res.json({
-        authenticated: false,
-        user: null
-      });
-    }
+    const { password, ...userData } = user;
+    return res.json({
+      authenticated: true,
+      user: userData
+    });
   });
 }
