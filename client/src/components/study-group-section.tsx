@@ -74,22 +74,38 @@ export function StudyGroupSection() {
     deadline?: string;
   }
   
-  // Fetch groups
+  // Fetch groups based on active tab
   const { 
     data: groups = [] as GroupItem[], 
     isLoading: isLoadingGroups,
     error: groupsError 
   } = useQuery<GroupItem[]>({
-    queryKey: ['/api/groups'],
+    queryKey: ['/api/groups', activeTab === 'team-projects' ? 'true' : 'false'],
+    queryFn: async () => {
+      const isTeamProject = activeTab === 'team-projects';
+      const response = await fetch(`/api/groups?isTeamProject=${isTeamProject}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch groups');
+      }
+      return response.json();
+    },
     enabled: !!user,
   });
   
-  // Fetch user's groups
+  // Fetch user's groups based on active tab
   const { 
     data: userGroups = [] as GroupItem[], 
     isLoading: isLoadingUserGroups 
   } = useQuery<GroupItem[]>({
-    queryKey: ['/api/groups/user'],
+    queryKey: ['/api/groups/user', activeTab === 'team-projects' ? 'true' : 'false'],
+    queryFn: async () => {
+      const isTeamProject = activeTab === 'team-projects';
+      const response = await fetch(`/api/groups/user?isTeamProject=${isTeamProject}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user groups');
+      }
+      return response.json();
+    },
     enabled: !!user,
   });
   
@@ -100,7 +116,7 @@ export function StudyGroupSection() {
       const token = getToken();
       
       if (!token) {
-        throw new Error('You must be logged in to create a community');
+        throw new Error('You must be logged in to create a study group');
       }
       
       return await fetch('/api/groups', {
@@ -112,25 +128,30 @@ export function StudyGroupSection() {
         body: JSON.stringify({
           ...data,
           createdById: user?.id,
+          isTeamProject: activeTab === "team-projects" // Add flag for team projects
         }),
       }).then(res => {
-        if (!res.ok) throw new Error('Failed to create community');
+        if (!res.ok) throw new Error('Failed to create group');
         return res.json();
       });
     },
     onSuccess: () => {
       toast({
         title: "Success!",
-        description: "Community created successfully",
+        description: activeTab === "team-projects" ? "Team created successfully" : "Group created successfully",
       });
       setOpenCreateDialog(false);
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+      // Invalidate both regular and team project queries for both endpoints
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', 'true'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', 'false'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', 'true'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', 'false'] });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to create community. Please try again.",
+        description: activeTab === "team-projects" ? "Failed to create team. Please try again." : "Failed to create group. Please try again.",
         variant: "destructive",
       });
     },
@@ -143,7 +164,19 @@ export function StudyGroupSection() {
       const token = getToken();
       
       if (!token) {
-        throw new Error('You must be logged in to join a community');
+        throw new Error('You must be logged in to join a group');
+      }
+      
+      // Check if user is already a member or creator of this group
+      const isCreator = groups.some(group => group.id === groupId && group.createdById === user?.id);
+      const isAlreadyMember = userGroups.some(group => group.id === groupId);
+      
+      if (isCreator) {
+        throw new Error('You can\'t join a group you created');
+      }
+      
+      if (isAlreadyMember) {
+        throw new Error('You are already a member of this group');
       }
       
       return await fetch(`/api/groups/${groupId}/join`, {
@@ -153,23 +186,23 @@ export function StudyGroupSection() {
           'Authorization': `Bearer ${token}`
         },
       }).then(res => {
-        if (!res.ok) throw new Error('Failed to join community');
+        if (!res.ok) throw new Error('Failed to join group');
         return res.json();
       });
     },
     onSuccess: () => {
       toast({
         title: "Success!",
-        description: "Joined community successfully",
+        description: "Joined group successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups/user'] });
-      
-      // Refresh the groups data
-      window.location.reload();
+      // Invalidate both regular and team project queries for both endpoints
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', 'true'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', 'false'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', 'true'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', 'false'] });
     },
     onError: (error: any) => {
-      const errorMessage = error?.message || "Failed to join community. Please try again.";
+      const errorMessage = error?.message || "Failed to join group. Please try again.";
       toast({
         title: "Error",
         description: errorMessage,
@@ -183,7 +216,7 @@ export function StudyGroupSection() {
     if (!user) {
       toast({
         title: "Error",
-        description: "You must be logged in to create a community",
+        description: "You must be logged in to create a group",
         variant: "destructive",
       });
       return;
@@ -206,7 +239,7 @@ export function StudyGroupSection() {
     if (!user) {
       toast({
         title: "Error",
-        description: "You must be logged in to join a community",
+        description: "You must be logged in to join a group",
         variant: "destructive",
       });
       return;
@@ -218,11 +251,22 @@ export function StudyGroupSection() {
   const selectedGroupData = groups.find((group: GroupItem) => group.id === selectedGroup);
   const selectedTeamData = userGroups.find((team: GroupItem) => team.id === selectedTeam);
   
+  // Check if user is the creator of a group
+  const isCreatorOfGroup = (groupId: number) => {
+    const group = groups.find(g => g.id === groupId);
+    return group && group.createdById === user?.id;
+  };
+  
+  // Check if user is already a member of a group
+  const isAlreadyMember = (groupId: number) => {
+    return userGroups.some(group => group.id === groupId);
+  };
+  
   return (
     <div>
       <Tabs defaultValue="study-groups" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="study-groups">Communities</TabsTrigger>
+          <TabsTrigger value="study-groups">Study Groups</TabsTrigger>
           <TabsTrigger value="team-projects">Team Projects</TabsTrigger>
         </TabsList>
         
@@ -231,21 +275,21 @@ export function StudyGroupSection() {
           <div>
             <div className="flex justify-between items-center border-b pb-4">
               <div>
-                <h3 className="text-xl font-medium text-neutral-900">👥 Join Communities</h3>
-                <p className="text-sm text-neutral-500 mt-1">Public/private communities for collaborative learning</p>
+                <h3 className="text-xl font-medium text-neutral-900">👥 Join Study Groups</h3>
+                <p className="text-sm text-neutral-500 mt-1">Public/private groups for collaborative learning</p>
               </div>
               <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
                 <DialogTrigger asChild>
                   <Button className="flex items-center">
                     <Plus className="w-4 h-4 mr-1" />
-                    Create Community
+                    Create Group
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Create a new community</DialogTitle>
+                    <DialogTitle>Create a new study group</DialogTitle>
                     <DialogDescription>
-                      Set up a community for collaborative learning. Fill out the details below.
+                      Set up a study group for collaborative learning. Fill out the details below.
                     </DialogDescription>
                   </DialogHeader>
                   
@@ -256,7 +300,7 @@ export function StudyGroupSection() {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Community Name</FormLabel>
+                            <FormLabel>Group Name</FormLabel>
                             <FormControl>
                               <Input placeholder="E.g. Data Structures Study Circle" {...field} />
                             </FormControl>
@@ -273,7 +317,7 @@ export function StudyGroupSection() {
                             <FormLabel>Description</FormLabel>
                             <FormControl>
                               <Textarea 
-                                placeholder="Briefly describe the purpose and focus of this community"
+                                placeholder="Briefly describe the purpose and focus of this study group"
                                 {...field}
                               />
                             </FormControl>
@@ -294,9 +338,9 @@ export function StudyGroupSection() {
                               />
                             </FormControl>
                             <div className="space-y-1 leading-none">
-                              <FormLabel>Private Community</FormLabel>
+                              <FormLabel>Private Group</FormLabel>
                               <FormDescription>
-                                Private communities require admin approval to join
+                                Private groups require admin approval to join
                               </FormDescription>
                             </div>
                           </FormItem>
@@ -312,7 +356,7 @@ export function StudyGroupSection() {
                           {createGroupMutation.isPending && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           )}
-                          Create Community
+                          Create Group
                         </Button>
                       </DialogFooter>
                     </form>
@@ -328,7 +372,7 @@ export function StudyGroupSection() {
                 </div>
               ) : groups.length === 0 ? (
                 <div className="col-span-3 text-center py-8 border rounded-lg">
-                  <p className="text-neutral-500">No communities available. Create one to get started!</p>
+                  <p className="text-neutral-500">No study groups available. Create one to get started!</p>
                 </div>
               ) : (
                 groups.map((group: any) => (
@@ -359,21 +403,31 @@ export function StudyGroupSection() {
                         <span className="text-xs text-neutral-500">
                           {group.memberCount || 0} members
                         </span>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleJoinGroup(group.id);
-                          }}
-                          disabled={joinGroupMutation.isPending}
-                        >
-                          {joinGroupMutation.isPending && (
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                          )}
-                          Join
-                        </Button>
+                        {isCreatorOfGroup(group.id) ? (
+                          <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                            Creator
+                          </span>
+                        ) : isAlreadyMember(group.id) ? (
+                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                            Member
+                          </span>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleJoinGroup(group.id);
+                            }}
+                            disabled={joinGroupMutation.isPending}
+                          >
+                            {joinGroupMutation.isPending && (
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                            )}
+                            Join
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -406,7 +460,7 @@ export function StudyGroupSection() {
                 <div className="flex space-x-4">
                   <Button variant="outline" className="flex-1 flex items-center justify-center">
                     <MessageCircle className="h-4 w-4 mr-2" />
-                    Community Chat
+                    Group Chat
                   </Button>
                   <Button variant="outline" className="flex-1 flex items-center justify-center">
                     <Video className="h-4 w-4 mr-2" />

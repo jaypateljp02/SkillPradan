@@ -196,6 +196,7 @@ export const groups = pgTable("groups", {
   name: text("name").notNull(),
   description: text("description"),
   isPrivate: boolean("is_private").default(false),
+  isTeamProject: boolean("is_team_project").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   createdById: integer("created_by_id").notNull(),
 });
@@ -241,6 +242,7 @@ export const insertGroupSchema = createInsertSchema(groups).pick({
   name: true,
   description: true,
   isPrivate: true,
+  isTeamProject: true,
   createdById: true
 });
 

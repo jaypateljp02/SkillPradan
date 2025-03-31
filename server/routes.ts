@@ -576,10 +576,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   app.get("/api/groups", isAuthenticated, async (req, res) => {
     try {
+      const isTeamProject = req.query.isTeamProject === 'true';
       const groups = await storage.getAllGroups();
       
+      // Filter groups by type (team project or regular group)
+      // If isTeamProject query param is not provided, return all groups
+      const filteredGroups = req.query.isTeamProject !== undefined ? 
+        groups.filter(group => group.isTeamProject === isTeamProject) : 
+        groups;
+      
       // For each group, get the member count
-      const enrichedGroups = await Promise.all(groups.map(async (group) => {
+      const enrichedGroups = await Promise.all(filteredGroups.map(async (group) => {
         const members = await storage.getGroupMembers(group.id);
         return {
           ...group,
@@ -597,11 +604,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/groups/user", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
+      const isTeamProject = req.query.isTeamProject === 'true';
       const allGroups = await storage.getAllGroups();
+      
+      // Pre-filter groups by type if specified
+      const filteredGroups = req.query.isTeamProject !== undefined ? 
+        allGroups.filter(group => group.isTeamProject === isTeamProject) : 
+        allGroups;
       
       // For each group, get the members and check if current user is a member
       const userGroups = [];
-      for (const group of allGroups) {
+      for (const group of filteredGroups) {
         const members = await storage.getGroupMembers(group.id);
         const isMember = members.some(member => member.userId === userId);
         
@@ -705,10 +718,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userId = req.user!.id;
     
     try {
+      // Ensure we have isTeamProject flag set appropriately
+      const isTeamProject = req.body.isTeamProject === true; 
+      
       // Validate with Zod schema
       const validatedData = insertGroupSchema.parse({
         ...req.body,
-        createdById: userId
+        createdById: userId,
+        isTeamProject: isTeamProject
       });
       
       // Create the group
@@ -756,6 +773,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const group = await storage.getGroup(groupId);
     if (!group) return res.status(404).send("Group not found");
     
+    // Check if user is the creator of the group
+    if (group.createdById === userId) {
+      return res.status(400).json({ message: "You cannot join a group you created" });
+    }
+    
     // Check if already a member
     const members = await storage.getGroupMembers(groupId);
     const existingMember = members.find(member => member.userId === userId);
@@ -774,6 +796,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         groupId,
         userId,
         role
+      });
+      
+      // Create activity for joining group
+      await storage.createActivity({
+        userId,
+        type: 'group',
+        description: `Joined the group "${group.name}"`,
+        pointsEarned: 10
       });
       
       // Get user data to return
