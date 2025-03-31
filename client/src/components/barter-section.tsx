@@ -183,7 +183,7 @@ export function BarterSection(): JSX.Element {
           <div>
             <label className="block text-sm font-medium text-neutral-700">I can teach:</label>
             <Select onValueChange={(value) => setTeachingSkillId(value)}>
-              <SelectTrigger className="mt-1 bg-white text-neutral-900">
+              <SelectTrigger className="mt-1 bg-white text-neutral-900 border-neutral-300">
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
               <SelectContent>
@@ -191,6 +191,7 @@ export function BarterSection(): JSX.Element {
                   <SelectItem 
                     key={skill.id} 
                     value={skill.id.toString()}
+                    className="text-neutral-900"
                   >
                     {skill.name}
                   </SelectItem>
@@ -201,7 +202,7 @@ export function BarterSection(): JSX.Element {
           <div>
             <label className="block text-sm font-medium text-neutral-700">I want to learn:</label>
             <Select onValueChange={(value) => setLearningSkillId(value)}>
-              <SelectTrigger className="mt-1 bg-white text-neutral-900">
+              <SelectTrigger className="mt-1 bg-white text-neutral-900 border-neutral-300">
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
               <SelectContent>
@@ -209,6 +210,7 @@ export function BarterSection(): JSX.Element {
                   <SelectItem 
                     key={skill.id} 
                     value={skill.id.toString()}
+                    className="text-neutral-900"
                   >
                     {skill.name}
                   </SelectItem>

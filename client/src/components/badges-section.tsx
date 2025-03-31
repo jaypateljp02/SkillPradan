@@ -1,9 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCard } from "@/components/ui/badge-card";
-import { Plus } from "lucide-react";
+import { Plus, Award, Code, Flame, Heart, Star } from "lucide-react";
+
+interface Badge {
+  id: number;
+  name: string;
+  description: string;
+  requirement: string;
+  imageUrl?: string;
+}
+
+interface UserBadge {
+  id: number;
+  userId: number;
+  badgeId: number;
+  earnedAt: string;
+  badge: Badge;
+}
 
 export function BadgesSection() {
-  const { data: userBadges = [], isLoading } = useQuery({
+  const { data: userBadges = [], isLoading } = useQuery<UserBadge[]>({
     queryKey: ["/api/user-badges"],
   });
   
@@ -46,12 +62,30 @@ export function BadgesSection() {
       
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
         {userBadges.length === 0 ? (
-          <div className="col-span-full bg-neutral-50 p-4 rounded-md text-center">
-            <p className="text-neutral-500">You haven't earned any badges yet</p>
-          </div>
+          <>
+            {/* Show sample badges if user doesn't have any yet */}
+            <BadgeCard
+              icon="js-square"
+              name="JavaScript Novice"
+              description="Started learning JavaScript"
+              color="primary"
+            />
+            <BadgeCard
+              icon="code-branch"
+              name="Code Explorer"
+              description="Exploring new coding skills"
+              color="purple"
+            />
+            <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded-lg p-4 text-center flex flex-col items-center justify-center">
+              <div className="h-16 w-16 rounded-full bg-neutral-100 flex items-center justify-center">
+                <Plus className="h-6 w-6 text-neutral-400" />
+              </div>
+              <p className="mt-2 text-sm text-neutral-500">Complete exchanges to earn badges</p>
+            </div>
+          </>
         ) : (
           <>
-            {userBadges.map((userBadge: any) => (
+            {userBadges.map((userBadge) => (
               <BadgeCard
                 key={userBadge.id}
                 icon={getBadgeIcon(userBadge.badge.name)}
@@ -63,7 +97,7 @@ export function BadgesSection() {
             
             <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded-lg p-4 text-center flex flex-col items-center justify-center">
               <div className="h-16 w-16 rounded-full bg-neutral-100 flex items-center justify-center">
-                <Plus className="text-xl text-neutral-400" />
+                <Plus className="h-6 w-6 text-neutral-400" />
               </div>
               <p className="mt-2 text-sm text-neutral-500">Unlock more badges</p>
             </div>
