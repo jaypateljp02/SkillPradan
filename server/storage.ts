@@ -79,6 +79,7 @@ export interface IStorage {
   getGroupsByUser(userId: number): Promise<Group[]>;
   createGroup(groupData: Partial<Group>): Promise<Group>;
   updateGroup(id: number, groupData: Partial<Group>): Promise<Group | undefined>;
+  deleteGroup(id: number): Promise<boolean>;
   
   // Group member operations
   getGroupMember(id: number): Promise<GroupMember | undefined>;
@@ -702,6 +703,49 @@ export class MemStorage implements IStorage {
     const updatedGroup = { ...group, ...groupData };
     this.groups.set(id, updatedGroup);
     return updatedGroup;
+  }
+  
+  async deleteGroup(id: number): Promise<boolean> {
+    // Check if group exists
+    const group = await this.getGroup(id);
+    if (!group) return false;
+    
+    // Delete the group
+    this.groups.delete(id);
+    
+    // Remove all group members
+    const groupMembers = Array.from(this.groupMembers.values())
+      .filter(member => member.groupId === id);
+      
+    for (const member of groupMembers) {
+      this.groupMembers.delete(member.id);
+    }
+    
+    // Remove all group files
+    const groupFiles = Array.from(this.groupFiles.values())
+      .filter(file => file.groupId === id);
+      
+    for (const file of groupFiles) {
+      this.groupFiles.delete(file.id);
+    }
+    
+    // Remove all group events
+    const groupEvents = Array.from(this.groupEvents.values())
+      .filter(event => event.groupId === id);
+      
+    for (const event of groupEvents) {
+      this.groupEvents.delete(event.id);
+    }
+    
+    // Remove all group messages
+    const groupMessages = Array.from(this.groupMessages.values())
+      .filter(message => message.groupId === id);
+      
+    for (const message of groupMessages) {
+      this.groupMessages.delete(message.id);
+    }
+    
+    return true;
   }
 
   // Group member operations

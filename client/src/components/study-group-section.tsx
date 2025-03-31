@@ -4,7 +4,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { 
   Users, Calendar, MessageCircle, Video, Plus, FileText, 
   Settings, FolderUp, Globe, Lock, Code, Hammer, Loader2,
-  Building2
+  Building2, Trash2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -296,6 +296,70 @@ export function StudyGroupSection() {
     return userGroups.some(group => group.id === groupId);
   };
   
+  // Delete group mutation
+  const deleteGroupMutation = useMutation({
+    mutationFn: async (groupId: number) => {
+      const token = getToken();
+      
+      if (!token) {
+        throw new Error('You must be logged in to delete a group');
+      }
+      
+      return await fetch(`/api/groups/${groupId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+      }).then(res => {
+        if (!res.ok) throw new Error('Failed to delete group');
+        return res.json();
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success!",
+        description: activeTab === "team-projects" ? "Team deleted successfully" : "Group deleted successfully",
+      });
+      // Reset selected group/team
+      if (activeTab === "team-projects") {
+        setSelectedTeam(null);
+      } else {
+        setSelectedGroup(null);
+      }
+      // Invalidate all groups queries
+      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user'] });
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.message || "Failed to delete group. Please try again.";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle group deletion
+  const handleDeleteGroup = (groupId: number) => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to delete a group",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Confirm deletion
+    if (confirm(activeTab === "team-projects" 
+      ? "Are you sure you want to delete this team? This action cannot be undone." 
+      : "Are you sure you want to delete this group? This action cannot be undone."
+    )) {
+      deleteGroupMutation.mutate(groupId);
+    }
+  };
+  
   return (
     <div>
       <Tabs defaultValue="study-groups" className="w-full" onValueChange={setActiveTab}>
@@ -482,10 +546,23 @@ export function StudyGroupSection() {
                       <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full">Private</span>
                     )}
                   </div>
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4 mr-1" />
-                    Manage
-                  </Button>
+                  {isCreatorOfGroup(selectedGroupData.id) && (
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                        onClick={() => handleDeleteGroup(selectedGroupData.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Settings className="h-4 w-4 mr-1" />
+                        Manage
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">{selectedGroupData.description}</p>
               </div>
@@ -706,10 +783,23 @@ export function StudyGroupSection() {
               <div className="p-4 border-b border-neutral-200">
                 <div className="flex justify-between items-center">
                   <h4 className="font-medium text-neutral-900">{selectedTeamData.name}</h4>
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4 mr-1" />
-                    Manage
-                  </Button>
+                  {isCreatorOfGroup(selectedTeamData.id) && (
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                        onClick={() => handleDeleteGroup(selectedTeamData.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Settings className="h-4 w-4 mr-1" />
+                        Manage
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">{selectedTeamData.description}</p>
                 <div className="mt-2 flex items-center">

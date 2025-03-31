@@ -751,6 +751,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(updatedGroup);
   });
   
+  // Route for deleting a group
+  app.delete("/api/groups/:id", isAuthenticated, async (req, res) => {
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.id);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Only the creator should be able to delete a group
+    if (group.createdById !== userId) {
+      return res.status(403).send("Only the creator can delete this group");
+    }
+    
+    const success = await storage.deleteGroup(groupId);
+    
+    if (success) {
+      // Add an activity for deleting the group
+      await storage.createActivity({
+        userId,
+        type: "group",
+        description: `Deleted the group: ${group.name}`,
+        pointsEarned: 0
+      });
+      
+      res.status(200).send({ message: "Group deleted successfully" });
+    } else {
+      res.status(500).send({ message: "Failed to delete group" });
+    }
+  });
+  
   // Route for joining a group
   app.post("/api/groups/:id/join", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
