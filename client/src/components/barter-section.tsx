@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
-export function BarterSection() {
+export function BarterSection(): JSX.Element {
   const { user } = useAuth();
   const { toast } = useToast();
   const [teachingSkillId, setTeachingSkillId] = useState<string>("");
@@ -25,19 +25,19 @@ export function BarterSection() {
   const [showMatches, setShowMatches] = useState(false);
   
   // Get user skills for dropdowns
-  const { data: skills = [] } = useQuery({
+  const { data: skills = [] } = useQuery<any[]>({
     queryKey: ["/api/skills"],
   });
   
-  const teachingSkills = skills.filter(skill => skill.isTeaching);
-  const learningSkills = skills.filter(skill => !skill.isTeaching);
+  const teachingSkills = skills.filter((skill: any) => skill.isTeaching);
+  const learningSkills = skills.filter((skill: any) => !skill.isTeaching);
   
   // Get active exchanges
-  const { data: exchanges = [] } = useQuery({
+  const { data: exchanges = [] } = useQuery<any[]>({
     queryKey: ["/api/exchanges"],
   });
   
-  const activeExchanges = exchanges.filter(exchange => 
+  const activeExchanges = exchanges.filter((exchange: any) => 
     exchange.status === "active" || exchange.status === "pending"
   );
   
@@ -76,10 +76,27 @@ export function BarterSection() {
     
     // Simulate a short delay for UX purposes
     setTimeout(() => {
-      matchMutation.mutate({
-        teachingSkillId: parseInt(teachingSkillId),
-        learningSkillId: parseInt(learningSkillId)
-      });
+      try {
+        // Convert to numbers and validate
+        const teachingId = Number(teachingSkillId);
+        const learningId = Number(learningSkillId);
+        
+        if (isNaN(teachingId) || isNaN(learningId)) {
+          throw new Error("Invalid skill ID format");
+        }
+        
+        matchMutation.mutate({
+          teachingSkillId: teachingId,
+          learningSkillId: learningId
+        });
+      } catch (error) {
+        setSearchingMatches(false);
+        toast({
+          title: "Invalid selection",
+          description: "Please select valid skills",
+          variant: "destructive",
+        });
+      }
     }, 1500);
   };
   
@@ -125,20 +142,34 @@ export function BarterSection() {
     // 1. Current user wants to learn matched user's teaching skill
     // 2. Current user wants to teach their selected skill (teachingSkillId)
     // 3. Matched user wants to learn the current user's teaching skill
-    const exchangeData = {
-      teacherId: user!.id,               // Current user as teacher
-      studentId: match.userId,           // Matched user as student
-      teacherSkillId: parseInt(teachingSkillId),  // Current user's teaching skill
-      studentSkillId: match.learningSkill.id      // Matched user's learning skill (same as current user's teaching)
-    };
-    
-    createExchangeMutation.mutate(exchangeData);
-    
-    // Also show a toast for better UX
-    toast({
-      title: "Requesting exchange...",
-      description: `Sending request to ${match.name} to teach them ${teachingSkills.find(s => s.id.toString() === teachingSkillId)?.name} in exchange for learning ${match.teachingSkill.name}`,
-    });
+    try {
+      const teachingId = Number(teachingSkillId);
+      if (isNaN(teachingId)) {
+        throw new Error("Invalid teaching skill ID");
+      }
+      
+      const data = {
+        teacherId: user!.id,             // Current user as teacher
+        studentId: match.userId,         // Matched user as student
+        teacherSkillId: teachingId,      // Current user's teaching skill
+        studentSkillId: match.learningSkill.id  // Matched user's learning skill (same as current user's teaching)
+      };
+      
+      createExchangeMutation.mutate(data);
+      
+      // Also show a toast for better UX
+      const teachingSkillName = teachingSkills.find((s: any) => s.id.toString() === teachingSkillId)?.name || 'selected skill';
+      toast({
+        title: "Requesting exchange...",
+        description: `Sending request to ${match.name} to teach them ${teachingSkillName} in exchange for learning ${match.teachingSkill.name}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error creating exchange",
+        description: "There was a problem with the skill data",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -156,7 +187,7 @@ export function BarterSection() {
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
               <SelectContent>
-                {teachingSkills.map(skill => (
+                {teachingSkills.map((skill: any) => (
                   <SelectItem 
                     key={skill.id} 
                     value={skill.id.toString()}
@@ -174,7 +205,7 @@ export function BarterSection() {
                 <SelectValue placeholder="Select skill" />
               </SelectTrigger>
               <SelectContent>
-                {learningSkills.map(skill => (
+                {learningSkills.map((skill: any) => (
                   <SelectItem 
                     key={skill.id} 
                     value={skill.id.toString()}
@@ -241,7 +272,7 @@ export function BarterSection() {
               <p className="text-sm text-neutral-500">No active exchanges found.</p>
             </div>
           ) : (
-            activeExchanges.map((exchange) => (
+            activeExchanges.map((exchange: any) => (
               <ExchangeCard 
                 key={exchange.id}
                 exchange={exchange}

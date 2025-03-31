@@ -100,17 +100,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Skill matching
-  app.post("/api/skill-matches", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const { teachingSkillId, learningSkillId } = req.body;
-    
-    const matches = await storage.findSkillMatches(
-      parseInt(teachingSkillId),
-      parseInt(learningSkillId)
-    );
-    
-    res.json(matches);
+  app.post("/api/skill-matches", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { teachingSkillId, learningSkillId } = req.body;
+      
+      // Validate input
+      if (!teachingSkillId || !learningSkillId) {
+        return res.status(400).json({ message: "Both teaching and learning skill IDs are required" });
+      }
+      
+      // Convert to numbers and validate
+      const teachingId = Number(teachingSkillId);
+      const learningId = Number(learningSkillId);
+      
+      if (isNaN(teachingId) || isNaN(learningId)) {
+        return res.status(400).json({ message: "Skill IDs must be valid numbers" });
+      }
+      
+      // Verify the skills exist and belong to this user
+      const teachingSkill = await storage.getSkill(teachingId);
+      const learningSkill = await storage.getSkill(learningId);
+      
+      if (!teachingSkill || !learningSkill) {
+        return res.status(404).json({ message: "One or both skills not found" });
+      }
+      
+      if (teachingSkill.userId !== userId || learningSkill.userId !== userId) {
+        return res.status(403).json({ message: "You can only match with your own skills" });
+      }
+      
+      // Find matches
+      const matches = await storage.findSkillMatches(teachingId, learningId);
+      
+      res.json(matches);
+    } catch (error) {
+      console.error("Error finding skill matches:", error);
+      res.status(500).json({ message: "Failed to find skill matches" });
+    }
   });
   
   // Exchanges
@@ -160,9 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   });
   
-  app.post("/api/exchanges", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
+  app.post("/api/exchanges", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const { teacherId, studentId, teacherSkillId, studentSkillId } = req.body;
     
@@ -190,9 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(exchange);
   });
   
-  app.put("/api/exchanges/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
+  app.put("/api/exchanges/:id", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const exchangeId = parseInt(req.params.id);
     
@@ -513,23 +536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Skill Matches endpoint
-  app.post("/api/skill-matches", isAuthenticated, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const { teachingSkillId, learningSkillId } = req.body;
-      
-      if (!teachingSkillId || !learningSkillId) {
-        return res.status(400).json({ message: "Both teachingSkillId and learningSkillId are required" });
-      }
-      
-      const matches = await storage.findSkillMatches(teachingSkillId, learningSkillId);
-      return res.json(matches);
-    } catch (error) {
-      console.error("Error finding skill matches:", error);
-      return res.status(500).json({ message: (error as Error).message });
-    }
-  });
+  // (removed duplicate skill matches endpoint)
   
   // For development and testing only - a simplified endpoint to list all users
   // This would be removed in production
@@ -856,7 +863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Validate with Zod schema
       // Ensure role is always a string
-      const role = targetUserId === userId ? 'member' : (req.body.role || 'member');
+      const role: string = targetUserId === userId ? 'member' : (req.body.role || 'member');
       
       const validatedData = insertGroupMemberSchema.parse({
         groupId,
@@ -865,7 +872,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Add the member
-      const member = await storage.addGroupMember(validatedData);
+      const member = await storage.addGroupMember({
+        groupId: validatedData.groupId,
+        userId: validatedData.userId,
+        role: validatedData.role as string
+      });
       
       // Get user info
       const user = await storage.getUser(targetUserId);
@@ -1062,26 +1073,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Validate with Zod schema
       // Prepare event data with proper types
-      const eventData: {
-        groupId: number,
-        createdById: number,
-        title: string,
-        description?: string,
-        startTime: Date,
-        endTime?: Date
-      } = {
-        ...req.body,
+      const eventData = {
+        title: req.body.title as string,
         groupId,
         createdById: userId,
+        startTime: new Date(req.body.startTime),
         // Handle nullable fields correctly
-        description: req.body.description || undefined,
-        endTime: req.body.endTime || undefined
+        description: req.body.description ? String(req.body.description) : undefined,
+        endTime: req.body.endTime ? new Date(req.body.endTime) : undefined
       };
       
       const validatedData = insertGroupEventSchema.parse(eventData);
       
       // Create the event
-      const event = await storage.createGroupEvent(validatedData);
+      const event = await storage.createGroupEvent({
+        groupId: validatedData.groupId,
+        createdById: validatedData.createdById,
+        title: validatedData.title,
+        startTime: validatedData.startTime,
+        description: validatedData.description as string | undefined,
+        endTime: validatedData.endTime ? validatedData.endTime : undefined
+      });
       
       // Get creator info
       const creator = await storage.getUser(userId);
