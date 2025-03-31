@@ -19,7 +19,7 @@ interface ToolCardProps {
 function ToolCard({ icon, title, description, buttonText, href, onClick }: ToolCardProps) {
   const button = (
     <Button 
-      className="w-full"
+      className="w-full bg-purple text-white hover:bg-opacity-90"
       onClick={onClick}
     >
       {buttonText}
@@ -50,14 +50,26 @@ function ToolCard({ icon, title, description, buttonText, href, onClick }: ToolC
   );
 }
 
+interface Exchange {
+  id: number;
+  status: string;
+  teacherId: number;
+  studentId: number;
+  teacherSkillId: number;
+  studentSkillId: number;
+  createdAt: string;
+  totalSessions: number;
+  sessionsCompleted: number;
+}
+
 export function LearningTools() {
   const { user } = useAuth();
   
-  const { data: exchanges = [] } = useQuery({
+  const { data: exchanges = [] } = useQuery<Exchange[]>({
     queryKey: ["/api/exchanges"],
   });
   
-  const activeExchanges = exchanges.filter(exchange => exchange.status === "active");
+  const activeExchanges = exchanges.filter((exchange) => exchange.status === "active");
   
   // Get the first active exchange to link to
   const firstActiveExchange = activeExchanges.length > 0 ? activeExchanges[0] : null;
@@ -70,8 +82,8 @@ export function LearningTools() {
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <ToolCard
           icon={
-            <div className="h-12 w-12 rounded-lg bg-primary bg-opacity-10 flex items-center justify-center">
-              <Video className="text-lg text-primary" />
+            <div className="h-12 w-12 rounded-lg bg-purple-light flex items-center justify-center">
+              <Video className="text-lg text-purple" />
             </div>
           }
           title="Video Conference"

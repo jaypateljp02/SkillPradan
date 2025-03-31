@@ -23,4 +23,17 @@
   .text-purple {
     @apply text-[hsl(var(--primary-purple))];
   }
+  
+  .bg-purple {
+    @apply bg-[hsl(var(--primary-purple))];
+  }
+  
+  .bg-purple-light {
+    @apply bg-[hsl(var(--primary-purple)/0.1)];
+  }
+  
+  /* Ensure text on purple backgrounds is visible */
+  .bg-primary, .bg-purple {
+    @apply text-white;
+  }
 }
