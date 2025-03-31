@@ -20,12 +20,28 @@ export default function GroupsPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Study Groups</h1>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create Group
-        </Button>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Study Groups</h1>
+          <Button>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Group
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Input 
+            type="search" 
+            placeholder="Search groups..." 
+            className="max-w-sm"
+            onChange={(e) => {
+              const searchTerm = e.target.value.toLowerCase();
+              setGroups(groups.filter(group => 
+                group.name.toLowerCase().includes(searchTerm) ||
+                group.description.toLowerCase().includes(searchTerm)
+              ));
+            }}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
