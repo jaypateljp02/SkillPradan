@@ -1,13 +1,8 @@
-
-import { useLocation } from "wouter";
+import React, { useState } from 'react';
+import { useLocation, Link } from 'wouter';
 import { 
-  User, 
-  Repeat, 
-  CreditCard, 
-  GraduationCap,
-  Trophy,
-  Users 
-} from "lucide-react";
+  User, Repeat, Settings, CreditCard, GraduationCap, Trophy, Users
+} from 'lucide-react';
 
 interface NavItem {
   label: string;
@@ -17,40 +12,40 @@ interface NavItem {
 
 export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   const [location] = useLocation();
-
+  
   // Only render this component on the home page
   if (location !== '/') return null;
-
+  
   const navItems: NavItem[] = [
     {
       label: 'Profile',
       icon: <User className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: 'profile-tab'
+      target: '#profile-tab'
     },
     {
       label: 'Barter',
       icon: <Repeat className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: 'barter-tab'
+      target: '#barter-tab'
     },
     {
       label: 'Points',
       icon: <CreditCard className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: 'points-tab'
+      target: '#points-tab'
     },
     {
       label: 'Learn',
       icon: <GraduationCap className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: 'learn-tab'
+      target: '#learn-tab'
     },
     {
       label: 'Achievements',
       icon: <Trophy className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: 'achievements-tab'
+      target: '#achievements-tab'
     },
     {
       label: 'Community',
       icon: <Users className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: 'study-group-tab'
+      target: '#study-group-tab'
     }
   ];
 
@@ -61,7 +56,7 @@ export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void 
           {navItems.map((item) => (
             <button
               key={item.label}
-              onClick={() => setActiveTab(item.target)}
+              onClick={() => setActiveTab(item.target.substring(1))}
               className="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-neutral-500 hover:bg-white hover:text-primary transition-colors"
             >
               {item.icon}
@@ -69,7 +64,7 @@ export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void 
             </button>
           ))}
         </nav>
-
+        
         <div className="mt-auto pt-6">
           <div className="px-4">
             <div className="bg-white rounded-lg shadow p-4">
