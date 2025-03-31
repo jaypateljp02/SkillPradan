@@ -1,9 +1,19 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut } from "lucide-react";
+import { 
+  LogOut, 
+  User, 
+  MessageCircle, 
+  PieChart, 
+  Users, 
+  Calendar, 
+  Medal,
+  BookOpen,
+  Home
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import logoImage from "../assets/logo.png";
 
@@ -11,9 +21,30 @@ interface LayoutProps {
   children: ReactNode;
 }
 
+interface SidebarItemProps {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+  active?: boolean;
+}
+
+const SidebarItem = ({ icon, label, href, active }: SidebarItemProps) => (
+  <Link href={href}>
+    <a className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+      active 
+        ? "bg-primary bg-opacity-10 text-primary font-medium" 
+        : "text-gray-600 hover:bg-gray-100"
+    }`}>
+      {icon}
+      <span>{label}</span>
+    </a>
+  </Link>
+);
+
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const [location] = useLocation();
   
   const handleLogout = () => {
     logout();
@@ -23,11 +54,22 @@ export function Layout({ children }: LayoutProps) {
     });
   };
 
+  const sidebarItems = [
+    { icon: <Home className="h-5 w-5" />, label: "Home", href: "/" },
+    { icon: <User className="h-5 w-5" />, label: "Profile", href: "/profile" },
+    { icon: <BookOpen className="h-5 w-5" />, label: "Learn", href: "/barter" },
+    { icon: <MessageCircle className="h-5 w-5" />, label: "Chat", href: "/chat" },
+    { icon: <Calendar className="h-5 w-5" />, label: "Sessions", href: "/sessions" },
+    { icon: <Users className="h-5 w-5" />, label: "Study Groups", href: "/study-groups" },
+    { icon: <PieChart className="h-5 w-5" />, label: "Teams", href: "/groups" },
+    { icon: <Medal className="h-5 w-5" />, label: "Leaderboard", href: "/leaderboard" },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
+    <div className="min-h-screen flex flex-col bg-neutral-50 font-sans">
       {/* Header/Navigation */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="bg-white shadow-sm z-10">
+        <div className="max-w-full px-4">
           <div className="flex justify-between h-16">
             {/* Logo and Brand */}
             <div className="flex items-center">
@@ -43,8 +85,8 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex items-center space-x-4">
               {user && (
                 <>
-                  <div className="bg-neutral-100 px-3 py-1 rounded-full flex items-center">
-                    <div className="text-yellow-600 mr-1">
+                  <div className="bg-amber-50 border border-amber-200 px-3 py-1 rounded-full flex items-center">
+                    <div className="text-amber-600 mr-1">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                         <path d="M21 6H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1zm-1 10H4V8h16v8z" />
                         <path d="M10 10h4v4h-4z" />
@@ -76,10 +118,28 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
       
-      {/* Main content */}
-      <main className="flex-1">
-        {children}
-      </main>
+      {/* Main content with sidebar */}
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <aside className="w-64 bg-white border-r border-gray-200 h-[calc(100vh-4rem)] sticky top-16">
+          <nav className="px-3 py-4 space-y-1">
+            {sidebarItems.map((item) => (
+              <SidebarItem
+                key={item.href}
+                icon={item.icon}
+                label={item.label}
+                href={item.href}
+                active={location === item.href}
+              />
+            ))}
+          </nav>
+        </aside>
+        
+        {/* Main content */}
+        <main className="flex-1 p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
