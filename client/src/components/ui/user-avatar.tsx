@@ -2,12 +2,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserAvatarProps {
   src?: string;
+  avatarUrl?: string;
   name: string;
   size?: "sm" | "md" | "lg";
   className?: string;
 }
 
-export function UserAvatar({ src, name, size = "md", className = "" }: UserAvatarProps) {
+export function UserAvatar({ src, avatarUrl, name, size = "md", className = "" }: UserAvatarProps) {
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -24,10 +25,11 @@ export function UserAvatar({ src, name, size = "md", className = "" }: UserAvata
   };
   
   const avatarSize = sizeClasses[size];
+  const imageSrc = avatarUrl || src;
   
   return (
     <Avatar className={`${avatarSize} ${className}`}>
-      <AvatarImage src={src} alt={name} />
+      <AvatarImage src={imageSrc} alt={name} />
       <AvatarFallback className="bg-primary text-primary-foreground">
         {getInitials(name)}
       </AvatarFallback>

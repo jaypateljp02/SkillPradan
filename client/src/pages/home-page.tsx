@@ -1,10 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { SocketProvider } from "@/hooks/use-socket";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Sidebar } from "@/components/ui/sidebar";
-import { MobileNav } from "@/components/ui/mobile-nav";
 import { ProfileHeader } from "@/components/profile-header";
 import { SkillsSection } from "@/components/skills-section";
 import { ActivityFeed } from "@/components/activity-feed";
@@ -26,13 +24,16 @@ import {
   CreditCard,
   Award,
   LogOut,
-  Star 
+  Star,
+  User,
+  Repeat,
+  Trophy,
+  Users
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import logoImage from "../assets/logo.png";
 
 export default function HomePage() {
-  const { user, logoutMutation } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("profile-tab");
   
   // Define challenge type
@@ -56,24 +57,89 @@ export default function HomePage() {
     queryKey: ["/api/challenges"],
   });
   
-  // Handle logout
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
+  const navItems = [
+    {
+      label: 'Profile',
+      icon: <User className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: 'profile-tab'
+    },
+    {
+      label: 'Barter',
+      icon: <Repeat className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: 'barter-tab'
+    },
+    {
+      label: 'Points',
+      icon: <CreditCard className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: 'points-tab'
+    },
+    {
+      label: 'Learn',
+      icon: <GraduationCap className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: 'learn-tab'
+    },
+    {
+      label: 'Achievements',
+      icon: <Trophy className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: 'achievements-tab'
+    },
+    {
+      label: 'Community',
+      icon: <Users className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: 'study-group-tab'
+    }
+  ];
 
   return (
     <SocketProvider>
       <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
-
         {/* Main Content */}
-        <main className="flex-grow">
+        <main className="flex-grow pt-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row">
+
               {/* Sidebar Navigation */}
-              <Sidebar setActiveTab={setActiveTab} />
+              <div className="hidden md:block md:w-64 md:flex-shrink-0">
+                <div className="sticky top-6 py-6 flex flex-col h-[calc(100vh-80px)]">
+                  <nav className="flex-1 space-y-2">
+                    {navItems.map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={() => setActiveTab(item.target)}
+                        className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                          activeTab === item.target 
+                            ? 'bg-white text-primary shadow-sm' 
+                            : 'text-neutral-500 hover:bg-white hover:text-primary'
+                        }`}
+                      >
+                        {item.icon}
+                        {item.label}
+                      </button>
+                    ))}
+                  </nav>
+                  
+                  <div className="mt-auto pt-6">
+                    <div className="px-4">
+                      <div className="bg-white rounded-lg shadow p-4">
+                        <h3 className="text-sm font-medium text-neutral-700">Weekly Challenge</h3>
+                        <p className="mt-1 text-xs text-neutral-500">Complete 3 skill exchanges this week</p>
+                        <div className="mt-3">
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-neutral-500">2/3 completed</span>
+                            <span className="text-primary font-medium">+200 points</span>
+                          </div>
+                          <div className="h-2 bg-neutral-100 rounded-full">
+                            <div className="h-full w-2/3 bg-primary rounded-full transition-all duration-300 ease-in-out"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Tab Content */}
-              <div className="md:ml-8 md:flex-1 pt-6 pb-20 md:pb-6">
+              <div className="md:ml-8 md:flex-1 pt-0 pb-20 md:pb-6">
                 {/* Profile Tab */}
                 <div 
                   id="profile-tab" 
@@ -296,8 +362,25 @@ export default function HomePage() {
           </div>
         </main>
 
-        {/* Mobile Navigation */}
-        <MobileNav setActiveTab={setActiveTab} activeTab={activeTab} />
+        {/* Mobile Navigation - Fixed at Bottom */}
+        <div className="md:hidden fixed bottom-0 inset-x-0 bg-white shadow-lg">
+          <div className="flex justify-around">
+            {navItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => setActiveTab(item.target)}
+                className={`flex flex-col items-center p-3 ${
+                  activeTab === item.target 
+                    ? 'text-primary' 
+                    : 'text-neutral-500 hover:text-primary'
+                }`}
+              >
+                {React.cloneElement(item.icon as React.ReactElement, { className: 'text-lg' })}
+                <span className="text-xs mt-1">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </SocketProvider>
   );
