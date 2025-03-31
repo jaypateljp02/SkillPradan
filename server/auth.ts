@@ -86,7 +86,9 @@ export function setupAuth(app: Express) {
     
     const existingUser = await storage.getUserByUsername(username);
     if (existingUser) {
-      return res.status(400).send("Username already exists");
+      return res.status(400).json({
+        message: "This username is already taken. Please choose a different username."
+      });
     }
 
     const user = await storage.createUser({
