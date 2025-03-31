@@ -43,7 +43,7 @@ const createGroupSchema = z.object({
   isPrivate: z.boolean().default(false),
 });
 
-export function StudyGroupSection() {
+export function CommunitySection() {
   const [activeTab, setActiveTab] = useState("study-groups");
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
@@ -226,7 +226,7 @@ export function StudyGroupSection() {
           <TabsTrigger value="team-projects">Team Projects</TabsTrigger>
         </TabsList>
         
-        {/* Study Groups Tab */}
+        {/* Communities Tab */}
         <TabsContent value="study-groups" className="space-y-8">
           <div>
             <div className="flex justify-between items-center border-b pb-4">

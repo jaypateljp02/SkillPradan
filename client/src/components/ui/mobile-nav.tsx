@@ -33,7 +33,7 @@ export function MobileNav({ setActiveTab, activeTab }: MobileNavProps) {
       target: 'achievements-tab'
     },
     {
-      label: 'Groups',
+      label: 'Community',
       icon: <Users className="text-lg" />,
       target: 'study-group-tab'
     }
