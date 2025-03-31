@@ -12,15 +12,21 @@ import {
   insertGroupMessageSchema 
 } from "@shared/schema";
 
+// Middleware to check if a user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: Function) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  return res.status(401).json({ message: "Unauthorized" });
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
 
   // API Routes
   // Skills routes
-  app.get("/api/skills", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
+  app.get("/api/skills", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const skills = await storage.getSkillsByUser(userId);
     
@@ -536,32 +542,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Groups
-  app.get("/api/groups", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    const groups = await storage.getAllGroups();
-    res.json(groups);
-  });
+  // Group routes are handled below in the "// Group routes" section
 
-  app.post("/api/groups", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    const userId = req.user!.id;
-    const group = await storage.createGroup({
-      ...req.body,
-      createdById: userId
-    });
-    
-    // Add creator as admin
-    await storage.addGroupMember({
-      groupId: group.id,
-      userId,
-      role: "admin"
-    });
-    
-    res.status(201).json(group);
-  });
-
-  app.post("/api/groups/:groupId/join", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.post("/api/groups/:groupId/join", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
     
@@ -574,54 +557,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(member);
   });
 
-  app.post("/api/groups/:groupId/files", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    const userId = req.user!.id;
-    const groupId = parseInt(req.params.groupId);
-    
-    const file = await storage.addGroupFile({
-      groupId,
-      uploadedById: userId,
-      ...req.body
-    });
-    
-    res.status(201).json(file);
-  });
-
-  app.post("/api/groups/:groupId/events", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    const userId = req.user!.id;
-    const groupId = parseInt(req.params.groupId);
-    
-    const event = await storage.createGroupEvent({
-      groupId,
-      createdById: userId,
-      ...req.body
-    });
-    
-    res.status(201).json(event);
-  });
-
-  app.post("/api/groups/:groupId/messages", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    const userId = req.user!.id;
-    const groupId = parseInt(req.params.groupId);
-    
-    const message = await storage.createGroupMessage({
-      groupId,
-      userId,
-      content: req.body.content
-    });
-    
-    res.status(201).json(message);
-  });
-
   // =========================================
   // Group routes
   // =========================================
-  app.get("/api/groups", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
+  app.get("/api/groups", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     const all = req.query.all === 'true';
     
@@ -644,8 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedGroups);
   });
   
-  app.get("/api/groups/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/groups/:id", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.id);
@@ -726,9 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  app.post("/api/groups", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
+  app.post("/api/groups", isAuthenticated, async (req, res) => {
     const userId = req.user!.id;
     
     try {
@@ -754,8 +690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/groups/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.put("/api/groups/:id", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.id);
@@ -778,8 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group Member routes
   // =========================================
-  app.get("/api/groups/:groupId/members", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/groups/:groupId/members", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -814,8 +748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedMembers);
   });
   
-  app.post("/api/groups/:groupId/members", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.post("/api/groups/:groupId/members", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -871,8 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/groups/:groupId/members/:userId", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.delete("/api/groups/:groupId/members/:userId", isAuthenticated, async (req, res) => {
     
     const currentUserId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -914,8 +846,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group Files routes
   // =========================================
-  app.get("/api/groups/:groupId/files", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/groups/:groupId/files", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -950,8 +881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedFiles);
   });
   
-  app.post("/api/groups/:groupId/files", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.post("/api/groups/:groupId/files", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -998,8 +928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group Events routes
   // =========================================
-  app.get("/api/groups/:groupId/events", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/groups/:groupId/events", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1034,8 +963,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedEvents);
   });
   
-  app.post("/api/groups/:groupId/events", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.post("/api/groups/:groupId/events", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1082,8 +1010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group Messages routes
   // =========================================
-  app.get("/api/groups/:groupId/messages", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/groups/:groupId/messages", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1116,8 +1043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedMessages);
   });
   
-  app.post("/api/groups/:groupId/messages", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.post("/api/groups/:groupId/messages", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
