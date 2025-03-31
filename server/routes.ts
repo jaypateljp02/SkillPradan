@@ -111,13 +111,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Exchanges
-  app.get("/api/exchanges", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = req.user!.id;
-    const exchanges = await storage.getExchangesByUser(userId);
-    
-    // For each exchange, fetch the related skills
+  app.get("/api/exchanges", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const exchanges = await storage.getExchangesByUser(userId);
+      
+      // For each exchange, fetch the related skills
     const enrichedExchanges = await Promise.all(exchanges.map(async (exchange) => {
       const teacherSkill = await storage.getSkill(exchange.teacherSkillId);
       const studentSkill = await storage.getSkill(exchange.studentSkillId);
@@ -152,6 +151,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }));
     
     res.json(enrichedExchanges);
+  } catch (error) {
+    console.error("Error fetching exchanges:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
   });
   
   app.post("/api/exchanges", async (req, res) => {
@@ -222,54 +225,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Sessions
-  app.get("/api/sessions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = req.user!.id;
-    const exchanges = await storage.getExchangesByUser(userId);
-    
-    let sessions: any[] = [];
-    for (const exchange of exchanges) {
-      const exchangeSessions = await storage.getSessionsByExchange(exchange.id);
+  app.get("/api/sessions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const exchanges = await storage.getExchangesByUser(userId);
       
-      // Enrich session data with exchange information
-      const enrichedSessions = await Promise.all(exchangeSessions.map(async (session) => {
-        const otherUserId = exchange.teacherId === userId ? exchange.studentId : exchange.teacherId;
-        const otherUser = await storage.getUser(otherUserId);
+      let sessions: any[] = [];
+      for (const exchange of exchanges) {
+        const exchangeSessions = await storage.getSessionsByExchange(exchange.id);
         
-        // Remove password
-        let otherUserData;
-        if (otherUser) {
-          const { password, ...userData } = otherUser;
-          otherUserData = userData;
-        }
+        // Enrich session data with exchange information
+        const enrichedSessions = await Promise.all(exchangeSessions.map(async (session) => {
+          const otherUserId = exchange.teacherId === userId ? exchange.studentId : exchange.teacherId;
+          const otherUser = await storage.getUser(otherUserId);
+          
+          // Remove password
+          let otherUserData;
+          if (otherUser) {
+            const { password, ...userData } = otherUser;
+            otherUserData = userData;
+          }
+          
+          return {
+            ...session,
+            exchange: {
+              id: exchange.id,
+              status: exchange.status
+            },
+            otherUser: otherUserData,
+            isTeacher: exchange.teacherId === userId
+          };
+        }));
         
-        return {
-          ...session,
-          exchange: {
-            id: exchange.id,
-            status: exchange.status
-          },
-          otherUser: otherUserData,
-          isTeacher: exchange.teacherId === userId
-        };
-      }));
+        sessions = [...sessions, ...enrichedSessions];
+      }
       
-      sessions = [...sessions, ...enrichedSessions];
+      // Sort by scheduled time
+      sessions.sort((a, b) => {
+        if (!a.scheduledTime) return 1;
+        if (!b.scheduledTime) return -1;
+        return new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime();
+      });
+      
+      res.json(sessions);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
-    
-    // Sort by scheduled time
-    sessions.sort((a, b) => {
-      if (!a.scheduledTime) return 1;
-      if (!b.scheduledTime) return -1;
-      return new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime();
-    });
-    
-    res.json(sessions);
   });
   
-  app.post("/api/sessions", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.post("/api/sessions", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const { exchangeId, scheduledTime, duration } = req.body;
@@ -292,8 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(session);
   });
   
-  app.put("/api/sessions/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.put("/api/sessions/:id", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const sessionId = parseInt(req.params.id);
@@ -344,15 +348,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Badges
-  app.get("/api/badges", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/badges", isAuthenticated, async (req, res) => {
     
     const badges = await storage.getAllBadges();
     res.json(badges);
   });
   
-  app.get("/api/user-badges", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/user-badges", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const userBadges = await storage.getUserBadges(userId);
@@ -370,8 +372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Challenges
-  app.get("/api/challenges", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/challenges", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const challenges = await storage.getAllChallenges();
@@ -394,8 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedChallenges);
   });
   
-  app.post("/api/user-challenges", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.post("/api/user-challenges", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const { challengeId } = req.body;
@@ -422,8 +422,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(userChallenge);
   });
   
-  app.put("/api/user-challenges/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.put("/api/user-challenges/:id", isAuthenticated, async (req, res) => {
     
     const userId = req.user!.id;
     const userChallengeId = parseInt(req.params.id);
@@ -442,16 +441,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Leaderboard
-  app.get("/api/leaderboard", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/leaderboard", isAuthenticated, async (req, res) => {
     
     const leaderboard = await storage.getLeaderboard();
     res.json(leaderboard);
   });
   
   // Reviews
-  app.get("/api/users/:userId/reviews", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+  app.get("/api/users/:userId/reviews", isAuthenticated, async (req, res) => {
     
     const userId = parseInt(req.params.userId);
     const reviews = await storage.getReviewsByUser(userId);

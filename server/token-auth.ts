@@ -49,7 +49,7 @@ declare global {
     interface User extends SelectUser {} 
     
     interface Request {
-      user: User; 
+      user?: User; 
       isAuthenticated(): boolean;
     }
   }
@@ -57,7 +57,7 @@ declare global {
 
 // Create a custom interface for authenticated requests
 interface AuthenticatedRequest extends Request {
-  user: SelectUser;
+  user: User;
 }
 
 // Authentication middleware
