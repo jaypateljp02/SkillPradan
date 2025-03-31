@@ -35,6 +35,15 @@ export function StudyGroups() {
 
   const { data: myGroups = [], isLoading: myGroupsLoading } = useQuery<Group[]>({
     queryKey: ["/api/groups"],
+    queryFn: async () => {
+      const response = await fetch("/api/groups");
+      if (!response.ok) {
+        return [];
+      }
+      const groups = await response.json();
+      // Filter for team projects only
+      return groups.filter((group: any) => group.isTeamProject === true);
+    }
   });
   
   const { data: allGroups = [], isLoading: allGroupsLoading } = useQuery<Group[]>({
@@ -44,7 +53,9 @@ export function StudyGroups() {
       if (!response.ok) {
         return [];
       }
-      return response.json();
+      const groups = await response.json();
+      // Filter for team projects only
+      return groups.filter((group: any) => group.isTeamProject === true);
     }
   });
 
@@ -53,7 +64,10 @@ export function StudyGroups() {
       const response = await fetch("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(groupData)
+        body: JSON.stringify({
+          ...groupData,
+          isTeamProject: true // Mark this as a team project
+        })
       });
       if (!response.ok) {
         const error = await response.json();
@@ -105,17 +119,17 @@ export function StudyGroups() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Study Groups</h2>
+        <h2 className="text-2xl font-bold">Team Projects</h2>
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Create Group
+              Create Team
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create New Study Group</DialogTitle>
+              <DialogTitle>Create New Team Project</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreateGroup} className="space-y-4">
               <div>
@@ -151,7 +165,7 @@ export function StudyGroups() {
                 className="w-full"
                 disabled={createGroupMutation.isPending}
               >
-                {createGroupMutation.isPending ? "Creating..." : "Create Group"}
+                {createGroupMutation.isPending ? "Creating..." : "Create Team"}
               </Button>
             </form>
           </DialogContent>
@@ -160,21 +174,21 @@ export function StudyGroups() {
 
       <Tabs defaultValue="my-groups" className="mb-6">
         <TabsList>
-          <TabsTrigger value="my-groups">My Groups</TabsTrigger>
-          <TabsTrigger value="discover">Discover Groups</TabsTrigger>
+          <TabsTrigger value="my-groups">My Teams</TabsTrigger>
+          <TabsTrigger value="discover">Discover Teams</TabsTrigger>
         </TabsList>
         <TabsContent value="my-groups">
           {myGroupsLoading ? (
-            <p>Loading your groups...</p>
+            <p>Loading your teams...</p>
           ) : myGroups.length === 0 ? (
             <div className="text-center py-12">
-              <h3 className="text-lg font-semibold mb-2">You haven't joined any groups yet</h3>
-              <p className="text-muted-foreground mb-4">Join an existing group or create a new one to get started</p>
+              <h3 className="text-lg font-semibold mb-2">You haven't joined any team projects yet</h3>
+              <p className="text-muted-foreground mb-4">Join an existing team or create a new one to get started</p>
               <Button onClick={() => {
                 const button = document.querySelector('button[value="discover"]') as HTMLButtonElement;
                 if (button) button.click();
               }}>
-                Discover Groups
+                Discover Teams
               </Button>
             </div>
           ) : (
@@ -191,7 +205,7 @@ export function StudyGroups() {
         </TabsContent>
         <TabsContent value="discover">
           {allGroupsLoading ? (
-            <p>Loading groups...</p>
+            <p>Loading teams...</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {allGroups.filter(group => !group.isPrivate || isGroupMember(group.id)).map((group) => (
@@ -263,7 +277,7 @@ function GroupCard({ group, isMember, onJoin, isJoining = false }: GroupCardProp
             disabled={isJoining}
           >
             <UserPlus className="h-4 w-4 mr-1" />
-            {isJoining ? "Joining..." : "Join Group"}
+            {isJoining ? "Joining..." : "Join Team"}
           </Button>
         )}
       </div>

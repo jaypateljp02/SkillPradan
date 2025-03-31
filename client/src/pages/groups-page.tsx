@@ -20,9 +20,9 @@ function GroupDetail({ groupId }: { groupId: string }) {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold">Group Details</h2>
-        <p className="text-muted-foreground">This is a placeholder for the group details page.</p>
-        <p className="text-muted-foreground">You're viewing group ID: {groupId}</p>
+        <h2 className="text-2xl font-bold">Team Project Details</h2>
+        <p className="text-muted-foreground">This is a placeholder for the team project details page.</p>
+        <p className="text-muted-foreground">You're viewing team project ID: {groupId}</p>
       </div>
       <p>Navigate to specific features:</p>
       <ul className="list-disc pl-5 mt-2 space-y-1">
