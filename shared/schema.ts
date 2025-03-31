@@ -236,11 +236,57 @@ export const groupMessages = pgTable("group_messages", {
   sentAt: timestamp("sent_at").defaultNow(),
 });
 
+// Create insert schemas for group-related tables
+export const insertGroupSchema = createInsertSchema(groups).pick({
+  name: true,
+  description: true,
+  isPrivate: true,
+  createdById: true
+});
+
+export const insertGroupMemberSchema = createInsertSchema(groupMembers).pick({
+  groupId: true,
+  userId: true,
+  role: true
+});
+
+export const insertGroupEventSchema = createInsertSchema(groupEvents).pick({
+  groupId: true,
+  title: true,
+  description: true,
+  startTime: true,
+  endTime: true,
+  createdById: true
+});
+
+export const insertGroupFileSchema = createInsertSchema(groupFiles).pick({
+  groupId: true,
+  name: true,
+  type: true,
+  url: true,
+  uploadedById: true
+});
+
+export const insertGroupMessageSchema = createInsertSchema(groupMessages).pick({
+  groupId: true,
+  userId: true,
+  content: true
+});
+
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 
 export type Group = typeof groups.$inferSelect;
+export type InsertGroup = z.infer<typeof insertGroupSchema>;
+
 export type GroupMember = typeof groupMembers.$inferSelect;
+export type InsertGroupMember = z.infer<typeof insertGroupMemberSchema>;
+
 export type GroupEvent = typeof groupEvents.$inferSelect;
+export type InsertGroupEvent = z.infer<typeof insertGroupEventSchema>;
+
 export type GroupFile = typeof groupFiles.$inferSelect;
+export type InsertGroupFile = z.infer<typeof insertGroupFileSchema>;
+
 export type GroupMessage = typeof groupMessages.$inferSelect;
+export type InsertGroupMessage = z.infer<typeof insertGroupMessageSchema>;

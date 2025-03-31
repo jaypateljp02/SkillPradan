@@ -8,7 +8,8 @@ import {
   UserBadge, InsertUserBadge,
   Challenge, InsertChallenge,
   UserChallenge, InsertUserChallenge,
-  Review, InsertReview
+  Review, InsertReview,
+  Group, GroupMember, GroupEvent, GroupFile, GroupMessage
 } from "@shared/schema";
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
@@ -72,6 +73,33 @@ export interface IStorage {
   createReview(review: InsertReview): Promise<Review>;
   getUserRating(userId: number): Promise<{ rating: number, count: number }>;
   
+  // Group operations
+  getGroup(id: number): Promise<Group | undefined>;
+  getAllGroups(): Promise<Group[]>;
+  getGroupsByUser(userId: number): Promise<Group[]>;
+  createGroup(groupData: Partial<Group>): Promise<Group>;
+  updateGroup(id: number, groupData: Partial<Group>): Promise<Group | undefined>;
+  
+  // Group member operations
+  getGroupMember(id: number): Promise<GroupMember | undefined>;
+  getGroupMembers(groupId: number): Promise<GroupMember[]>;
+  addGroupMember(memberData: { groupId: number, userId: number, role: string }): Promise<GroupMember>;
+  removeGroupMember(groupId: number, userId: number): Promise<boolean>;
+  
+  // Group file operations
+  getGroupFile(id: number): Promise<GroupFile | undefined>;
+  getGroupFiles(groupId: number): Promise<GroupFile[]>;
+  addGroupFile(fileData: { groupId: number, uploadedById: number, name: string, type: string, url: string }): Promise<GroupFile>;
+  
+  // Group event operations
+  getGroupEvent(id: number): Promise<GroupEvent | undefined>;
+  getGroupEvents(groupId: number): Promise<GroupEvent[]>;
+  createGroupEvent(eventData: { groupId: number, createdById: number, title: string, description?: string, startTime: Date, endTime?: Date }): Promise<GroupEvent>;
+  
+  // Group message operations
+  getGroupMessages(groupId: number): Promise<GroupMessage[]>;
+  createGroupMessage(messageData: { groupId: number, userId: number, content: string }): Promise<GroupMessage>;
+  
   // Leaderboard
   getLeaderboard(): Promise<{id: number, name: string, university: string, exchanges: number, points: number, avatar: string}[]>;
   
@@ -103,6 +131,11 @@ export class MemStorage implements IStorage {
   private challenges: Map<number, Challenge>;
   private userChallenges: Map<number, UserChallenge>;
   private reviews: Map<number, Review>;
+  private groups: Map<number, Group>;
+  private groupMembers: Map<number, GroupMember>;
+  private groupEvents: Map<number, GroupEvent>;
+  private groupFiles: Map<number, GroupFile>;
+  private groupMessages: Map<number, GroupMessage>;
   
   private userIdCounter: number;
   private skillIdCounter: number;
@@ -114,6 +147,11 @@ export class MemStorage implements IStorage {
   private challengeIdCounter: number;
   private userChallengeIdCounter: number;
   private reviewIdCounter: number;
+  private groupIdCounter: number;
+  private groupMemberIdCounter: number;
+  private groupEventIdCounter: number;
+  private groupFileIdCounter: number;
+  private groupMessageIdCounter: number;
   
   sessionStore: SessionStore;
 
@@ -128,6 +166,11 @@ export class MemStorage implements IStorage {
     this.challenges = new Map();
     this.userChallenges = new Map();
     this.reviews = new Map();
+    this.groups = new Map();
+    this.groupMembers = new Map();
+    this.groupEvents = new Map();
+    this.groupFiles = new Map();
+    this.groupMessages = new Map();
     
     this.userIdCounter = 1;
     this.skillIdCounter = 1;
@@ -139,6 +182,11 @@ export class MemStorage implements IStorage {
     this.challengeIdCounter = 1;
     this.userChallengeIdCounter = 1;
     this.reviewIdCounter = 1;
+    this.groupIdCounter = 1;
+    this.groupMemberIdCounter = 1;
+    this.groupEventIdCounter = 1;
+    this.groupFileIdCounter = 1;
+    this.groupMessageIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000
@@ -597,6 +645,216 @@ export class MemStorage implements IStorage {
       rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
       count: reviews.length 
     };
+  }
+
+  // Group operations
+  async getGroup(id: number): Promise<Group | undefined> {
+    return this.groups.get(id);
+  }
+  
+  async getAllGroups(): Promise<Group[]> {
+    return Array.from(this.groups.values());
+  }
+  
+  async getGroupsByUser(userId: number): Promise<Group[]> {
+    // Get all group members for this user
+    const userMemberships = Array.from(this.groupMembers.values()).filter(
+      member => member.userId === userId
+    );
+    
+    // Get the groups the user is a member of
+    const groupIds = userMemberships.map(membership => membership.groupId);
+    return Array.from(this.groups.values()).filter(
+      group => groupIds.includes(group.id)
+    );
+  }
+  
+  async createGroup(groupData: Partial<Group>): Promise<Group> {
+    const id = this.groupIdCounter++;
+    const now = new Date();
+    
+    const newGroup: Group = {
+      id,
+      name: groupData.name || '',
+      description: groupData.description || null,
+      isPrivate: groupData.isPrivate || false,
+      createdAt: now,
+      createdById: groupData.createdById || 0
+    };
+    
+    this.groups.set(id, newGroup);
+    
+    // Add activity for the user who created the group
+    await this.createActivity({
+      userId: newGroup.createdById,
+      type: "group",
+      description: `Created a new study group: ${newGroup.name}`,
+      pointsEarned: 10 // Small bonus for creating a group
+    });
+    
+    return newGroup;
+  }
+  
+  async updateGroup(id: number, groupData: Partial<Group>): Promise<Group | undefined> {
+    const group = await this.getGroup(id);
+    if (!group) return undefined;
+    
+    const updatedGroup = { ...group, ...groupData };
+    this.groups.set(id, updatedGroup);
+    return updatedGroup;
+  }
+
+  // Group member operations
+  async getGroupMember(id: number): Promise<GroupMember | undefined> {
+    return this.groupMembers.get(id);
+  }
+  
+  async getGroupMembers(groupId: number): Promise<GroupMember[]> {
+    return Array.from(this.groupMembers.values()).filter(
+      member => member.groupId === groupId
+    );
+  }
+  
+  async addGroupMember(memberData: { groupId: number, userId: number, role: string }): Promise<GroupMember> {
+    const id = this.groupMemberIdCounter++;
+    const now = new Date();
+    
+    const newMember: GroupMember = {
+      id,
+      groupId: memberData.groupId,
+      userId: memberData.userId,
+      role: memberData.role,
+      joinedAt: now
+    };
+    
+    this.groupMembers.set(id, newMember);
+    
+    // Add activity for joining a group (only if not the creator)
+    const group = await this.getGroup(memberData.groupId);
+    if (group && group.createdById !== memberData.userId) {
+      await this.createActivity({
+        userId: memberData.userId,
+        type: "group",
+        description: `Joined the study group: ${group.name}`,
+        pointsEarned: 5 // Small bonus for joining a group
+      });
+    }
+    
+    return newMember;
+  }
+  
+  async removeGroupMember(groupId: number, userId: number): Promise<boolean> {
+    const members = await this.getGroupMembers(groupId);
+    const member = members.find(m => m.userId === userId);
+    
+    if (!member) return false;
+    
+    this.groupMembers.delete(member.id);
+    return true;
+  }
+
+  // Group file operations
+  async getGroupFile(id: number): Promise<GroupFile | undefined> {
+    return this.groupFiles.get(id);
+  }
+  
+  async getGroupFiles(groupId: number): Promise<GroupFile[]> {
+    return Array.from(this.groupFiles.values()).filter(
+      file => file.groupId === groupId
+    );
+  }
+  
+  async addGroupFile(fileData: { groupId: number, uploadedById: number, name: string, type: string, url: string }): Promise<GroupFile> {
+    const id = this.groupFileIdCounter++;
+    const now = new Date();
+    
+    const newFile: GroupFile = {
+      id,
+      groupId: fileData.groupId,
+      name: fileData.name,
+      type: fileData.type,
+      url: fileData.url,
+      uploadedById: fileData.uploadedById,
+      uploadedAt: now
+    };
+    
+    this.groupFiles.set(id, newFile);
+    
+    // Add activity for uploading a file
+    const group = await this.getGroup(fileData.groupId);
+    if (group) {
+      await this.createActivity({
+        userId: fileData.uploadedById,
+        type: "group",
+        description: `Uploaded file "${fileData.name}" to group: ${group.name}`,
+        pointsEarned: 3 // Small bonus for contributing content
+      });
+    }
+    
+    return newFile;
+  }
+
+  // Group event operations
+  async getGroupEvent(id: number): Promise<GroupEvent | undefined> {
+    return this.groupEvents.get(id);
+  }
+  
+  async getGroupEvents(groupId: number): Promise<GroupEvent[]> {
+    return Array.from(this.groupEvents.values()).filter(
+      event => event.groupId === groupId
+    );
+  }
+  
+  async createGroupEvent(eventData: { groupId: number, createdById: number, title: string, description?: string, startTime: Date, endTime?: Date }): Promise<GroupEvent> {
+    const id = this.groupEventIdCounter++;
+    
+    const newEvent: GroupEvent = {
+      id,
+      groupId: eventData.groupId,
+      title: eventData.title,
+      description: eventData.description || null,
+      startTime: eventData.startTime,
+      endTime: eventData.endTime || null,
+      createdById: eventData.createdById
+    };
+    
+    this.groupEvents.set(id, newEvent);
+    
+    // Add activity for creating an event
+    const group = await this.getGroup(eventData.groupId);
+    if (group) {
+      await this.createActivity({
+        userId: eventData.createdById,
+        type: "group",
+        description: `Created event "${eventData.title}" in group: ${group.name}`,
+        pointsEarned: 5 // Bonus for organizing an event
+      });
+    }
+    
+    return newEvent;
+  }
+
+  // Group message operations
+  async getGroupMessages(groupId: number): Promise<GroupMessage[]> {
+    return Array.from(this.groupMessages.values())
+      .filter(message => message.groupId === groupId)
+      .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+  }
+  
+  async createGroupMessage(messageData: { groupId: number, userId: number, content: string }): Promise<GroupMessage> {
+    const id = this.groupMessageIdCounter++;
+    const now = new Date();
+    
+    const newMessage: GroupMessage = {
+      id,
+      groupId: messageData.groupId,
+      userId: messageData.userId,
+      content: messageData.content,
+      sentAt: now
+    };
+    
+    this.groupMessages.set(id, newMessage);
+    return newMessage;
   }
   
   // Leaderboard

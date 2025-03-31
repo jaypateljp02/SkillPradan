@@ -4,6 +4,13 @@ import { storage } from "./storage";
 import { WebSocketServer } from "ws";
 import { setupAuth } from "./auth";
 import { setupWebSockets } from "./socket";
+import { 
+  insertGroupSchema, 
+  insertGroupMemberSchema, 
+  insertGroupEventSchema, 
+  insertGroupFileSchema, 
+  insertGroupMessageSchema 
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -607,6 +614,551 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
     
     res.status(201).json(message);
+  });
+
+  // =========================================
+  // Group routes
+  // =========================================
+  app.get("/api/groups", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const all = req.query.all === 'true';
+    
+    let groups;
+    if (all) {
+      groups = await storage.getAllGroups();
+    } else {
+      groups = await storage.getGroupsByUser(userId);
+    }
+    
+    // For each group, get the member count
+    const enrichedGroups = await Promise.all(groups.map(async (group) => {
+      const members = await storage.getGroupMembers(group.id);
+      return {
+        ...group,
+        memberCount: members.length
+      };
+    }));
+    
+    res.json(enrichedGroups);
+  });
+  
+  app.get("/api/groups/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.id);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is a member of this group if it's private
+    if (group.isPrivate) {
+      const members = await storage.getGroupMembers(groupId);
+      const isMember = members.some(member => member.userId === userId);
+      
+      if (!isMember) {
+        return res.status(403).send("You don't have access to this private group");
+      }
+    }
+    
+    // Get members, files, events, and messages for the group
+    const members = await storage.getGroupMembers(groupId);
+    const files = await storage.getGroupFiles(groupId);
+    const events = await storage.getGroupEvents(groupId);
+    const messages = await storage.getGroupMessages(groupId);
+    
+    // Get user info for each member
+    const enrichedMembers = await Promise.all(members.map(async (member) => {
+      const user = await storage.getUser(member.userId);
+      if (!user) return member;
+      
+      const { password, ...userData } = user;
+      return {
+        ...member,
+        user: userData
+      };
+    }));
+    
+    // Get user info for each file uploader
+    const enrichedFiles = await Promise.all(files.map(async (file) => {
+      const uploader = await storage.getUser(file.uploadedById);
+      if (!uploader) return file;
+      
+      const { password, ...uploaderData } = uploader;
+      return {
+        ...file,
+        uploader: uploaderData
+      };
+    }));
+    
+    // Get user info for each event creator
+    const enrichedEvents = await Promise.all(events.map(async (event) => {
+      const creator = await storage.getUser(event.createdById);
+      if (!creator) return event;
+      
+      const { password, ...creatorData } = creator;
+      return {
+        ...event,
+        creator: creatorData
+      };
+    }));
+    
+    // Get user info for each message sender
+    const enrichedMessages = await Promise.all(messages.map(async (message) => {
+      const sender = await storage.getUser(message.userId);
+      if (!sender) return message;
+      
+      const { password, ...senderData } = sender;
+      return {
+        ...message,
+        sender: senderData
+      };
+    }));
+    
+    res.json({
+      ...group,
+      members: enrichedMembers,
+      files: enrichedFiles,
+      events: enrichedEvents,
+      messages: enrichedMessages
+    });
+  });
+  
+  app.post("/api/groups", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    
+    try {
+      // Validate with Zod schema
+      const validatedData = insertGroupSchema.parse({
+        ...req.body,
+        createdById: userId
+      });
+      
+      // Create the group
+      const group = await storage.createGroup(validatedData);
+      
+      // Add the creator as an admin
+      await storage.addGroupMember({
+        groupId: group.id,
+        userId,
+        role: 'admin'
+      });
+      
+      res.status(201).json(group);
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+  
+  app.put("/api/groups/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.id);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is an admin of this group
+    const members = await storage.getGroupMembers(groupId);
+    const userMember = members.find(member => member.userId === userId);
+    
+    if (!userMember || userMember.role !== 'admin') {
+      return res.status(403).send("You need to be an admin to update this group");
+    }
+    
+    const updatedGroup = await storage.updateGroup(groupId, req.body);
+    res.json(updatedGroup);
+  });
+  
+  // =========================================
+  // Group Member routes
+  // =========================================
+  app.get("/api/groups/:groupId/members", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is a member of this group if it's private
+    if (group.isPrivate) {
+      const members = await storage.getGroupMembers(groupId);
+      const isMember = members.some(member => member.userId === userId);
+      
+      if (!isMember) {
+        return res.status(403).send("You don't have access to this private group");
+      }
+    }
+    
+    const members = await storage.getGroupMembers(groupId);
+    
+    // Get user info for each member
+    const enrichedMembers = await Promise.all(members.map(async (member) => {
+      const user = await storage.getUser(member.userId);
+      if (!user) return member;
+      
+      const { password, ...userData } = user;
+      return {
+        ...member,
+        user: userData
+      };
+    }));
+    
+    res.json(enrichedMembers);
+  });
+  
+  app.post("/api/groups/:groupId/members", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // If joining self to group, check if group is private
+    let targetUserId = req.body.userId || userId;
+    
+    if (targetUserId !== userId) {
+      // If adding someone else, check if current user is admin
+      const members = await storage.getGroupMembers(groupId);
+      const userMember = members.find(member => member.userId === userId);
+      
+      if (!userMember || userMember.role !== 'admin') {
+        return res.status(403).send("You need to be an admin to add others to this group");
+      }
+    }
+    
+    // Check if user is already a member
+    const members = await storage.getGroupMembers(groupId);
+    const existingMember = members.find(member => member.userId === targetUserId);
+    if (existingMember) {
+      return res.status(400).send("User is already a member of this group");
+    }
+    
+    try {
+      // Validate with Zod schema
+      const validatedData = insertGroupMemberSchema.parse({
+        groupId,
+        userId: targetUserId,
+        role: targetUserId === userId ? 'member' : (req.body.role || 'member')
+      });
+      
+      // Add the member
+      const member = await storage.addGroupMember(validatedData);
+      
+      // Get user info
+      const user = await storage.getUser(targetUserId);
+      if (user) {
+        const { password, ...userData } = user;
+        
+        res.status(201).json({
+          ...member,
+          user: userData
+        });
+      } else {
+        res.status(201).json(member);
+      }
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+  
+  app.delete("/api/groups/:groupId/members/:userId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const currentUserId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    const targetUserId = parseInt(req.params.userId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Get members to check permissions
+    const members = await storage.getGroupMembers(groupId);
+    
+    // If removing someone else, check if current user is admin
+    if (targetUserId !== currentUserId) {
+      const userMember = members.find(member => member.userId === currentUserId);
+      
+      if (!userMember || userMember.role !== 'admin') {
+        return res.status(403).send("You need to be an admin to remove others from this group");
+      }
+    }
+    
+    // Don't allow removing the creator if they're the last admin
+    if (group.createdById === targetUserId) {
+      const admins = members.filter(member => member.role === 'admin');
+      
+      if (admins.length === 1 && admins[0].userId === targetUserId) {
+        return res.status(400).send("Cannot remove the only admin from the group");
+      }
+    }
+    
+    const success = await storage.removeGroupMember(groupId, targetUserId);
+    
+    if (success) {
+      res.status(200).json({ success: true });
+    } else {
+      res.status(404).send("Member not found");
+    }
+  });
+  
+  // =========================================
+  // Group Files routes
+  // =========================================
+  app.get("/api/groups/:groupId/files", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is a member of this group if it's private
+    if (group.isPrivate) {
+      const members = await storage.getGroupMembers(groupId);
+      const isMember = members.some(member => member.userId === userId);
+      
+      if (!isMember) {
+        return res.status(403).send("You don't have access to this private group");
+      }
+    }
+    
+    const files = await storage.getGroupFiles(groupId);
+    
+    // Get uploader info for each file
+    const enrichedFiles = await Promise.all(files.map(async (file) => {
+      const uploader = await storage.getUser(file.uploadedById);
+      if (!uploader) return file;
+      
+      const { password, ...uploaderData } = uploader;
+      return {
+        ...file,
+        uploader: uploaderData
+      };
+    }));
+    
+    res.json(enrichedFiles);
+  });
+  
+  app.post("/api/groups/:groupId/files", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is a member of this group
+    const members = await storage.getGroupMembers(groupId);
+    const isMember = members.some(member => member.userId === userId);
+    
+    if (!isMember) {
+      return res.status(403).send("You need to be a member to upload files to this group");
+    }
+    
+    try {
+      // Validate with Zod schema
+      const validatedData = insertGroupFileSchema.parse({
+        ...req.body,
+        groupId,
+        uploadedById: userId
+      });
+      
+      // Add the file
+      const file = await storage.addGroupFile(validatedData);
+      
+      // Get uploader info
+      const uploader = await storage.getUser(userId);
+      if (uploader) {
+        const { password, ...uploaderData } = uploader;
+        
+        res.status(201).json({
+          ...file,
+          uploader: uploaderData
+        });
+      } else {
+        res.status(201).json(file);
+      }
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+  
+  // =========================================
+  // Group Events routes
+  // =========================================
+  app.get("/api/groups/:groupId/events", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is a member of this group if it's private
+    if (group.isPrivate) {
+      const members = await storage.getGroupMembers(groupId);
+      const isMember = members.some(member => member.userId === userId);
+      
+      if (!isMember) {
+        return res.status(403).send("You don't have access to this private group");
+      }
+    }
+    
+    const events = await storage.getGroupEvents(groupId);
+    
+    // Get creator info for each event
+    const enrichedEvents = await Promise.all(events.map(async (event) => {
+      const creator = await storage.getUser(event.createdById);
+      if (!creator) return event;
+      
+      const { password, ...creatorData } = creator;
+      return {
+        ...event,
+        creator: creatorData
+      };
+    }));
+    
+    res.json(enrichedEvents);
+  });
+  
+  app.post("/api/groups/:groupId/events", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is a member of this group
+    const members = await storage.getGroupMembers(groupId);
+    const isMember = members.some(member => member.userId === userId);
+    
+    if (!isMember) {
+      return res.status(403).send("You need to be a member to create events in this group");
+    }
+    
+    try {
+      // Validate with Zod schema
+      const validatedData = insertGroupEventSchema.parse({
+        ...req.body,
+        groupId,
+        createdById: userId
+      });
+      
+      // Create the event
+      const event = await storage.createGroupEvent(validatedData);
+      
+      // Get creator info
+      const creator = await storage.getUser(userId);
+      if (creator) {
+        const { password, ...creatorData } = creator;
+        
+        res.status(201).json({
+          ...event,
+          creator: creatorData
+        });
+      } else {
+        res.status(201).json(event);
+      }
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
+  });
+  
+  // =========================================
+  // Group Messages routes
+  // =========================================
+  app.get("/api/groups/:groupId/messages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is a member of this group
+    const members = await storage.getGroupMembers(groupId);
+    const isMember = members.some(member => member.userId === userId);
+    
+    if (!isMember) {
+      return res.status(403).send("You need to be a member to view messages in this group");
+    }
+    
+    const messages = await storage.getGroupMessages(groupId);
+    
+    // Get sender info for each message
+    const enrichedMessages = await Promise.all(messages.map(async (message) => {
+      const sender = await storage.getUser(message.userId);
+      if (!sender) return message;
+      
+      const { password, ...senderData } = sender;
+      return {
+        ...message,
+        sender: senderData
+      };
+    }));
+    
+    res.json(enrichedMessages);
+  });
+  
+  app.post("/api/groups/:groupId/messages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
+    
+    const userId = req.user!.id;
+    const groupId = parseInt(req.params.groupId);
+    
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    
+    // Check if the user is a member of this group
+    const members = await storage.getGroupMembers(groupId);
+    const isMember = members.some(member => member.userId === userId);
+    
+    if (!isMember) {
+      return res.status(403).send("You need to be a member to send messages in this group");
+    }
+    
+    try {
+      // Validate with Zod schema
+      const validatedData = insertGroupMessageSchema.parse({
+        groupId,
+        userId,
+        content: req.body.content
+      });
+      
+      // Create the message
+      const message = await storage.createGroupMessage(validatedData);
+      
+      // Get sender info
+      const sender = await storage.getUser(userId);
+      if (sender) {
+        const { password, ...senderData } = sender;
+        
+        res.status(201).json({
+          ...message,
+          sender: senderData
+        });
+      } else {
+        res.status(201).json(message);
+      }
+    } catch (error) {
+      res.status(400).json({ error: (error as Error).message });
+    }
   });
 
   // Create the HTTP server

@@ -16,6 +16,8 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/session/:id" component={VideoSession} />
+      <ProtectedRoute path="/groups/:groupId/chat" component={GroupsPage} />
+      <ProtectedRoute path="/groups/:groupId" component={GroupsPage} />
       <ProtectedRoute path="/groups" component={GroupsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />

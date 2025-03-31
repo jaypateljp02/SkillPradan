@@ -1,69 +1,36 @@
 
-import { useState, useEffect } from 'react';
-import { PlusCircle, Users, Calendar, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { StudyGroups } from '@/components/study-groups';
+import { GroupChat } from '@/components/group-chat';
+import { Route, Switch } from 'wouter';
 
 export default function GroupsPage() {
-  const [groups, setGroups] = useState([]);
-  const [loading, setLoading] = useState(true);
+  return (
+    <Switch>
+      <Route path="/groups" component={StudyGroups} />
+      <Route path="/groups/:groupId/chat" component={GroupChat} />
+      <Route path="/groups/:groupId">
+        {(params) => <GroupDetail groupId={params.groupId} />}
+      </Route>
+    </Switch>
+  );
+}
 
-  useEffect(() => {
-    fetch('/api/groups')
-      .then(res => res.json())
-      .then(data => {
-        setGroups(data);
-        setLoading(false);
-      });
-  }, []);
-
+// Simple group detail component for the main group view
+function GroupDetail({ groupId }: { groupId: string }) {
   return (
     <div className="container mx-auto p-6">
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Study Groups</h1>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Group
-          </Button>
-        </div>
-        <div className="flex gap-2">
-          <Input 
-            type="search" 
-            placeholder="Search groups..." 
-            className="max-w-sm"
-            onChange={(e) => {
-              const searchTerm = e.target.value.toLowerCase();
-              setGroups(groups.filter(group => 
-                group.name.toLowerCase().includes(searchTerm) ||
-                group.description.toLowerCase().includes(searchTerm)
-              ));
-            }}
-          />
-        </div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold">Group Details</h2>
+        <p className="text-muted-foreground">This is a placeholder for the group details page.</p>
+        <p className="text-muted-foreground">You're viewing group ID: {groupId}</p>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {groups.map((group: any) => (
-          <Card key={group.id} className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold">{group.name}</h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-4">{group.description}</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">Join Group</Button>
-              <Button variant="outline" size="sm">
-                <Calendar className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm">
-                <FileText className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <p>Navigate to specific features:</p>
+      <ul className="list-disc pl-5 mt-2 space-y-1">
+        <li><a href={`/groups/${groupId}/chat`} className="text-primary hover:underline">Group Chat</a></li>
+        <li><a href={`/groups/${groupId}/files`} className="text-primary hover:underline">Files</a></li>
+        <li><a href={`/groups/${groupId}/events`} className="text-primary hover:underline">Events</a></li>
+        <li><a href={`/groups/${groupId}/members`} className="text-primary hover:underline">Members</a></li>
+      </ul>
     </div>
   );
 }
