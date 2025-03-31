@@ -1,85 +1,106 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { Button } from "./ui/button";
-import { PlusCircle, Users, FileText, Calendar } from "lucide-react";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { useToast } from "./ui/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Users, FileText, Calendar, MessageSquare, Upload, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export function StudyGroups() {
-  const [isCreating, setIsCreating] = useState(false);
-  const { toast } = useToast();
+  const [newGroup, setNewGroup] = useState({
+    name: "",
+    description: "",
+    isPrivate: false
+  });
   
-  const { data: groups = [], isLoading } = useQuery({
+  const queryClient = useQueryClient();
+  
+  const { data: groups = [] } = useQuery({
     queryKey: ["/api/groups"],
   });
 
-  const createGroup = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    
-    try {
+  const createGroupMutation = useMutation({
+    mutationFn: async (groupData) => {
       const response = await fetch("/api/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.get("name"),
-          description: formData.get("description"),
-          isPrivate: formData.get("isPrivate") === "true"
-        })
+        body: JSON.stringify(groupData)
       });
-      
-      if (!response.ok) throw new Error("Failed to create group");
-      
-      setIsCreating(false);
-      toast({
-        title: "Success",
-        description: "Study group created successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create study group",
-        variant: "destructive",
-      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["/api/groups"]);
     }
+  });
+
+  const joinGroupMutation = useMutation({
+    mutationFn: async (groupId) => {
+      const response = await fetch(`/api/groups/${groupId}/join`, {
+        method: "POST"
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["/api/groups"]);
+    }
+  });
+
+  const handleCreateGroup = async (e) => {
+    e.preventDefault();
+    await createGroupMutation.mutate(newGroup);
+    setNewGroup({ name: "", description: "", isPrivate: false });
   };
 
-  if (isLoading) {
-    return <div>Loading study groups...</div>;
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Study Groups</h2>
-        <Dialog open={isCreating} onOpenChange={setIsCreating}>
+        <Dialog>
           <DialogTrigger asChild>
             <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
+              <Plus className="h-4 w-4 mr-2" />
               Create Group
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create Study Group</DialogTitle>
+              <DialogTitle>Create New Study Group</DialogTitle>
             </DialogHeader>
-            <form onSubmit={createGroup} className="space-y-4">
+            <form onSubmit={handleCreateGroup} className="space-y-4">
               <div>
-                <Input name="name" placeholder="Group Name" required />
+                <Label htmlFor="name">Group Name</Label>
+                <Input
+                  id="name"
+                  value={newGroup.name}
+                  onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+                  placeholder="e.g., IIT Coders"
+                  required
+                />
               </div>
               <div>
-                <Textarea name="description" placeholder="Group Description" />
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={newGroup.description}
+                  onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+                  placeholder="What's this group about?"
+                  required
+                />
               </div>
-              <div>
-                <label>
-                  <input type="checkbox" name="isPrivate" value="true" />
-                  Private Group
-                </label>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="private"
+                  checked={newGroup.isPrivate}
+                  onCheckedChange={(checked) => setNewGroup({ ...newGroup, isPrivate: checked })}
+                />
+                <Label htmlFor="private">Private Group</Label>
               </div>
-              <Button type="submit">Create Group</Button>
+              <Button type="submit" className="w-full">
+                Create Group
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -91,18 +112,36 @@ export function StudyGroups() {
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-5 w-5 text-primary" />
               <h3 className="font-semibold">{group.name}</h3>
+              {group.isPrivate && (
+                <span className="text-xs bg-neutral-100 px-2 py-1 rounded">Private</span>
+              )}
             </div>
             <p className="text-sm text-gray-600 mb-4">{group.description}</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <FileText className="h-4 w-4 mr-1" />
-                Files
+            <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/groups/${group.id}/files`}>
+                  <FileText className="h-4 w-4 mr-1" />
+                  Files
+                </Link>
               </Button>
-              <Button variant="outline" size="sm">
-                <Calendar className="h-4 w-4 mr-1" />
-                Events
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/groups/${group.id}/events`}>
+                  <Calendar className="h-4 w-4 mr-1" />
+                  Events
+                </Link>
               </Button>
-              <Button size="sm">Join Group</Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/groups/${group.id}/chat`}>
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  Chat
+                </Link>
+              </Button>
+              <Button 
+                size="sm"
+                onClick={() => joinGroupMutation.mutate(group.id)}
+              >
+                Join Group
+              </Button>
             </div>
           </div>
         ))}
