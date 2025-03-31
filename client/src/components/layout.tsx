@@ -32,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
                     <AvatarImage src={user.avatar || undefined} alt={user.name} />
                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium">{user.name}</span>
+                  <span className="text-sm font-medium">Student One</span>
                 </div>
               </Link>
               <div className="cursor-pointer" onClick={logout}>
