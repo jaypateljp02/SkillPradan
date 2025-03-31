@@ -72,6 +72,7 @@ export function StudyGroupSection() {
     members?: number;
     isPublic?: boolean;
     deadline?: string;
+    isTeamProject?: boolean;
   }
   
   // Fetch groups based on active tab
@@ -80,15 +81,14 @@ export function StudyGroupSection() {
     isLoading: isLoadingGroups,
     error: groupsError 
   } = useQuery<GroupItem[]>({
-    queryKey: ['/api/groups', activeTab === 'team-projects' ? 'true' : 'false'],
+    queryKey: ['/api/groups'],
     queryFn: async () => {
-      const isTeamProject = activeTab === 'team-projects';
       const token = getToken();
       if (!token) {
         return [];
       }
       
-      const response = await fetch(`/api/groups?isTeamProject=${isTeamProject}`, {
+      const response = await fetch(`/api/groups`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -97,7 +97,12 @@ export function StudyGroupSection() {
       if (!response.ok) {
         throw new Error('Failed to fetch groups');
       }
-      return response.json();
+      
+      // Get all groups and filter on client side
+      const allGroups = await response.json();
+      return allGroups.filter((group: GroupItem) => 
+        activeTab === 'team-projects' ? group.isTeamProject : !group.isTeamProject
+      );
     },
     enabled: !!user,
   });
@@ -107,15 +112,14 @@ export function StudyGroupSection() {
     data: userGroups = [] as GroupItem[], 
     isLoading: isLoadingUserGroups 
   } = useQuery<GroupItem[]>({
-    queryKey: ['/api/groups/user', activeTab === 'team-projects' ? 'true' : 'false'],
+    queryKey: ['/api/groups/user'],
     queryFn: async () => {
-      const isTeamProject = activeTab === 'team-projects';
       const token = getToken();
       if (!token) {
         return [];
       }
       
-      const response = await fetch(`/api/groups/user?isTeamProject=${isTeamProject}`, {
+      const response = await fetch(`/api/groups/user`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -124,7 +128,12 @@ export function StudyGroupSection() {
       if (!response.ok) {
         throw new Error('Failed to fetch user groups');
       }
-      return response.json();
+      
+      // Get all user groups and filter on client side
+      const allUserGroups = await response.json();
+      return allUserGroups.filter((group: GroupItem) => 
+        activeTab === 'team-projects' ? group.isTeamProject : !group.isTeamProject
+      );
     },
     enabled: !!user,
   });
@@ -162,11 +171,9 @@ export function StudyGroupSection() {
       });
       setOpenCreateDialog(false);
       form.reset();
-      // Invalidate both regular and team project queries for both endpoints
-      queryClient.invalidateQueries({ queryKey: ['/api/groups', 'true'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups', 'false'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', 'true'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', 'false'] });
+      // Invalidate all groups queries
+      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user'] });
     },
     onError: () => {
       toast({
@@ -215,11 +222,9 @@ export function StudyGroupSection() {
         title: "Success!",
         description: "Joined group successfully",
       });
-      // Invalidate both regular and team project queries for both endpoints
-      queryClient.invalidateQueries({ queryKey: ['/api/groups', 'true'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups', 'false'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', 'true'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', 'false'] });
+      // Invalidate all groups queries
+      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user'] });
     },
     onError: (error: any) => {
       const errorMessage = error?.message || "Failed to join group. Please try again.";
