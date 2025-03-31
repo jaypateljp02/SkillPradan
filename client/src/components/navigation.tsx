@@ -1,31 +1,69 @@
-
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { 
+  Home, 
+  UserCircle, 
+  MessagesSquare, 
+  Video, 
+  Users, 
+  Repeat
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Home, Users, BarChart2, MessageSquare, Calendar, UserPlus, UsersRound, GraduationCap } from "lucide-react";
-
-const routes = [
-  { path: "/", label: "Home", icon: <Home className="h-4 w-4" /> },
-  { path: "/profile", label: "Profile", icon: <Users className="h-4 w-4" /> },
-  { path: "/barter", label: "Barter", icon: <BarChart2 className="h-4 w-4" /> },
-  { path: "/groups", label: "Study Groups", icon: <UsersRound className="h-4 w-4" /> },
-  { path: "/chat", label: "Chat", icon: <MessageSquare className="h-4 w-4" /> },
-  { path: "/sessions", label: "Sessions", icon: <Calendar className="h-4 w-4" /> },
-];
 
 export function Navigation() {
+  const [location] = useLocation();
+
+  const navItems = [
+    {
+      name: "Home",
+      href: "/",
+      icon: <Home className="h-4 w-4" />,
+      active: location === "/"
+    },
+    {
+      name: "Profile",
+      href: "/profile",
+      icon: <UserCircle className="h-4 w-4" />,
+      active: location === "/profile"
+    },
+    {
+      name: "Barter",
+      href: "/barter",
+      icon: <Repeat className="h-4 w-4" />,
+      active: location === "/barter"
+    },
+    {
+      name: "Chat",
+      href: "/chat",
+      icon: <MessagesSquare className="h-4 w-4" />,
+      active: location === "/chat"
+    },
+    {
+      name: "Sessions",
+      href: "/sessions",
+      icon: <Video className="h-4 w-4" />,
+      active: location.startsWith("/session")
+    },
+    {
+      name: "Study Groups",
+      href: "/groups",
+      icon: <Users className="h-4 w-4" />,
+      active: location.startsWith("/groups")
+    }
+  ];
+
   return (
-    <nav className="flex items-center space-x-4 lg:space-x-6">
-      {routes.map((route) => (
-        <Link
-          key={route.path}
-          href={route.path}
-          className={cn(
-            "text-sm font-medium transition-colors hover:text-primary",
-            "flex items-center gap-2"
-          )}
-        >
-          {route.icon}
-          {route.label}
+    <nav className="flex items-center space-x-1">
+      {navItems.map((item) => (
+        <Link key={item.href} href={item.href}>
+          <a
+            className={cn(
+              "inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium transition-all hover:bg-muted",
+              item.active ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-foreground"
+            )}
+          >
+            <span className="mr-2">{item.icon}</span>
+            <span className="hidden md:inline">{item.name}</span>
+          </a>
         </Link>
       ))}
     </nav>

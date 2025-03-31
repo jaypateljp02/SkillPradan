@@ -15,6 +15,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<{user: SelectUser, token: string}, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<{user: SelectUser, token: string}, Error, InsertUser>;
+  logout?: () => void; // Added this to fix the type issue
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -214,5 +215,14 @@ export function useAuth() {
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  
+  // Add a simple logout function that triggers the logoutMutation
+  const logout = () => {
+    context.logoutMutation.mutate();
+  };
+  
+  return {
+    ...context,
+    logout
+  };
 }

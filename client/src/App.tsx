@@ -1,20 +1,31 @@
 
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import VideoSession from "@/pages/video-session";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
 import GroupsPage from "@/pages/groups-page";
+import { Layout } from "@/components/layout";
 
 function Router() {
-  return (
+  const [location] = useLocation();
+  const { user } = useAuth();
+  
+  // Don't show layout on auth page
+  const showLayout = location !== "/auth" && user !== null;
+
+  const routes = (
     <Switch>
       <ProtectedRoute path="/" component={HomePage} />
+      <ProtectedRoute path="/profile" component={HomePage} />
+      <ProtectedRoute path="/barter" component={HomePage} />
+      <ProtectedRoute path="/chat" component={HomePage} />
+      <ProtectedRoute path="/sessions" component={HomePage} />
       <ProtectedRoute path="/session/:id" component={VideoSession} />
       <ProtectedRoute path="/groups/:groupId/chat" component={GroupsPage} />
       <ProtectedRoute path="/groups/:groupId" component={GroupsPage} />
@@ -23,6 +34,8 @@ function Router() {
       <Route component={NotFound} />
     </Switch>
   );
+
+  return showLayout ? <Layout>{routes}</Layout> : routes;
 }
 
 function App() {
