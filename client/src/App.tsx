@@ -10,6 +10,7 @@ import VideoSession from "@/pages/video-session";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
 import GroupsPage from "@/pages/groups-page";
+import StudyGroupsPage from "@/pages/study-groups-page";
 import { Layout } from "@/components/layout";
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
       <ProtectedRoute path="/chat" component={HomePage} />
       <ProtectedRoute path="/sessions" component={HomePage} />
       <ProtectedRoute path="/session/:id" component={VideoSession} />
+      <ProtectedRoute path="/study-groups" component={StudyGroupsPage} />
       <ProtectedRoute path="/groups/:groupId/chat" component={GroupsPage} />
       <ProtectedRoute path="/groups/:groupId" component={GroupsPage} />
       <ProtectedRoute path="/groups" component={GroupsPage} />

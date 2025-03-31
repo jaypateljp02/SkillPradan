@@ -64,58 +64,6 @@ export default function HomePage() {
   return (
     <SocketProvider>
       <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
-        {/* Header */}
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center">
-                  <div className="flex items-center">
-                    <img src={logoImage} alt="Skill प्रदान Logo" className="h-8 w-8" />
-                    <span className="ml-2 text-xl font-bold text-gray-800">
-                      Skill Pradan
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="hidden md:ml-6 md:flex md:items-center md:space-x-4">
-                <div className="flex space-x-2 items-center bg-neutral-100 rounded-full px-3 py-1">
-                  <CreditCard className="h-5 w-5 text-amber-500" />
-                  <span className="text-sm font-semibold text-neutral-700">
-                    {user?.points?.toLocaleString() || 0} Points
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    className="flex items-center max-w-xs rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                    onClick={handleLogout}
-                  >
-                    <UserAvatar 
-                      src={user?.avatar || undefined} 
-                      name={user?.name || ''} 
-                      size="sm"
-                    />
-                    <span className="ml-2 text-sm font-medium text-neutral-700">
-                      {user?.name}
-                    </span>
-                    <LogOut className="ml-1 h-5 w-5 text-neutral-400" />
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex items-center md:hidden">
-                <Button variant="ghost">
-                  <span className="sr-only">Open main menu</span>
-                  <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
 
         {/* Main Content */}
         <main className="flex-grow">
