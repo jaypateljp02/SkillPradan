@@ -5,16 +5,16 @@ import {
   UseMutationResult,
 } from "@tanstack/react-query";
 import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { getQueryFn, apiRequest, queryClient, setToken, removeToken } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
   user: SelectUser | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
+  loginMutation: UseMutationResult<{user: SelectUser, token: string}, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  registerMutation: UseMutationResult<{user: SelectUser, token: string}, Error, InsertUser>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -36,41 +36,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         console.log("Attempting login with credentials:", credentials.username);
         const res = await apiRequest("POST", "/api/login", credentials);
-        const userData = await res.json();
-        console.log("Login successful, received user data:", userData);
+        const data = await res.json();
+        console.log("Login successful, received data:", data);
         
-        // Wait for session cookie to be properly set
-        const verifySession = async () => {
+        // Store the token
+        if (data.token) {
+          console.log("Storing authentication token");
+          setToken(data.token);
+        } else {
+          console.error("No token received from login");
+        }
+        
+        // Verify token is working by making a request to user endpoint
+        const verifyToken = async () => {
           try {
-            const checkRes = await fetch("/api/debug/session", {
-              credentials: "include",
-              cache: "no-cache",
-              mode: "same-origin",
+            const checkRes = await fetch("/api/debug/token", {
+              headers: {
+                "Authorization": `Bearer ${data.token}`
+              },
+              cache: "no-cache"
             });
             
-            const sessionData = await checkRes.json();
-            console.log("Session verification data:", sessionData);
-            
-            if (!sessionData.authenticated) {
-              console.error("Session not authenticated after login!");
+            if (checkRes.ok) {
+              const tokenData = await checkRes.json();
+              console.log("Token verification data:", tokenData);
+              
+              if (!tokenData.authenticated) {
+                console.error("Token not valid after login!");
+              }
+            } else {
+              console.error("Token verification failed:", checkRes.status);
             }
           } catch (e) {
-            console.error("Failed to verify session after login:", e);
+            console.error("Failed to verify token after login:", e);
           }
         };
         
-        await verifySession();
-        return userData;
+        await verifyToken();
+        return data;
       } catch (error) {
         console.error("Login mutation function error:", error);
         throw error;
       }
     },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/user"], data.user);
       toast({
         title: "Welcome back!",
-        description: `Logged in as ${user.name}`,
+        description: `Logged in as ${data.user.name}`,
       });
       
       // Force query cache invalidation to ensure fresh data
@@ -97,41 +110,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         console.log("Attempting registration for:", credentials.username);
         const res = await apiRequest("POST", "/api/register", credentials);
-        const userData = await res.json();
-        console.log("Registration successful, received user data:", userData);
+        const data = await res.json();
+        console.log("Registration successful, received data:", data);
         
-        // Verify session was created after registration
-        const verifySession = async () => {
-          try {
-            const checkRes = await fetch("/api/debug/session", {
-              credentials: "include",
-              cache: "no-cache",
-              mode: "same-origin",
-            });
-            
-            const sessionData = await checkRes.json();
-            console.log("Session verification data after registration:", sessionData);
-            
-            if (!sessionData.authenticated) {
-              console.error("Session not authenticated after registration!");
-            }
-          } catch (e) {
-            console.error("Failed to verify session after registration:", e);
-          }
-        };
+        // Store the token
+        if (data.token) {
+          console.log("Storing authentication token");
+          setToken(data.token);
+        } else {
+          console.error("No token received from registration");
+        }
         
-        await verifySession();
-        return userData;
+        return data;
       } catch (error) {
         console.error("Registration mutation function error:", error);
         throw error;
       }
     },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
+    onSuccess: (data) => {
+      queryClient.setQueryData(["/api/user"], data.user);
       toast({
         title: "Account created",
-        description: `Welcome to Skill प्रदान, ${user.name}!`,
+        description: `Welcome to Skill प्रदान, ${data.user.name}!`,
       });
       
       // Force query cache invalidation to ensure fresh data
@@ -159,30 +159,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Attempting to log out");
         await apiRequest("POST", "/api/logout");
         
+        // Remove the token
+        removeToken();
+        
         // Clear client-side cache completely
         queryClient.clear();
-        
-        // Verify session was cleared after logout
-        const verifySession = async () => {
-          try {
-            const checkRes = await fetch("/api/debug/session", {
-              credentials: "include",
-              cache: "no-cache",
-              mode: "same-origin",
-            });
-            
-            const sessionData = await checkRes.json();
-            console.log("Session verification data after logout:", sessionData);
-            
-            if (sessionData.authenticated) {
-              console.error("Session still authenticated after logout!");
-            }
-          } catch (e) {
-            console.error("Failed to verify session after logout:", e);
-          }
-        };
-        
-        await verifySession();
       } catch (error) {
         console.error("Logout mutation function error:", error);
         throw error;

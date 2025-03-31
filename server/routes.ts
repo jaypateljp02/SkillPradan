@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { WebSocketServer } from "ws";
-import { setupAuth } from "./auth";
+import { setupAuth, isAuthenticated } from "./token-auth";
 import { setupWebSockets } from "./socket";
 import { 
   insertGroupSchema, 
@@ -11,14 +11,6 @@ import {
   insertGroupFileSchema, 
   insertGroupMessageSchema 
 } from "@shared/schema";
-
-// Middleware to check if a user is authenticated
-const isAuthenticated = (req: Request, res: Response, next: Function) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  return res.status(401).json({ message: "Unauthorized" });
-};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes

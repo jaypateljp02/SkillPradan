@@ -1,5 +1,23 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Token storage
+const AUTH_TOKEN_KEY = "auth_token";
+
+// Get token from localStorage
+export function getToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+// Set token in localStorage
+export function setToken(token: string): void {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+// Remove token from localStorage
+export function removeToken(): void {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -17,29 +35,31 @@ export async function apiRequest(
   console.log(`Making ${method} request to ${url}`, data);
   
   try {
+    // Get auth token from storage
+    const token = getToken();
+    
+    // Prepare headers with auth token if available
+    const headers: Record<string, string> = {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { "Authorization": `Bearer ${token}` } : {})
+    };
+    
     const res = await fetch(url, {
       method,
-      headers: {
-        ...(data ? { "Content-Type": "application/json" } : {}),
-      },
+      headers,
       body: data ? JSON.stringify(data) : undefined,
-      credentials: "include", // This includes cookies in the request
-      mode: "same-origin", // Use same-origin for better cookie handling
-      cache: "no-cache",
+      cache: "no-cache"
     });
     
     console.log(`Received response from ${url}:`, {
       status: res.status,
-      statusText: res.statusText,
-      cookies: document.cookie ? "Present" : "None"
+      statusText: res.statusText
     });
-    
-    // Log what cookies we have
-    console.log("Current cookies:", document.cookie || "None");
     
     // Check if we need to redirect to login
     if (res.status === 401 && url !== "/api/login") {
       console.log("Received 401, user not authenticated");
+      removeToken(); // Clear invalid token
       window.location.href = "/auth";
       throw new Error("User not authenticated");
     }
@@ -59,28 +79,36 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     console.log(`Making query request to ${queryKey[0]}`);
-    console.log("Current cookies before request:", document.cookie || "None");
     
     try {
+      // Get auth token from storage
+      const token = getToken();
+      
+      // Prepare headers with auth token if available
+      const headers: Record<string, string> = {
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      };
+      
       const res = await fetch(queryKey[0] as string, {
-        credentials: "include", // This includes cookies in the request
-        cache: "no-cache",
-        mode: "same-origin", // Use same-origin for better cookie handling
+        headers,
+        cache: "no-cache"
       });
       
       console.log(`Received query response from ${queryKey[0]}:`, {
         status: res.status,
-        statusText: res.statusText,
-        cookies: document.cookie ? "Present" : "None"
+        statusText: res.statusText
       });
-      
-      // Log what cookies we have after the response
-      console.log("Current cookies after response:", document.cookie || "None");
 
       // Redirect to login page if unauthorized and path is not already auth-related
       if (res.status === 401 && !String(queryKey[0]).includes('/api/login') && !String(queryKey[0]).includes('/api/register')) {
         if (unauthorizedBehavior === "returnNull") {
           console.log("Returning null due to 401 status");
+          
+          // Clear token if it's invalid
+          if (token) {
+            console.log("Removing invalid token");
+            removeToken();
+          }
           
           // Only redirect if we're fetching the user data
           if (String(queryKey[0]) === '/api/user') {
