@@ -87,13 +87,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Activity feed
-  app.get("/api/activities", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = req.user!.id;
-    const activities = await storage.getActivitiesByUser(userId);
-    
-    res.json(activities);
+  app.get("/api/activities", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const activities = await storage.getActivitiesByUser(userId);
+      
+      res.json(activities || []);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ message: "Error fetching activities" });
+    }
   });
   
   // Skill matching
@@ -355,20 +358,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/user-badges", isAuthenticated, async (req, res) => {
-    
-    const userId = req.user!.id;
-    const userBadges = await storage.getUserBadges(userId);
-    
-    // Enrich with badge data
-    const enrichedBadges = await Promise.all(userBadges.map(async (userBadge) => {
-      const badge = await storage.getBadge(userBadge.badgeId);
-      return {
-        ...userBadge,
-        badge
-      };
-    }));
-    
-    res.json(enrichedBadges);
+    try {
+      const userId = req.user!.id;
+      const userBadges = await storage.getUserBadges(userId);
+      
+      // Enrich with badge data
+      const enrichedBadges = await Promise.all(userBadges.map(async (userBadge) => {
+        try {
+          const badge = await storage.getBadge(userBadge.badgeId);
+          return {
+            ...userBadge,
+            badge
+          };
+        } catch (error) {
+          console.error(`Error fetching badge ${userBadge.badgeId}:`, error);
+          return userBadge; // Return at least the user badge data
+        }
+      }));
+      
+      res.json(enrichedBadges || []);
+    } catch (error) {
+      console.error("Error fetching user badges:", error);
+      res.status(500).json({ message: "Error fetching user badges" });
+    }
   });
   
   // Challenges
@@ -442,9 +454,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Leaderboard
   app.get("/api/leaderboard", isAuthenticated, async (req, res) => {
-    
-    const leaderboard = await storage.getLeaderboard();
-    res.json(leaderboard);
+    try {
+      const leaderboard = await storage.getLeaderboard();
+      res.json(leaderboard || []); // Ensure we always send an array
+    } catch (error) {
+      console.error("Error fetching leaderboard:", error);
+      res.status(500).json({ message: "Error fetching leaderboard" });
+    }
   });
   
   // Reviews
