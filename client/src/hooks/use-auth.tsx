@@ -92,8 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Add a slight delay to ensure state is updated before redirect
       setTimeout(() => {
-        // Redirect to the groups page after successful login
-        window.location.href = "/groups";
+        // Redirect to the home page after successful login
+        window.location.href = "/";
       }, 500);
     },
     onError: (error: Error) => {
@@ -140,8 +140,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Add a slight delay to ensure state is updated before redirect
       setTimeout(() => {
-        // Redirect to the groups page after successful registration
-        window.location.href = "/groups";
+        // Redirect to the home page after successful registration
+        window.location.href = "/";
       }, 500);
     },
     onError: (error: Error) => {

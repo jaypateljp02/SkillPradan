@@ -21,50 +21,7 @@ export function Layout({ children }: LayoutProps) {
               <span className="text-xl font-bold text-primary cursor-pointer">Skill प्रदान</span>
             </Link>
             
-            {user && (
-              <div className="flex items-center space-x-2">
-                <Link href="/">
-                  <div className="flex items-center px-3 py-2 rounded-md bg-primary/10">
-                    <Home className="h-5 w-5 mr-2" />
-                    <span className="text-sm font-medium">Home</span>
-                  </div>
-                </Link>
-                
-                <Link href="/profile">
-                  <div className="flex items-center px-3 py-2 rounded-md">
-                    <UserCircle className="h-5 w-5 mr-2" />
-                    <span className="text-sm font-medium">Profile</span>
-                  </div>
-                </Link>
-                
-                <Link href="/barter">
-                  <div className="flex items-center px-3 py-2 rounded-md">
-                    <span className="text-sm font-medium">Barter</span>
-                  </div>
-                </Link>
-                
-                <Link href="/chat">
-                  <div className="flex items-center px-3 py-2 rounded-md">
-                    <MessagesSquare className="h-5 w-5 mr-2" />
-                    <span className="text-sm font-medium">Chat</span>
-                  </div>
-                </Link>
-                
-                <Link href="/sessions">
-                  <div className="flex items-center px-3 py-2 rounded-md">
-                    <Video className="h-5 w-5 mr-2" />
-                    <span className="text-sm font-medium">Sessions</span>
-                  </div>
-                </Link>
-                
-                <Link href="/groups">
-                  <div className="flex items-center px-3 py-2 rounded-md">
-                    <Users className="h-5 w-5 mr-2" />
-                    <span className="text-sm font-medium">Study Groups</span>
-                  </div>
-                </Link>
-              </div>
-            )}
+            {/* Navigation links removed as requested */}
           </div>
           
           {user && (
@@ -75,7 +32,7 @@ export function Layout({ children }: LayoutProps) {
                     <AvatarImage src={user.avatar || undefined} alt={user.name} />
                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium">Student One</span>
+                  <span className="text-sm font-medium">{user.name}</span>
                 </div>
               </Link>
               <div className="cursor-pointer" onClick={logout}>
