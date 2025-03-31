@@ -57,7 +57,7 @@ declare global {
 
 // Create a custom interface for authenticated requests
 interface AuthenticatedRequest extends Request {
-  user: User;
+  user: SelectUser;
 }
 
 // Authentication middleware

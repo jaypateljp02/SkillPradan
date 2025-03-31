@@ -881,12 +881,12 @@ export class MemStorage implements IStorage {
       name: user.name,
       university: user.university || "",
       exchanges: userExchanges.get(user.id) || 0,
-      points: user.points,
+      points: user.points || 0,  // Handle null points
       avatar: user.avatar || ""
     }));
     
     // Sort by points (descending)
-    return leaderboard.sort((a, b) => b.points - a.points);
+    return leaderboard.sort((a, b) => (b.points || 0) - (a.points || 0));
   }
   
   // Find potential skill matches
