@@ -458,53 +458,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(reviews);
   });
   
-  app.get("/api/users/:userId/rating", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = parseInt(req.params.userId);
-    const rating = await storage.getUserRating(userId);
-    res.json(rating);
+  app.get("/api/users/:userId/rating", isAuthenticated, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const rating = await storage.getUserRating(userId);
+      return res.json(rating);
+    } catch (error) {
+      console.error("Error fetching user rating:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
   });
   
-  app.post("/api/reviews", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const reviewerId = req.user!.id;
-    
-    // Make sure the user can't review themselves
-    if (reviewerId === req.body.reviewedUserId) {
-      return res.status(400).send("You cannot review yourself");
-    }
-    
-    // Create the review
+  app.post("/api/reviews", isAuthenticated, async (req, res) => {
     try {
+      const reviewerId = req.user!.id;
+      
+      // Make sure the user can't review themselves
+      if (reviewerId === req.body.reviewedUserId) {
+        return res.status(400).json({ message: "You cannot review yourself" });
+      }
+      
+      // Create the review
       const review = await storage.createReview({
         ...req.body,
         reviewerId
       });
       
-      res.status(201).json(review);
+      return res.status(201).json(review);
     } catch (error) {
-      res.status(400).json({ error: (error as Error).message });
+      console.error("Error creating review:", error);
+      return res.status(400).json({ message: (error as Error).message });
     }
   });
   
   // Skill Matches endpoint
-  app.post("/api/skill-matches", async (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).send("Unauthorized");
-    
-    const userId = req.user!.id;
-    const { teachingSkillId, learningSkillId } = req.body;
-    
-    if (!teachingSkillId || !learningSkillId) {
-      return res.status(400).send("Both teachingSkillId and learningSkillId are required");
-    }
-    
+  app.post("/api/skill-matches", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.user!.id;
+      const { teachingSkillId, learningSkillId } = req.body;
+      
+      if (!teachingSkillId || !learningSkillId) {
+        return res.status(400).json({ message: "Both teachingSkillId and learningSkillId are required" });
+      }
+      
       const matches = await storage.findSkillMatches(teachingSkillId, learningSkillId);
-      res.json(matches);
+      return res.json(matches);
     } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+      console.error("Error finding skill matches:", error);
+      return res.status(500).json({ message: (error as Error).message });
     }
   });
   
