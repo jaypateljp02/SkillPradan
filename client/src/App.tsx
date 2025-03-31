@@ -10,7 +10,6 @@ import VideoSession from "@/pages/video-session";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
 import GroupsPage from "@/pages/groups-page";
-import { Navigation } from "@/components/navigation";
 
 function Router() {
   return (
@@ -28,14 +27,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div className="min-h-screen">
-          <header className="border-b">
-            <div className="container mx-auto py-4">
-              <Navigation />
-            </div>
-          </header>
-          <Router />
-        </div>
+        <Router />
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
