@@ -9,6 +9,8 @@ import VideoSession from "@/pages/video-session";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
 import logoImage from "./assets/logo.png";
+import GroupsPage from "./pages/groups-page"; // Added import statement
+
 
 function Router() {
   return (
@@ -16,6 +18,7 @@ function Router() {
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/session/:id" component={VideoSession} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/groups" component={GroupsPage} /> {/* Added Groups route */}
       <Route component={NotFound} />
     </Switch>
   );
