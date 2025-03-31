@@ -83,7 +83,17 @@ export function StudyGroupSection() {
     queryKey: ['/api/groups', activeTab === 'team-projects' ? 'true' : 'false'],
     queryFn: async () => {
       const isTeamProject = activeTab === 'team-projects';
-      const response = await fetch(`/api/groups?isTeamProject=${isTeamProject}`);
+      const token = getToken();
+      if (!token) {
+        return [];
+      }
+      
+      const response = await fetch(`/api/groups?isTeamProject=${isTeamProject}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (!response.ok) {
         throw new Error('Failed to fetch groups');
       }
@@ -100,7 +110,17 @@ export function StudyGroupSection() {
     queryKey: ['/api/groups/user', activeTab === 'team-projects' ? 'true' : 'false'],
     queryFn: async () => {
       const isTeamProject = activeTab === 'team-projects';
-      const response = await fetch(`/api/groups/user?isTeamProject=${isTeamProject}`);
+      const token = getToken();
+      if (!token) {
+        return [];
+      }
+      
+      const response = await fetch(`/api/groups/user?isTeamProject=${isTeamProject}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       if (!response.ok) {
         throw new Error('Failed to fetch user groups');
       }
@@ -526,10 +546,91 @@ export function StudyGroupSection() {
                 <h3 className="text-xl font-medium text-neutral-900">🛠️ Form Teams</h3>
                 <p className="text-sm text-neutral-500 mt-1">Work on hackathons and assignments together</p>
               </div>
-              <Button className="flex items-center">
-                <Plus className="w-4 h-4 mr-1" />
-                Create Team
-              </Button>
+              <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create Team
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create a new team project</DialogTitle>
+                    <DialogDescription>
+                      Set up a team for collaborating on projects and assignments. Fill out the details below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Team Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="E.g. Hackathon Team Alpha" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Briefly describe your project and team goals"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="isPrivate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Private Team</FormLabel>
+                              <FormDescription>
+                                Private teams require admin approval to join
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <DialogFooter>
+                        <Button 
+                          type="submit" 
+                          disabled={createGroupMutation.isPending}
+                          className="w-full"
+                        >
+                          {createGroupMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Create Team
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
             </div>
             
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
