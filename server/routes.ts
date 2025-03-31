@@ -125,10 +125,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let teacherUser, studentUser;
       if (exchange.teacherId === userId) {
         studentUser = await storage.getUser(exchange.studentId);
-        teacherUser = req.user;
+        teacherUser = req.user!;
       } else {
         teacherUser = await storage.getUser(exchange.teacherId);
-        studentUser = req.user;
+        studentUser = req.user!;
       }
       
       // Remove passwords
