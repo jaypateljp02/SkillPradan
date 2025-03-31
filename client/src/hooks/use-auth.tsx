@@ -42,6 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Welcome back!",
         description: `Logged in as ${user.name}`,
       });
+      
+      // Redirect to the groups page after successful login
+      window.location.href = "/groups";
     },
     onError: (error: Error) => {
       toast({
@@ -63,6 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Account created",
         description: `Welcome to SkillSwap, ${user.name}!`,
       });
+      
+      // Redirect to the groups page after successful registration
+      window.location.href = "/groups";
     },
     onError: (error: Error) => {
       toast({

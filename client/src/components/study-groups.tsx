@@ -23,14 +23,27 @@ export function StudyGroups() {
   
   const queryClient = useQueryClient();
   
-  const { data: myGroups = [], isLoading: myGroupsLoading } = useQuery({
+  interface Group {
+    id: number;
+    name: string;
+    description: string | null;
+    isPrivate: boolean;
+    createdById: number;
+    createdAt: string;
+    memberCount?: number;
+  }
+
+  const { data: myGroups = [], isLoading: myGroupsLoading } = useQuery<Group[]>({
     queryKey: ["/api/groups"],
   });
   
-  const { data: allGroups = [], isLoading: allGroupsLoading } = useQuery({
+  const { data: allGroups = [], isLoading: allGroupsLoading } = useQuery<Group[]>({
     queryKey: ["/api/groups", "all"],
     queryFn: async () => {
       const response = await fetch("/api/groups?all=true");
+      if (!response.ok) {
+        return [];
+      }
       return response.json();
     }
   });
@@ -157,7 +170,10 @@ export function StudyGroups() {
             <div className="text-center py-12">
               <h3 className="text-lg font-semibold mb-2">You haven't joined any groups yet</h3>
               <p className="text-muted-foreground mb-4">Join an existing group or create a new one to get started</p>
-              <Button onClick={() => document.querySelector('button[value="discover"]')?.click()}>
+              <Button onClick={() => {
+                const button = document.querySelector('button[value="discover"]') as HTMLButtonElement;
+                if (button) button.click();
+              }}>
                 Discover Groups
               </Button>
             </div>
