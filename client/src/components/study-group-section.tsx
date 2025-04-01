@@ -572,67 +572,43 @@ export function StudyGroupSection() {
                   <Button 
                     variant="outline" 
                     className="flex-1 flex items-center justify-center"
+                    onClick={() => handleFeatureInDevelopment("Group Chat")}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Group Chat
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 flex items-center justify-center"
                     onClick={() => handleFeatureInDevelopment("Video Session")}
                   >
                     <Video className="h-4 w-4 mr-2" />
                     Start Session
                   </Button>
-                </div>
-                
-                <h5 className="text-md font-medium text-neutral-900 mb-3 mt-6">💬 Group Chat</h5>
-                <div className="bg-neutral-50 rounded-md p-4 h-48 overflow-y-auto mb-4">
-                  <div className="space-y-4">
-                    <div className="flex items-start">
-                      <UserAvatar name="Rahul Kumar" size="sm" />
-                      <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
-                        <div className="flex items-center">
-                          <span className="text-xs font-medium">Rahul Kumar</span>
-                          <span className="ml-2 text-xs text-neutral-500">10:30 AM</span>
-                        </div>
-                        <p className="text-sm mt-1">Hi everyone, I'm struggling with understanding recursion. Can someone help?</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start">
-                      <UserAvatar name="Priya Singh" size="sm" />
-                      <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
-                        <div className="flex items-center">
-                          <span className="text-xs font-medium">Priya Singh</span>
-                          <span className="ml-2 text-xs text-neutral-500">10:45 AM</span>
-                        </div>
-                        <p className="text-sm mt-1">I can help explain recursion. Let's set up a quick study session!</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex">
-                  <input 
-                    type="text" 
-                    placeholder="Type your message..." 
-                    className="flex-1 py-2 px-3 border border-neutral-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                  />
                   <Button 
-                    className="rounded-l-none"
-                    onClick={() => handleFeatureInDevelopment("Chat Messaging")}
+                    variant="outline" 
+                    className="flex-1 flex items-center justify-center"
+                    onClick={() => handleFeatureInDevelopment("File Sharing")}
                   >
-                    Send
+                    <FolderUp className="h-4 w-4 mr-2" />
+                    Share Files
                   </Button>
                 </div>
                 
                 <div className="mt-6">
-                  <h5 className="text-md font-medium text-neutral-900 mb-3">Shared Resources</h5>
+                  <h5 className="text-md font-medium text-neutral-900 mb-2">📂 Shared Files</h5>
                   <div className="space-y-2">
                     <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
                       <div className="flex items-center">
                         <FileText className="h-5 w-5 text-blue-500" />
-                        <span className="ml-2 text-sm font-medium">Recursion Examples.pdf</span>
+                        <span className="ml-2 text-sm font-medium">Data Structures Notes.pdf</span>
                       </div>
                       <span className="text-xs text-neutral-500">Shared 2 days ago</span>
                     </div>
                     <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
                       <div className="flex items-center">
                         <FileText className="h-5 w-5 text-blue-500" />
-                        <span className="ml-2 text-sm font-medium">Math Formulas Cheat Sheet.docx</span>
+                        <span className="ml-2 text-sm font-medium">Algorithms Cheat Sheet.docx</span>
                       </div>
                       <span className="text-xs text-neutral-500">Shared 1 week ago</span>
                     </div>
@@ -640,10 +616,10 @@ export function StudyGroupSection() {
                       variant="ghost" 
                       size="sm" 
                       className="mt-2 text-primary"
-                      onClick={() => handleFeatureInDevelopment("Resource Sharing")}
+                      onClick={() => handleFeatureInDevelopment("File Upload")}
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Share New Resource
+                      Upload New File
                     </Button>
                   </div>
                 </div>
