@@ -41,45 +41,45 @@ export function Layout({ children }: LayoutProps) {
               {/* Navigation links - add admin link if user is admin */}
               <nav className="ml-6 flex space-x-4">
                 <Link href="/">
-                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
                     Home
-                  </a>
+                  </span>
                 </Link>
                 <Link href="/barter">
-                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
                     Skill Exchange
-                  </a>
+                  </span>
                 </Link>
                 <Link href="/sessions">
-                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
                     Sessions
-                  </a>
+                  </span>
                 </Link>
                 <Link href="/study-groups">
-                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
                     Study Groups
-                  </a>
+                  </span>
                 </Link>
                 <Link href="/groups">
-                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
                     Teams
-                  </a>
+                  </span>
                 </Link>
                 <Link href="/chat">
-                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
                     Messages
-                  </a>
+                  </span>
                 </Link>
                 <Link href="/profile">
-                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
                     Profile
-                  </a>
+                  </span>
                 </Link>
                 {user?.isAdmin && (
                   <Link href="/admin">
-                    <a className="px-3 py-2 rounded-md text-sm font-medium text-primary hover:text-primary/80">
+                    <span className="px-3 py-2 rounded-md text-sm font-medium text-primary hover:text-primary/80 cursor-pointer">
                       Admin
-                    </a>
+                    </span>
                   </Link>
                 )}
               </nav>
