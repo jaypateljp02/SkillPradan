@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
 import { ReviewDialog } from "@/components/review-dialog";
+import { QuickRating } from "@/components/quick-rating";
 import { useAuth } from "@/hooks/use-auth";
 
 interface ExchangeCardProps {
@@ -37,7 +38,6 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
 
   // For dialogs
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -526,22 +526,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
             )}
 
             {isExchangeCompleted && otherUserId && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="flex items-center"
-                onClick={() => setReviewOpen(true)}
-              >
-                <Star className="h-4 w-4 mr-1 text-yellow-400" />
-                Review {otherUser?.name}
-              </Button>
-            )}
-
-            {/* Review Dialog */}
-            {otherUserId && (
-              <ReviewDialog
-                open={reviewOpen}
-                onOpenChange={setReviewOpen}
+              <QuickRating
                 userId={otherUserId}
                 exchangeId={exchange.id}
                 userName={otherUser?.name || "User"}

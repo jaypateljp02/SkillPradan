@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -74,6 +74,9 @@ export function ReviewDialog({
         title: "Review submitted",
         description: "Your review has been submitted successfully",
       });
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}/reviews`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
       onOpenChange(false);
     },
     onError: (error) => {

@@ -1,22 +1,47 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Button } from "@/components/ui/button";
 import { 
   FileText, 
   Save,
-  Video
+  Video,
+  Star
 } from "lucide-react";
+import { QuickRating } from "@/components/quick-rating";
 import { format } from "date-fns";
 
+interface Session {
+  id: number;
+  exchangeId: number;
+  scheduledTime: string;
+  duration: number;
+  status: string;
+  notes?: string;
+  whiteboardData?: any;
+  exchange?: {
+    id: number;
+    status: string;
+  };
+  otherUser?: {
+    id: number;
+    name: string;
+    avatar?: string;
+  };
+  isTeacher: boolean;
+}
+
 export function SessionHistory() {
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data: sessions = [], isLoading } = useQuery<Session[]>({
     queryKey: ["/api/sessions"],
   });
   
   // Filter and sort completed sessions by date (newest first)
   const completedSessions = sessions
-    .filter(session => session.status === "completed")
-    .sort((a, b) => new Date(b.scheduledTime).getTime() - new Date(a.scheduledTime).getTime());
+    .filter((session: Session) => session.status === "completed")
+    .sort((a: Session, b: Session) => 
+      new Date(b.scheduledTime).getTime() - new Date(a.scheduledTime).getTime()
+    );
   
   if (isLoading) {
     return (
@@ -38,7 +63,7 @@ export function SessionHistory() {
             <p className="text-neutral-500">No completed sessions yet</p>
           </div>
         ) : (
-          completedSessions.map(session => (
+          completedSessions.map((session: Session) => (
             <div key={session.id} className="bg-white border border-neutral-200 rounded-lg p-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
@@ -89,6 +114,15 @@ export function SessionHistory() {
                     >
                       <Video className="mr-1 h-3 w-3" /> Recording
                     </Button>
+                    
+                    {/* Quick feedback button */}
+                    {session.otherUser?.id && session.exchange?.id && (
+                      <QuickRating
+                        userId={session.otherUser.id}
+                        exchangeId={session.exchange.id}
+                        userName={session.otherUser.name || "User"}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
