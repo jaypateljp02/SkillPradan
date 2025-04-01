@@ -242,7 +242,7 @@ export class MemStorage implements IStorage {
     setTimeout(async () => {
       try {
         // Check if we already have exchanges
-        const existingExchanges = [...this.exchanges.values()];
+        const existingExchanges = Array.from(this.exchanges.values());
         if (existingExchanges.length > 0) {
           console.log("Test exchanges already exist, skipping creation");
           return;
@@ -281,7 +281,7 @@ export class MemStorage implements IStorage {
         
         await this.createSession({
           exchangeId: exchange.id,
-          scheduledTime: twoWeeksAgo.toISOString(),
+          scheduledTime: twoWeeksAgo,
           duration: 60,
           status: "completed",
           notes: "First session went well. Covered basics."
@@ -289,7 +289,7 @@ export class MemStorage implements IStorage {
         
         await this.createSession({
           exchangeId: exchange.id,
-          scheduledTime: oneWeekAgo.toISOString(),
+          scheduledTime: oneWeekAgo,
           duration: 45,
           status: "completed",
           notes: "Second session focused on advanced topics."
@@ -297,7 +297,7 @@ export class MemStorage implements IStorage {
         
         await this.createSession({
           exchangeId: exchange.id,
-          scheduledTime: yesterday.toISOString(),
+          scheduledTime: yesterday,
           duration: 90,
           status: "completed",
           notes: "Final session with full project review.",

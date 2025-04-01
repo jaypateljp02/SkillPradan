@@ -127,6 +127,10 @@ export const insertExchangeSchema = createInsertSchema(exchanges).pick({
   teacherSkillId: true,
   studentSkillId: true,
   status: true,
+  sessionsCompleted: true,
+  totalSessions: true,
+}).extend({
+  notes: z.string().optional(),
 });
 
 export const insertSessionSchema = createInsertSchema(sessions).pick({
@@ -134,6 +138,9 @@ export const insertSessionSchema = createInsertSchema(sessions).pick({
   scheduledTime: true,
   duration: true,
   status: true,
+}).extend({
+  notes: z.string().optional(),
+  whiteboardData: z.record(z.any()).optional(),
 });
 
 export const insertActivitySchema = createInsertSchema(activities).pick({
