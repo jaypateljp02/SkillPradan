@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, User, RefreshCw, Award, GraduationCap, Trophy, Shield } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
@@ -38,11 +38,36 @@ export function Layout({ children }: LayoutProps) {
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 h-16 flex justify-between items-center">
           {/* Logo and Brand */}
-          <div className="flex-shrink-0 flex items-center">
-            <img src={logoImage} alt="Skill प्रदान Logo" className="h-8 w-8" />
-            <span className="ml-2 text-xl font-bold text-gray-800">
-              Skill Pradan
-            </span>
+          <div className="flex items-center">
+            <div className="flex-shrink-0 flex items-center">
+              <img src={logoImage} alt="Skill प्रदान Logo" className="h-8 w-8" />
+              <span className="ml-2 text-xl font-bold text-gray-800">
+                Skill Pradan
+              </span>
+            </div>
+            
+            {/* Admin dashboard link */}
+            {user?.isAdmin && (
+              <Link href="/admin-dashboard">
+                <div className="ml-6 px-3 py-1 bg-primary/10 rounded-md text-primary hover:bg-primary/20 cursor-pointer flex items-center">
+                  <Shield className="w-4 h-4 mr-1" />
+                  <span className="text-sm font-medium">Admin Dashboard</span>
+                </div>
+              </Link>
+            )}
+          </div>
+          
+          {/* Navigation links */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Link href="/profile">
+              <span className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Profile</span>
+            </Link>
+            <Link href="/barter">
+              <span className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Exchange</span>
+            </Link>
+            <Link href="/sessions">
+              <span className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Sessions</span>
+            </Link>
           </div>
           
           {/* User info */}
