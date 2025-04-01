@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, Home, User, Repeat, MessageCircle, Video, Users } from 'lucide-react';
+import { LogOut, Home, User, Repeat, MessageCircle, Video, Users, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logoImage from "../../assets/logo.png";
 
@@ -71,16 +71,24 @@ export function Navbar() {
           <div className="flex items-center">
             {user && (
               <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="mr-4"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-5 w-5 mr-1" />
-                  Logout
-                </Button>
-                <UserAvatar user={user} />
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center">
+                    <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                      <Trophy className="h-4 w-4" />
+                      {user?.points || 0} Points
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mr-4"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-5 w-5 mr-1" />
+                    Logout
+                  </Button>
+                  <UserAvatar user={user} />
+                </div>
               </>
             )}
           </div>
