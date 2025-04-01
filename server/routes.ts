@@ -11,6 +11,7 @@ import {
   insertGroupFileSchema, 
   insertGroupMessageSchema 
 } from "@shared/schema";
+import adminRouter from "./routes/admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -1238,6 +1239,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ error: (error as Error).message });
     }
   });
+
+  // Register admin routes
+  app.use("/api/admin", adminRouter);
 
   // Create the HTTP server
   const httpServer = createServer(app);

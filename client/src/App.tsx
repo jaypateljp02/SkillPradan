@@ -11,7 +11,25 @@ import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
 import GroupsPage from "@/pages/groups-page";
 import StudyGroupsPage from "@/pages/study-groups-page";
+import AdminDashboard from "@/pages/admin-dashboard";
 import { Layout } from "@/components/layout";
+
+// New protected route specifically for admin access
+const AdminRoute = ({ component: Component, ...rest }: any) => {
+  const { user } = useAuth();
+  
+  // Check if user is authenticated and is an admin
+  if (!user) {
+    return <Route {...rest} component={NotFound} />;
+  }
+
+  // Redirect to 404 if not an admin
+  if (!user.isAdmin) {
+    return <Route {...rest} component={NotFound} />;
+  }
+
+  return <Route {...rest} component={Component} />;
+};
 
 function Router() {
   const [location] = useLocation();
@@ -32,6 +50,7 @@ function Router() {
       <ProtectedRoute path="/groups/:groupId/chat" component={GroupsPage} />
       <ProtectedRoute path="/groups/:groupId" component={GroupsPage} />
       <ProtectedRoute path="/groups" component={GroupsPage} />
+      <AdminRoute path="/admin" component={AdminDashboard} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
