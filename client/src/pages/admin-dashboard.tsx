@@ -99,27 +99,43 @@ const AdminDashboard = () => {
     }
   }, [user, toast]);
   
-  // Fetch system statistics using the default query function that handles auth tokens
+  // Fetch system statistics using apiRequest to include auth token properly
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/stats");
+      return response.json();
+    },
     retry: 1
   });
   
-  // Fetch all users using the default query function that handles auth tokens
+  // Fetch all users using apiRequest to include auth token properly
   const { data: users, isLoading: usersLoading, error: usersError } = useQuery<AdminUser[]>({
     queryKey: ["/api/admin/users"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/users");
+      return response.json();
+    },
     retry: 1
   });
   
-  // Fetch all skills using the default query function that handles auth tokens
+  // Fetch all skills using apiRequest to include auth token properly
   const { data: skills, isLoading: skillsLoading, error: skillsError } = useQuery<AdminSkill[]>({
     queryKey: ["/api/admin/skills"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/skills");
+      return response.json();
+    },
     retry: 1
   });
   
-  // Fetch all exchanges using the default query function that handles auth tokens
+  // Fetch all exchanges using apiRequest to include auth token properly
   const { data: exchanges, isLoading: exchangesLoading, error: exchangesError } = useQuery<any[]>({
     queryKey: ["/api/admin/exchanges"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/admin/exchanges");
+      return response.json();
+    },
     retry: 1
   });
 
