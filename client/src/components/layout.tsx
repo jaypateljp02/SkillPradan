@@ -1,13 +1,11 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { LogOut, LayoutDashboard, Home, Users, MessageSquare, Calendar, BookOpen, Award, PanelLeft, ChevronRight, ChevronLeft } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { cn } from "@/lib/utils";
 import logoImage from "../assets/logo.png";
-import { useState } from "react";
 
 interface LayoutProps {
   children: ReactNode;
@@ -16,8 +14,6 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const [location] = useLocation();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   const handleLogout = () => {
     logout();
@@ -27,29 +23,10 @@ export function Layout({ children }: LayoutProps) {
     });
   };
 
-  const navItems = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/barter", label: "Skill Exchange", icon: Award },
-    { href: "/sessions", label: "Sessions", icon: Calendar },
-    { href: "/study-groups", label: "Study Groups", icon: Users },
-    { href: "/groups", label: "Teams", icon: Users },
-    { href: "/chat", label: "Messages", icon: MessageSquare },
-    { href: "/profile", label: "Profile", icon: Users }, // Changed to Users icon instead of UserAvatar
-  ];
-
-  // Admin nav item - only visible for admins
-  if (user?.isAdmin) {
-    navItems.push({ 
-      href: "/admin", 
-      label: "Admin Dashboard", 
-      icon: LayoutDashboard 
-    });
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
       {/* Header/Navigation */}
-      <header className="bg-white shadow-sm z-10">
+      <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             {/* Logo and Brand */}
@@ -60,6 +37,52 @@ export function Layout({ children }: LayoutProps) {
                   Skill Pradan
                 </span>
               </div>
+              
+              {/* Navigation links - add admin link if user is admin */}
+              <nav className="ml-6 flex space-x-4">
+                <Link href="/">
+                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Home
+                  </a>
+                </Link>
+                <Link href="/barter">
+                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Skill Exchange
+                  </a>
+                </Link>
+                <Link href="/sessions">
+                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Sessions
+                  </a>
+                </Link>
+                <Link href="/study-groups">
+                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Study Groups
+                  </a>
+                </Link>
+                <Link href="/groups">
+                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Teams
+                  </a>
+                </Link>
+                <Link href="/chat">
+                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Messages
+                  </a>
+                </Link>
+                <Link href="/profile">
+                  <a className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Profile
+                  </a>
+                </Link>
+                {user?.isAdmin && (
+                  <Link href="/admin">
+                    <a className="px-3 py-2 rounded-md text-sm font-medium text-primary hover:text-primary/80">
+                      Admin
+                    </a>
+                  </Link>
+                )}
+              </nav>
             </div>
             
             {/* User menu and points */}
@@ -99,67 +122,10 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
       
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <aside 
-          className={cn(
-            "bg-white shadow-sm h-[calc(100vh-4rem)] sticky top-16 transition-all duration-300",
-            sidebarCollapsed ? "w-16" : "w-64"
-          )}
-        >
-          <div className="flex flex-col h-full">
-            <div className="p-4 flex-1">
-              <nav className="space-y-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location === item.href;
-                  
-                  return (
-                    <Link 
-                      key={item.href} 
-                      href={item.href}
-                    >
-                      <a 
-                        className={cn(
-                          "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                          isActive 
-                            ? "bg-primary/10 text-primary hover:bg-primary/20" 
-                            : "text-gray-700 hover:bg-gray-100"
-                        )}
-                      >
-                        <Icon className="h-5 w-5 mr-3 flex-shrink-0" />
-                        {!sidebarCollapsed && <span>{item.label}</span>}
-                      </a>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-            
-            {/* Collapse button */}
-            <div className="p-4 border-t">
-              <button
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="w-full flex items-center justify-center p-2 rounded-md text-gray-500 hover:bg-gray-100"
-              >
-                {sidebarCollapsed ? (
-                  <ChevronRight className="h-5 w-5" />
-                ) : (
-                  <div className="flex items-center w-full">
-                    <ChevronLeft className="h-5 w-5 mr-2" />
-                    {!sidebarCollapsed && <span>Collapse</span>}
-                  </div>
-                )}
-              </button>
-            </div>
-          </div>
-        </aside>
-      
-        {/* Main content */}
-        <main className="flex-1">
-          {children}
-        </main>
-      </div>
+      {/* Main content */}
+      <main className="flex-1">
+        {children}
+      </main>
     </div>
   );
 }

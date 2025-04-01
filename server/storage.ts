@@ -243,6 +243,7 @@ export class MemStorage implements IStorage {
     try {
       // Secure password for testing
       const testPassword = await hashPassword("password123");
+      const adminPassword = await hashPassword("adminpass");
       
       // Check if we already have test users
       const existingUser = await this.getUserByUsername("testuser");
@@ -256,7 +257,7 @@ export class MemStorage implements IStorage {
       // Create admin user
       const adminUser = await this.createUser({
         username: "admin",
-        password: testPassword,
+        password: adminPassword, // Using specific admin password
         name: "Admin User",
         email: "admin@example.com",
         university: "Admin University",
