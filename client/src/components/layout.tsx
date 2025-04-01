@@ -1,9 +1,9 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import logoImage from "../assets/logo.png";
 
@@ -14,6 +14,15 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const [location] = useLocation();
+  
+  // Redirect from old /admin path to the new /admin-dashboard path
+  useEffect(() => {
+    if (location === "/admin" && user?.isAdmin) {
+      // Redirect to the new admin dashboard
+      window.location.href = "/admin-dashboard";
+    }
+  }, [location, user]);
   
   const handleLogout = () => {
     logout();
@@ -76,9 +85,9 @@ export function Layout({ children }: LayoutProps) {
                   </span>
                 </Link>
                 {user?.isAdmin && (
-                  <Link href="/admin">
-                    <span className="px-3 py-2 rounded-md text-sm font-medium text-primary hover:text-primary/80 cursor-pointer">
-                      Admin
+                  <Link href="/admin-dashboard">
+                    <span className="px-3 py-2 rounded-md text-sm font-medium text-primary hover:text-primary/80 cursor-pointer font-bold">
+                      Admin Dashboard
                     </span>
                   </Link>
                 )}

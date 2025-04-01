@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import VideoSession from "@/pages/video-session";
@@ -17,17 +18,32 @@ import { Layout } from "@/components/layout";
 // New protected route specifically for admin access
 const AdminRoute = ({ component: Component, ...rest }: any) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   
-  // Check if user is authenticated and is an admin
+  // If not authenticated, redirect to auth page
   if (!user) {
-    return <Route {...rest} component={NotFound} />;
+    // Redirect to auth page
+    setTimeout(() => {
+      window.location.href = "/auth";
+    }, 100);
+    return null;
   }
 
-  // Redirect to 404 if not an admin
+  // If not an admin, show toast and redirect to home
   if (!user.isAdmin) {
-    return <Route {...rest} component={NotFound} />;
+    // Show toast and redirect to home page
+    setTimeout(() => {
+      toast({
+        title: "Access Denied",
+        description: "You don't have admin privileges to access this page.",
+        variant: "destructive"
+      });
+      window.location.href = "/";
+    }, 100);
+    return null;
   }
 
+  // User is authenticated and is an admin
   return <Route {...rest} component={Component} />;
 };
 
@@ -50,7 +66,12 @@ function Router() {
       <ProtectedRoute path="/groups/:groupId/chat" component={GroupsPage} />
       <ProtectedRoute path="/groups/:groupId" component={GroupsPage} />
       <ProtectedRoute path="/groups" component={GroupsPage} />
-      <AdminRoute path="/admin" component={AdminDashboard} />
+      <AdminRoute path="/admin-dashboard" component={AdminDashboard} />
+      <AdminRoute path="/admin" component={() => {
+        // Redirect to admin-dashboard when /admin is accessed
+        window.location.href = "/admin-dashboard";
+        return null;
+      }} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
