@@ -1,7 +1,41 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "../lib/queryClient";
+import { queryClient, apiRequest } from "../lib/queryClient";
+
+// Define response types
+interface AdminStats {
+  stats: {
+    users: number;
+    skills: number;
+    exchanges: number;
+    sessions: number;
+    groups: number;
+  }
+}
+
+interface AdminUser {
+  id: number;
+  username: string;
+  name: string;
+  email: string;
+  university: string;
+  avatar: string;
+  points: number;
+  level: number;
+  isAdmin: boolean;
+  createdAt: string;
+}
+
+interface AdminSkill {
+  id: number;
+  name: string;
+  createdAt: string;
+  userId: number;
+  isVerified: boolean;
+  proficiencyLevel: string;
+  isTeaching: boolean;
+}
 import { useAuth } from "@/hooks/use-auth";
 import { 
   Card, 
@@ -65,172 +99,37 @@ const AdminDashboard = () => {
     }
   }, [user, toast]);
   
-  // Fetch system statistics
-  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
+  // Fetch system statistics using the default query function that handles auth tokens
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
-    queryFn: async () => {
-      try {
-        // Get the token from localStorage using the correct key
-        const token = localStorage.getItem("auth_token");
-        
-        if (!token) {
-          console.error("No auth token available");
-          toast({
-            title: "Authentication Error",
-            description: "Please login again to access admin features",
-            variant: "destructive"
-          });
-          return null;
-        }
-        
-        const response = await fetch("/api/admin/stats", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch system stats: ${response.status}`);
-        }
-        
-        return response.json();
-      } catch (error) {
-        console.error("Error fetching stats:", error);
-        throw error;
-      }
-    },
     retry: 1
   });
   
-  // Fetch all users
-  const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
+  // Fetch all users using the default query function that handles auth tokens
+  const { data: users, isLoading: usersLoading, error: usersError } = useQuery<AdminUser[]>({
     queryKey: ["/api/admin/users"],
-    queryFn: async () => {
-      try {
-        // Get the token from localStorage
-        const token = localStorage.getItem("auth_token");
-        
-        
-        if (!token) {
-          console.error("No auth token available");
-          return [];
-        }
-        
-        const response = await fetch("/api/admin/users", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch users: ${response.status}`);
-        }
-        
-        return response.json();
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        throw error;
-      }
-    },
     retry: 1
   });
   
-  // Fetch all skills
-  const { data: skills, isLoading: skillsLoading, error: skillsError } = useQuery({
+  // Fetch all skills using the default query function that handles auth tokens
+  const { data: skills, isLoading: skillsLoading, error: skillsError } = useQuery<AdminSkill[]>({
     queryKey: ["/api/admin/skills"],
-    queryFn: async () => {
-      try {
-        // Get the token from localStorage
-        const token = localStorage.getItem("auth_token");
-        
-        
-        if (!token) {
-          console.error("No auth token available");
-          return [];
-        }
-        
-        const response = await fetch("/api/admin/skills", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch skills: ${response.status}`);
-        }
-        
-        return response.json();
-      } catch (error) {
-        console.error("Error fetching skills:", error);
-        throw error;
-      }
-    },
     retry: 1
   });
   
-  // Fetch all exchanges
-  const { data: exchanges, isLoading: exchangesLoading, error: exchangesError } = useQuery({
+  // Fetch all exchanges using the default query function that handles auth tokens
+  const { data: exchanges, isLoading: exchangesLoading, error: exchangesError } = useQuery<any[]>({
     queryKey: ["/api/admin/exchanges"],
-    queryFn: async () => {
-      try {
-        // Get the token from localStorage
-        const token = localStorage.getItem("auth_token");
-        
-        
-        if (!token) {
-          console.error("No auth token available");
-          return [];
-        }
-        
-        const response = await fetch("/api/admin/exchanges", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch exchanges: ${response.status}`);
-        }
-        
-        return response.json();
-      } catch (error) {
-        console.error("Error fetching exchanges:", error);
-        throw error;
-      }
-    },
     retry: 1
   });
 
   // Mutation to make a user an admin
   const makeAdminMutation = useMutation({
     mutationFn: async (userId: number) => {
-      try {
-        // Get the token from localStorage
-        const token = localStorage.getItem("auth_token");
-        
-        
-        if (!token) {
-          console.error("No auth token available");
-          throw new Error("Authentication required");
-        }
-        
-        const response = await fetch(`/api/admin/users/${userId}/make-admin`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to update user admin status: ${response.status}`);
-        }
-        
-        return response.json();
-      } catch (error) {
-        console.error("Make admin error:", error);
-        throw error;
-      }
+      return apiRequest(
+        "POST",
+        `/api/admin/users/${userId}/make-admin`
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -251,33 +150,10 @@ const AdminDashboard = () => {
   // Mutation to remove admin status
   const removeAdminMutation = useMutation({
     mutationFn: async (userId: number) => {
-      try {
-        // Get the token from localStorage
-        const token = localStorage.getItem("auth_token");
-        
-        
-        if (!token) {
-          console.error("No auth token available");
-          throw new Error("Authentication required");
-        }
-        
-        const response = await fetch(`/api/admin/users/${userId}/remove-admin`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to update user admin status: ${response.status}`);
-        }
-        
-        return response.json();
-      } catch (error) {
-        console.error("Remove admin error:", error);
-        throw error;
-      }
+      return apiRequest(
+        "POST",
+        `/api/admin/users/${userId}/remove-admin`
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -296,7 +172,7 @@ const AdminDashboard = () => {
   });
 
   // Filter users based on search term
-  const filteredUsers = users?.filter((user: any) => {
+  const filteredUsers = users ? users.filter((user: AdminUser) => {
     if (!searchTerm) return true;
     
     const term = searchTerm.toLowerCase();
@@ -306,7 +182,7 @@ const AdminDashboard = () => {
       user.email?.toLowerCase().includes(term) ||
       user.university?.toLowerCase().includes(term)
     );
-  });
+  }) : [];
 
   // Generate top skills data for dashboard
   const getTopSkills = () => {
@@ -314,7 +190,7 @@ const AdminDashboard = () => {
     
     const skillCount: Record<string, number> = {};
     
-    skills.forEach((skill: any) => {
+    skills.forEach((skill: AdminSkill) => {
       if (skillCount[skill.name]) {
         skillCount[skill.name]++;
       } else {
@@ -334,7 +210,7 @@ const AdminDashboard = () => {
     
     const uniCount: Record<string, number> = {};
     
-    users.forEach((user: any) => {
+    users.forEach((user: AdminUser) => {
       if (user.university && uniCount[user.university]) {
         uniCount[user.university]++;
       } else if (user.university) {
@@ -421,7 +297,7 @@ const AdminDashboard = () => {
                   <CardTitle className="text-sm font-medium text-gray-500">Total Users</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats?.stats?.users || 0}</div>
+                  <div className="text-3xl font-bold">{stats && stats.stats ? stats.stats.users : 0}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -429,7 +305,7 @@ const AdminDashboard = () => {
                   <CardTitle className="text-sm font-medium text-gray-500">Total Skills</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats?.stats?.skills || 0}</div>
+                  <div className="text-3xl font-bold">{stats && stats.stats ? stats.stats.skills : 0}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -437,7 +313,7 @@ const AdminDashboard = () => {
                   <CardTitle className="text-sm font-medium text-gray-500">Exchanges</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats?.stats?.exchanges || 0}</div>
+                  <div className="text-3xl font-bold">{stats && stats.stats ? stats.stats.exchanges : 0}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -445,7 +321,7 @@ const AdminDashboard = () => {
                   <CardTitle className="text-sm font-medium text-gray-500">Sessions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats?.stats?.sessions || 0}</div>
+                  <div className="text-3xl font-bold">{stats && stats.stats ? stats.stats.sessions : 0}</div>
                 </CardContent>
               </Card>
             </div>
@@ -464,7 +340,7 @@ const AdminDashboard = () => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-500">Study Groups</span>
-                    <span className="text-xl font-bold">{stats?.stats?.groups || 0}</span>
+                    <span className="text-xl font-bold">{stats && stats.stats ? stats.stats.groups : 0}</span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-500">Platform Status</span>
@@ -472,12 +348,12 @@ const AdminDashboard = () => {
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-500">Total Exchanges</span>
-                    <span className="text-xl font-bold">{stats?.stats?.exchanges || 0}</span>
+                    <span className="text-xl font-bold">{stats && stats.stats ? stats.stats.exchanges : 0}</span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-500">Active Users Today</span>
                     <span className="text-xl font-bold">
-                      {users?.length > 0 ? Math.ceil(users.length * 0.75) : 0}
+                      {users && users.length > 0 ? Math.ceil(users.length * 0.75) : 0}
                     </span>
                   </div>
                 </div>
