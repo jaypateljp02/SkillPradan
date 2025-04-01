@@ -197,7 +197,7 @@ export class MemStorage implements IStorage {
     this.initPredefinedData();
   }
   
-  private initPredefinedData() {
+  private async initPredefinedData() {
     console.log("Initializing predefined data in storage...");
     
     // Add some badges
@@ -236,7 +236,79 @@ export class MemStorage implements IStorage {
     });
     
     // Create test users
-    this.createTestUsers();
+    await this.createTestUsers();
+    
+    // Create test exchanges for the demo - with 2-second delay to ensure users are created
+    setTimeout(async () => {
+      try {
+        // Check if we already have exchanges
+        const existingExchanges = [...this.exchanges.values()];
+        if (existingExchanges.length > 0) {
+          console.log("Test exchanges already exist, skipping creation");
+          return;
+        }
+        
+        // Get the test users
+        const testUser = await this.getUserByUsername("testuser");
+        const anotherUser = await this.getUserByUsername("student1");
+        
+        if (!testUser || !anotherUser) {
+          console.log("Missing test users, cannot create exchanges");
+          return;
+        }
+        
+        // Create a completed exchange between testuser and student1
+        const exchange = await this.createExchange({
+          teacherId: testUser.id,
+          studentId: anotherUser.id,
+          teacherSkillId: 1, // JavaScript
+          studentSkillId: 3, // Python
+          status: "completed",
+          totalSessions: 3,
+          sessionsCompleted: 3,
+          notes: "This exchange has been completed successfully."
+        });
+        
+        // Create completed sessions
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+        
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        await this.createSession({
+          exchangeId: exchange.id,
+          scheduledTime: twoWeeksAgo.toISOString(),
+          duration: 60,
+          status: "completed",
+          notes: "First session went well. Covered basics."
+        });
+        
+        await this.createSession({
+          exchangeId: exchange.id,
+          scheduledTime: oneWeekAgo.toISOString(),
+          duration: 45,
+          status: "completed",
+          notes: "Second session focused on advanced topics."
+        });
+        
+        await this.createSession({
+          exchangeId: exchange.id,
+          scheduledTime: yesterday.toISOString(),
+          duration: 90,
+          status: "completed",
+          notes: "Final session with full project review.",
+          whiteboardData: { content: "Sample whiteboard data with diagrams" }
+        });
+        
+        console.log("Created test exchange and sessions for demo");
+      } catch (error) {
+        console.error("Error creating test exchanges:", error);
+      }
+    }, 2000);
   }
   
   private async createTestUsers() {
