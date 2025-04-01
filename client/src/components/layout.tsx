@@ -34,7 +34,7 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
-      {/* Header/Navigation */}
+      {/* Header with logo and user info */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -46,52 +46,6 @@ export function Layout({ children }: LayoutProps) {
                   Skill Pradan
                 </span>
               </div>
-              
-              {/* Navigation links - add admin link if user is admin */}
-              <nav className="ml-6 flex space-x-4">
-                <Link href="/">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Home
-                  </span>
-                </Link>
-                <Link href="/barter">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Skill Exchange
-                  </span>
-                </Link>
-                <Link href="/sessions">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Sessions
-                  </span>
-                </Link>
-                <Link href="/study-groups">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Study Groups
-                  </span>
-                </Link>
-                <Link href="/groups">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Teams
-                  </span>
-                </Link>
-                <Link href="/chat">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Messages
-                  </span>
-                </Link>
-                <Link href="/profile">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Profile
-                  </span>
-                </Link>
-                {user?.isAdmin && (
-                  <Link href="/admin-dashboard">
-                    <span className="px-3 py-2 rounded-md text-sm font-medium text-primary hover:text-primary/80 cursor-pointer font-bold">
-                      Admin Dashboard
-                    </span>
-                  </Link>
-                )}
-              </nav>
             </div>
             
             {/* User menu and points */}
@@ -130,6 +84,56 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </header>
+      
+      {/* Navigation bar below header */}
+      <nav className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            <Link href="/">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
+                Home
+              </span>
+            </Link>
+            <Link href="/barter">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
+                Skill Exchange
+              </span>
+            </Link>
+            <Link href="/sessions">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
+                Sessions
+              </span>
+            </Link>
+            <Link href="/study-groups">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
+                Study Groups
+              </span>
+            </Link>
+            <Link href="/groups">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
+                Teams
+              </span>
+            </Link>
+            <Link href="/chat">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
+                Messages
+              </span>
+            </Link>
+            <Link href="/profile">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
+                Profile
+              </span>
+            </Link>
+            {user?.isAdmin && (
+              <Link href="/admin-dashboard">
+                <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-primary hover:text-primary/80 cursor-pointer font-bold">
+                  Admin Dashboard
+                </span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </nav>
       
       {/* Main content */}
       <main className="flex-1">

@@ -1046,7 +1046,7 @@ export class MemStorage implements IStorage {
     // Count exchanges for each user
     const userExchanges = new Map<number, number>();
     
-    for (const exchange of this.exchanges.values()) {
+    for (const exchange of Array.from(this.exchanges.values())) {
       const teacherId = exchange.teacherId;
       const studentId = exchange.studentId;
       
