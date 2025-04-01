@@ -70,9 +70,8 @@ const AdminDashboard = () => {
     queryKey: ["/api/admin/stats"],
     queryFn: async () => {
       try {
-        // Get the token from localStorage
-        const tokenData = localStorage.getItem("authToken");
-        const token = tokenData ? JSON.parse(tokenData).token : null;
+        // Get the token from localStorage using the correct key
+        const token = localStorage.getItem("auth_token");
         
         if (!token) {
           console.error("No auth token available");
@@ -109,8 +108,8 @@ const AdminDashboard = () => {
     queryFn: async () => {
       try {
         // Get the token from localStorage
-        const tokenData = localStorage.getItem("authToken");
-        const token = tokenData ? JSON.parse(tokenData).token : null;
+        const token = localStorage.getItem("auth_token");
+        
         
         if (!token) {
           console.error("No auth token available");
@@ -142,8 +141,8 @@ const AdminDashboard = () => {
     queryFn: async () => {
       try {
         // Get the token from localStorage
-        const tokenData = localStorage.getItem("authToken");
-        const token = tokenData ? JSON.parse(tokenData).token : null;
+        const token = localStorage.getItem("auth_token");
+        
         
         if (!token) {
           console.error("No auth token available");
@@ -175,8 +174,8 @@ const AdminDashboard = () => {
     queryFn: async () => {
       try {
         // Get the token from localStorage
-        const tokenData = localStorage.getItem("authToken");
-        const token = tokenData ? JSON.parse(tokenData).token : null;
+        const token = localStorage.getItem("auth_token");
+        
         
         if (!token) {
           console.error("No auth token available");
@@ -207,8 +206,8 @@ const AdminDashboard = () => {
     mutationFn: async (userId: number) => {
       try {
         // Get the token from localStorage
-        const tokenData = localStorage.getItem("authToken");
-        const token = tokenData ? JSON.parse(tokenData).token : null;
+        const token = localStorage.getItem("auth_token");
+        
         
         if (!token) {
           console.error("No auth token available");
@@ -254,8 +253,8 @@ const AdminDashboard = () => {
     mutationFn: async (userId: number) => {
       try {
         // Get the token from localStorage
-        const tokenData = localStorage.getItem("authToken");
-        const token = tokenData ? JSON.parse(tokenData).token : null;
+        const token = localStorage.getItem("auth_token");
+        
         
         if (!token) {
           console.error("No auth token available");
