@@ -1,19 +1,9 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  LogOut, 
-  User, 
-  MessageCircle, 
-  PieChart, 
-  Users, 
-  Calendar, 
-  Medal,
-  BookOpen,
-  Home
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import logoImage from "../assets/logo.png";
 
@@ -21,30 +11,9 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  href: string;
-  active?: boolean;
-}
-
-const NavItem = ({ icon, label, href, active }: NavItemProps) => (
-  <Link href={href}>
-    <div className={`flex items-center px-3 py-2 text-sm rounded-md cursor-pointer transition-colors ${
-      active 
-        ? "bg-primary/10 text-primary font-medium" 
-        : "text-gray-600 hover:bg-gray-100"
-    }`}>
-      {icon}
-      <span className="ml-2">{label}</span>
-    </div>
-  </Link>
-);
-
 export function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
-  const [location] = useLocation();
   
   const handleLogout = () => {
     logout();
@@ -53,17 +22,6 @@ export function Layout({ children }: LayoutProps) {
       description: "You have been successfully logged out."
     });
   };
-
-  const navItems = [
-    { icon: <Home className="h-4 w-4" />, label: "Home", href: "/" },
-    { icon: <User className="h-4 w-4" />, label: "Profile", href: "/profile" },
-    { icon: <BookOpen className="h-4 w-4" />, label: "Learn", href: "/barter" },
-    { icon: <MessageCircle className="h-4 w-4" />, label: "Chat", href: "/chat" },
-    { icon: <Calendar className="h-4 w-4" />, label: "Sessions", href: "/sessions" },
-    { icon: <Users className="h-4 w-4" />, label: "Study Groups", href: "/study-groups" },
-    { icon: <PieChart className="h-4 w-4" />, label: "Teams", href: "/groups" },
-    { icon: <Medal className="h-4 w-4" />, label: "Leaderboard", href: "/leaderboard" },
-  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-neutral-50 font-sans">
@@ -78,19 +36,6 @@ export function Layout({ children }: LayoutProps) {
                 <span className="ml-2 text-xl font-bold text-gray-800">
                   Skill Pradan
                 </span>
-              </div>
-              
-              {/* Navigation Links */}
-              <div className="ml-10 flex space-x-2">
-                {navItems.map((item) => (
-                  <NavItem
-                    key={item.href}
-                    icon={item.icon}
-                    label={item.label}
-                    href={item.href}
-                    active={location === item.href}
-                  />
-                ))}
               </div>
             </div>
             
