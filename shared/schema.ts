@@ -8,21 +8,22 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   email: text("email").notNull(),
-  university: text("university"),
-  avatar: text("avatar"),
-  points: integer("points").default(0),
-  level: integer("level").default(1),
-  createdAt: timestamp("created_at").defaultNow(),
+  university: text("university").notNull().default(""),
+  avatar: text("avatar").notNull().default(""),
+  points: integer("points").notNull().default(0),
+  level: integer("level").notNull().default(1),
+  isAdmin: boolean("is_admin").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   userId: integer("user_id").notNull(),
-  isVerified: boolean("is_verified").default(false),
-  proficiencyLevel: text("proficiency_level").default("beginner"),
+  isVerified: boolean("is_verified").notNull().default(false),
+  proficiencyLevel: text("proficiency_level").notNull().default("beginner"),
   isTeaching: boolean("is_teaching").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const exchanges = pgTable("exchanges", {
@@ -31,21 +32,21 @@ export const exchanges = pgTable("exchanges", {
   studentId: integer("student_id").notNull(),
   teacherSkillId: integer("teacher_skill_id").notNull(),
   studentSkillId: integer("student_skill_id").notNull(),
-  status: text("status").default("pending"), // pending, active, completed, cancelled
-  sessionsCompleted: integer("sessions_completed").default(0),
-  totalSessions: integer("total_sessions").default(3),
-  createdAt: timestamp("created_at").defaultNow(),
+  status: text("status").notNull().default("pending"), // pending, active, completed, cancelled
+  sessionsCompleted: integer("sessions_completed").notNull().default(0),
+  totalSessions: integer("total_sessions").notNull().default(3),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const sessions = pgTable("sessions", {
   id: serial("id").primaryKey(),
   exchangeId: integer("exchange_id").notNull(),
-  scheduledTime: timestamp("scheduled_time"),
-  duration: integer("duration").default(60), // in minutes
-  status: text("status").default("scheduled"), // scheduled, completed, cancelled
-  notes: text("notes"),
-  whiteboardData: json("whiteboard_data"),
-  createdAt: timestamp("created_at").defaultNow(),
+  scheduledTime: timestamp("scheduled_time").notNull(),
+  duration: integer("duration").notNull().default(60), // in minutes
+  status: text("status").notNull().default("scheduled"), // scheduled, completed, cancelled
+  notes: text("notes").notNull().default(""),
+  whiteboardData: json("whiteboard_data").notNull().default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const activities = pgTable("activities", {
@@ -53,8 +54,8 @@ export const activities = pgTable("activities", {
   userId: integer("user_id").notNull(),
   type: text("type").notNull(), // exchange, badge, verification, quiz
   description: text("description").notNull(),
-  pointsEarned: integer("points_earned").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
+  pointsEarned: integer("points_earned").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const badges = pgTable("badges", {
@@ -62,14 +63,14 @@ export const badges = pgTable("badges", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   icon: text("icon").notNull(),
-  pointsAwarded: integer("points_awarded").default(0),
+  pointsAwarded: integer("points_awarded").notNull().default(0),
 });
 
 export const userBadges = pgTable("user_badges", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   badgeId: integer("badge_id").notNull(),
-  earnedAt: timestamp("earned_at").defaultNow(),
+  earnedAt: timestamp("earned_at").notNull().defaultNow(),
 });
 
 export const challenges = pgTable("challenges", {
@@ -79,15 +80,15 @@ export const challenges = pgTable("challenges", {
   targetCount: integer("target_count").notNull(),
   type: text("type").notNull(), // exchange, verification
   pointsRewarded: integer("points_rewarded").notNull(),
-  durationDays: integer("duration_days").default(7),
+  durationDays: integer("duration_days").notNull().default(7),
 });
 
 export const userChallenges = pgTable("user_challenges", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   challengeId: integer("challenge_id").notNull(),
-  currentCount: integer("current_count").default(0),
-  startedAt: timestamp("started_at").defaultNow(),
+  currentCount: integer("current_count").notNull().default(0),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),
 });
 
@@ -98,7 +99,7 @@ export const reviews = pgTable("reviews", {
   reviewedUserId: integer("reviewed_user_id").notNull(),
   rating: integer("rating").notNull(),
   comment: text("comment"),
-  createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Define zod schemas for inserts
@@ -109,6 +110,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   university: true,
   avatar: true,
+  isAdmin: true,
 });
 
 export const insertSkillSchema = createInsertSchema(skills).pick({
@@ -195,9 +197,9 @@ export const groups = pgTable("groups", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  isPrivate: boolean("is_private").default(false),
-  isTeamProject: boolean("is_team_project").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+  isPrivate: boolean("is_private").notNull().default(false),
+  isTeamProject: boolean("is_team_project").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
   createdById: integer("created_by_id").notNull(),
 });
 
@@ -205,8 +207,8 @@ export const groupMembers = pgTable("group_members", {
   id: serial("id").primaryKey(),
   groupId: integer("group_id").notNull(),
   userId: integer("user_id").notNull(),
-  role: text("role").default("member"), // member, admin, moderator
-  joinedAt: timestamp("joined_at").defaultNow(),
+  role: text("role").notNull().default("member"), // member, admin, moderator
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
 });
 
 export const groupEvents = pgTable("group_events", {
@@ -226,7 +228,7 @@ export const groupFiles = pgTable("group_files", {
   type: text("type").notNull(), // pdf, code, etc
   url: text("url").notNull(),
   uploadedById: integer("uploaded_by_id").notNull(),
-  uploadedAt: timestamp("uploaded_at").defaultNow(),
+  uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
 });
 
 export const groupMessages = pgTable("group_messages", {
@@ -234,7 +236,7 @@ export const groupMessages = pgTable("group_messages", {
   groupId: integer("group_id").notNull(),
   userId: integer("user_id").notNull(),
   content: text("content").notNull(),
-  sentAt: timestamp("sent_at").defaultNow(),
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
 });
 
 // Create insert schemas for group-related tables

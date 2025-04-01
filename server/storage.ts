@@ -253,6 +253,19 @@ export class MemStorage implements IStorage {
       
       console.log("Creating test users...");
       
+      // Create admin user
+      const adminUser = await this.createUser({
+        username: "admin",
+        password: testPassword,
+        name: "Admin User",
+        email: "admin@example.com",
+        university: "Admin University",
+        avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=admin",
+        isAdmin: true
+      });
+      
+      console.log("Created admin user:", adminUser.id);
+      
       // Create first test user
       const testUser = await this.createUser({
         username: "testuser",
@@ -353,10 +366,16 @@ export class MemStorage implements IStorage {
     const id = this.userIdCounter++;
     const now = new Date();
     const user: User = { 
-      ...insertUser, 
       id, 
+      username: insertUser.username,
+      password: insertUser.password,
+      name: insertUser.name,
+      email: insertUser.email,
+      university: insertUser.university || "",
+      avatar: insertUser.avatar || "",
       points: 0, 
       level: 1, 
+      isAdmin: insertUser.isAdmin || false,
       createdAt: now 
     };
     this.users.set(id, user);
@@ -386,7 +405,15 @@ export class MemStorage implements IStorage {
   async createSkill(skill: InsertSkill): Promise<Skill> {
     const id = this.skillIdCounter++;
     const now = new Date();
-    const newSkill: Skill = { ...skill, id, createdAt: now };
+    const newSkill: Skill = { 
+      id,
+      name: skill.name,
+      createdAt: now,
+      userId: skill.userId,
+      isVerified: skill.isVerified || false,
+      proficiencyLevel: skill.proficiencyLevel || "beginner",
+      isTeaching: skill.isTeaching
+    };
     this.skills.set(id, newSkill);
     return newSkill;
   }
@@ -415,8 +442,12 @@ export class MemStorage implements IStorage {
     const id = this.exchangeIdCounter++;
     const now = new Date();
     const newExchange: Exchange = { 
-      ...exchange, 
       id, 
+      teacherId: exchange.teacherId,
+      studentId: exchange.studentId,
+      teacherSkillId: exchange.teacherSkillId,
+      studentSkillId: exchange.studentSkillId,
+      status: exchange.status || "pending",
       sessionsCompleted: 0, 
       totalSessions: 3, 
       createdAt: now 
@@ -449,10 +480,13 @@ export class MemStorage implements IStorage {
     const id = this.sessionIdCounter++;
     const now = new Date();
     const newSession: Session = { 
-      ...sessionData, 
       id, 
+      exchangeId: sessionData.exchangeId,
+      scheduledTime: sessionData.scheduledTime,
+      duration: sessionData.duration || 60,
+      status: sessionData.status || "scheduled",
       notes: "", 
-      whiteboardData: null, 
+      whiteboardData: {}, 
       createdAt: now 
     };
     this.sessions.set(id, newSession);
@@ -482,7 +516,14 @@ export class MemStorage implements IStorage {
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const id = this.activityIdCounter++;
     const now = new Date();
-    const newActivity: Activity = { ...activity, id, createdAt: now };
+    const newActivity: Activity = { 
+      id, 
+      createdAt: now,
+      userId: activity.userId,
+      type: activity.type,
+      description: activity.description,
+      pointsEarned: activity.pointsEarned || 0
+    };
     this.activities.set(id, newActivity);
     
     // Update user points
@@ -512,7 +553,13 @@ export class MemStorage implements IStorage {
   
   async createBadge(badge: InsertBadge): Promise<Badge> {
     const id = this.badgeIdCounter++;
-    const newBadge: Badge = { ...badge, id };
+    const newBadge: Badge = { 
+      id,
+      name: badge.name,
+      description: badge.description,
+      icon: badge.icon,
+      pointsAwarded: badge.pointsAwarded || 0
+    };
     this.badges.set(id, newBadge);
     return newBadge;
   }
@@ -555,7 +602,15 @@ export class MemStorage implements IStorage {
   
   async createChallenge(challenge: InsertChallenge): Promise<Challenge> {
     const id = this.challengeIdCounter++;
-    const newChallenge: Challenge = { ...challenge, id };
+    const newChallenge: Challenge = { 
+      id,
+      type: challenge.type,
+      title: challenge.title,
+      description: challenge.description,
+      targetCount: challenge.targetCount,
+      pointsRewarded: challenge.pointsRewarded,
+      durationDays: challenge.durationDays || 7
+    };
     this.challenges.set(id, newChallenge);
     return newChallenge;
   }
@@ -618,7 +673,15 @@ export class MemStorage implements IStorage {
   async createReview(review: InsertReview): Promise<Review> {
     const id = this.reviewIdCounter++;
     const now = new Date();
-    const newReview: Review = { ...review, id, createdAt: now };
+    const newReview: Review = { 
+      id, 
+      exchangeId: review.exchangeId,
+      reviewerId: review.reviewerId,
+      reviewedUserId: review.reviewedUserId,
+      rating: review.rating,
+      comment: review.comment || null,
+      createdAt: now 
+    };
     this.reviews.set(id, newReview);
     
     // Add an activity for the person being reviewed
@@ -679,6 +742,7 @@ export class MemStorage implements IStorage {
       name: groupData.name || '',
       description: groupData.description || null,
       isPrivate: groupData.isPrivate || false,
+      isTeamProject: groupData.isTeamProject || false,
       createdAt: now,
       createdById: groupData.createdById || 0
     };
