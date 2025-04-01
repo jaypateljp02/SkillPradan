@@ -42,64 +42,18 @@ export function Layout({ children }: LayoutProps) {
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
                 <img src={logoImage} alt="Skill प्रदान Logo" className="h-8 w-8" />
-                <span className="ml-2 text-xl font-bold text-gray-800">
+                <span className="ml-2 text-xl font-bold text-indigo-800">
                   Skill Pradan
                 </span>
               </div>
-              
-              {/* Navigation links - add admin link if user is admin */}
-              <nav className="ml-6 flex space-x-4">
-                <Link href="/">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Home
-                  </span>
-                </Link>
-                <Link href="/barter">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Skill Exchange
-                  </span>
-                </Link>
-                <Link href="/sessions">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Sessions
-                  </span>
-                </Link>
-                <Link href="/study-groups">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Study Groups
-                  </span>
-                </Link>
-                <Link href="/groups">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Teams
-                  </span>
-                </Link>
-                <Link href="/chat">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Messages
-                  </span>
-                </Link>
-                <Link href="/profile">
-                  <span className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 cursor-pointer">
-                    Profile
-                  </span>
-                </Link>
-                {user?.isAdmin && (
-                  <Link href="/admin-dashboard">
-                    <span className="px-3 py-2 rounded-md text-sm font-medium text-primary hover:text-primary/80 cursor-pointer font-bold">
-                      Admin Dashboard
-                    </span>
-                  </Link>
-                )}
-              </nav>
             </div>
             
             {/* User menu and points */}
             <div className="flex items-center space-x-4">
               {user && (
                 <>
-                  <div className="bg-neutral-100 px-3 py-1 rounded-full flex items-center">
-                    <div className="text-yellow-600 mr-1">
+                  <div className="bg-amber-50 px-3 py-1 rounded-md border border-amber-200 flex items-center">
+                    <div className="text-amber-600 mr-1">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                         <path d="M21 6H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1zm-1 10H4V8h16v8z" />
                         <path d="M10 10h4v4h-4z" />
@@ -112,7 +66,7 @@ export function Layout({ children }: LayoutProps) {
                     <UserAvatar 
                       name={user.name || "User"}
                       src={user.avatar === null ? undefined : user.avatar}
-                      className="h-8 w-8"
+                      className="h-9 w-9"
                     />
                     <span className="ml-2 text-sm font-medium text-gray-700">
                       {user.name}
@@ -130,6 +84,56 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </header>
+      
+      {/* Navigation Bar */}
+      <nav className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-8">
+            <Link href="/">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 hover:border-b-2 hover:border-indigo-600 cursor-pointer">
+                Home
+              </span>
+            </Link>
+            <Link href="/barter">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 hover:border-b-2 hover:border-indigo-600 cursor-pointer">
+                Skill Exchange
+              </span>
+            </Link>
+            <Link href="/sessions">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 hover:border-b-2 hover:border-indigo-600 cursor-pointer">
+                Sessions
+              </span>
+            </Link>
+            <Link href="/study-groups">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 hover:border-b-2 hover:border-indigo-600 cursor-pointer">
+                Study Groups
+              </span>
+            </Link>
+            <Link href="/groups">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 hover:border-b-2 hover:border-indigo-600 cursor-pointer">
+                Teams
+              </span>
+            </Link>
+            <Link href="/chat">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 hover:border-b-2 hover:border-indigo-600 cursor-pointer">
+                Messages
+              </span>
+            </Link>
+            <Link href="/profile">
+              <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600 hover:border-b-2 hover:border-indigo-600 cursor-pointer">
+                Profile
+              </span>
+            </Link>
+            {user?.isAdmin && (
+              <Link href="/admin-dashboard">
+                <span className="px-3 py-4 inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:border-b-2 hover:border-indigo-600 cursor-pointer font-semibold">
+                  Admin Dashboard
+                </span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </nav>
       
       {/* Main content */}
       <main className="flex-1">
