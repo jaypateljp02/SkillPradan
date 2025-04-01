@@ -21,23 +21,23 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-interface SidebarItemProps {
+interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   href: string;
   active?: boolean;
 }
 
-const SidebarItem = ({ icon, label, href, active }: SidebarItemProps) => (
+const NavItem = ({ icon, label, href, active }: NavItemProps) => (
   <Link href={href}>
-    <a className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+    <div className={`flex items-center px-3 py-2 text-sm rounded-md cursor-pointer transition-colors ${
       active 
-        ? "bg-primary bg-opacity-10 text-primary font-medium" 
+        ? "bg-primary/10 text-primary font-medium" 
         : "text-gray-600 hover:bg-gray-100"
     }`}>
       {icon}
-      <span>{label}</span>
-    </a>
+      <span className="ml-2">{label}</span>
+    </div>
   </Link>
 );
 
@@ -54,15 +54,15 @@ export function Layout({ children }: LayoutProps) {
     });
   };
 
-  const sidebarItems = [
-    { icon: <Home className="h-5 w-5" />, label: "Home", href: "/" },
-    { icon: <User className="h-5 w-5" />, label: "Profile", href: "/profile" },
-    { icon: <BookOpen className="h-5 w-5" />, label: "Learn", href: "/barter" },
-    { icon: <MessageCircle className="h-5 w-5" />, label: "Chat", href: "/chat" },
-    { icon: <Calendar className="h-5 w-5" />, label: "Sessions", href: "/sessions" },
-    { icon: <Users className="h-5 w-5" />, label: "Study Groups", href: "/study-groups" },
-    { icon: <PieChart className="h-5 w-5" />, label: "Teams", href: "/groups" },
-    { icon: <Medal className="h-5 w-5" />, label: "Leaderboard", href: "/leaderboard" },
+  const navItems = [
+    { icon: <Home className="h-4 w-4" />, label: "Home", href: "/" },
+    { icon: <User className="h-4 w-4" />, label: "Profile", href: "/profile" },
+    { icon: <BookOpen className="h-4 w-4" />, label: "Learn", href: "/barter" },
+    { icon: <MessageCircle className="h-4 w-4" />, label: "Chat", href: "/chat" },
+    { icon: <Calendar className="h-4 w-4" />, label: "Sessions", href: "/sessions" },
+    { icon: <Users className="h-4 w-4" />, label: "Study Groups", href: "/study-groups" },
+    { icon: <PieChart className="h-4 w-4" />, label: "Teams", href: "/groups" },
+    { icon: <Medal className="h-4 w-4" />, label: "Leaderboard", href: "/leaderboard" },
   ];
 
   return (
@@ -78,6 +78,19 @@ export function Layout({ children }: LayoutProps) {
                 <span className="ml-2 text-xl font-bold text-gray-800">
                   Skill Pradan
                 </span>
+              </div>
+              
+              {/* Navigation Links */}
+              <div className="ml-10 flex space-x-2">
+                {navItems.map((item) => (
+                  <NavItem
+                    key={item.href}
+                    icon={item.icon}
+                    label={item.label}
+                    href={item.href}
+                    active={location === item.href}
+                  />
+                ))}
               </div>
             </div>
             
@@ -118,28 +131,10 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
       
-      {/* Main content with sidebar */}
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 h-[calc(100vh-4rem)] sticky top-16">
-          <nav className="px-3 py-4 space-y-1">
-            {sidebarItems.map((item) => (
-              <SidebarItem
-                key={item.href}
-                icon={item.icon}
-                label={item.label}
-                href={item.href}
-                active={location === item.href}
-              />
-            ))}
-          </nav>
-        </aside>
-        
-        {/* Main content */}
-        <main className="flex-1 p-6">
-          {children}
-        </main>
-      </div>
+      {/* Main content */}
+      <main className="flex-1 p-6 max-w-7xl mx-auto">
+        {children}
+      </main>
     </div>
   );
 }
