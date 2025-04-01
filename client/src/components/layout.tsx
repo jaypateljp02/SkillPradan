@@ -57,19 +57,6 @@ export function Layout({ children }: LayoutProps) {
             )}
           </div>
           
-          {/* Navigation links */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Link href="/profile">
-              <span className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Profile</span>
-            </Link>
-            <Link href="/barter">
-              <span className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Exchange</span>
-            </Link>
-            <Link href="/sessions">
-              <span className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">Sessions</span>
-            </Link>
-          </div>
-          
           {/* User info */}
           <div className="flex items-center space-x-2">
             {user && (
