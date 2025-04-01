@@ -27,24 +27,6 @@ export function Navbar() {
             </div>
 
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
-              <Link href="/">
-                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900">
-                  <Home className="h-5 w-5 mr-1" />
-                  Home
-                </a>
-              </Link>
-              <Link href="/profile">
-                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900">
-                  <User className="h-5 w-5 mr-1" />
-                  Profile
-                </a>
-              </Link>
-              <Link href="/sessions">
-                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900">
-                  <Video className="h-5 w-5 mr-1" />
-                  Sessions
-                </a>
-              </Link>
             </nav>
           </div>
 
