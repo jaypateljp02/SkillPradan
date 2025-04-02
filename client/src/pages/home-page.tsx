@@ -19,6 +19,8 @@ import { ChallengeCard } from "@/components/challenge-card";
 import { ChallengesSection } from "@/components/challenges-section";
 import { Leaderboard } from "@/components/leaderboard";
 import { StudyGroupSection } from "@/components/study-group-section";
+import { ExamDashboard } from "@/components/exam-dashboard";
+import { ExamTaker } from "@/components/exam-taker";
 import { Challenge } from "@/types/challenge";
 import { 
   GraduationCap, 
@@ -30,7 +32,9 @@ import {
   User,
   Repeat,
   Trophy,
-  Users
+  Users,
+  FileCheck,
+  CheckCircle
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -65,6 +69,11 @@ export default function HomePage() {
       label: 'Learn',
       icon: <GraduationCap className="w-5 h-5 mr-3 text-neutral-400" />,
       target: 'learn-tab'
+    },
+    {
+      label: 'Verify Skills',
+      icon: <FileCheck className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: 'exams-tab'
     },
     {
       label: 'Achievements',
@@ -314,6 +323,21 @@ export default function HomePage() {
 
                     {/* Leaderboard */}
                     <Leaderboard />
+                  </div>
+                </div>
+
+                {/* Exams Tab */}
+                <div 
+                  id="exams-tab"
+                  className={`bg-white shadow rounded-lg ${activeTab !== 'exams-tab' ? 'hidden' : ''}`}
+                >
+                  <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+                    <h3 className="text-lg font-medium leading-6 text-neutral-900">Skill Verification</h3>
+                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">Take exams to verify your skill proficiency</p>
+                  </div>
+
+                  <div className="p-6">
+                    <ExamDashboard />
                   </div>
                 </div>
 

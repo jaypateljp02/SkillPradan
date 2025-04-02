@@ -28,26 +28,66 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  method: string,
-  url: string,
+  urlOrMethod: string,
+  urlOrOptions?: string | RequestInit,
   data?: unknown | undefined,
 ): Promise<Response> {
-  console.log(`Making ${method} request to ${url}`, data);
+  let method: string;
+  let url: string;
+  let options: RequestInit | undefined;
+  
+  // Handle different calling styles:
+  // apiRequest(url) - GET request to url
+  // apiRequest(url, options) - request to url with options
+  // apiRequest(method, url, data) - legacy style
+  
+  if (typeof urlOrOptions === 'string') {
+    // Legacy style: apiRequest(method, url, data)
+    method = urlOrMethod;
+    url = urlOrOptions;
+    options = {
+      method,
+      body: data ? JSON.stringify(data) : undefined,
+    };
+    console.log(`Making ${method} request to ${url}`, data);
+  } else {
+    // New style: apiRequest(url, options)
+    url = urlOrMethod;
+    options = urlOrOptions || {};
+    method = options.method || 'GET';
+    console.log(`Making ${method} request to ${url}`, options);
+  }
   
   try {
     // Get auth token from storage
     const token = getToken();
     
     // Prepare headers with auth token if available
-    const headers: Record<string, string> = {
-      ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { "Authorization": `Bearer ${token}` } : {})
-    };
+    const headersObj: Record<string, string> = {};
+    
+    // Add existing headers if any
+    if (options?.headers) {
+      Object.entries(options.headers).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          headersObj[key] = value;
+        }
+      });
+    }
+    
+    // Add Content-Type if we have a body
+    if (options?.body) {
+      headersObj["Content-Type"] = "application/json";
+    }
+    
+    // Add Authorization if we have a token
+    if (token) {
+      headersObj["Authorization"] = `Bearer ${token}`;
+    }
     
     const res = await fetch(url, {
+      ...options,
       method,
-      headers,
-      body: data ? JSON.stringify(data) : undefined,
+      headers: headersObj,
       cache: "no-cache"
     });
     
