@@ -4,8 +4,10 @@
 
 @layer base {
   :root {
-    --primary-purple: 272 60% 43%;
-    --purple-button: 272 60% 50%;
+    --primary-purple: 272 60% 50%;
+    --purple-button: 272 60% 55%;
+    --purple-light: 272 85% 75%;
+    --purple-background: 272 30% 95%;
   }
 
   * {
@@ -32,8 +34,25 @@
     @apply bg-[hsl(var(--primary-purple)/0.1)];
   }
   
+  .text-purple-light {
+    @apply text-[hsl(var(--purple-light))];
+  }
+  
+  .bg-purple-lighter {
+    @apply bg-[hsl(var(--purple-light))];
+  }
+  
+  .bg-purple-bg {
+    @apply bg-[hsl(var(--purple-background))];
+  }
+  
   /* Ensure text on purple backgrounds is visible */
   .bg-primary, .bg-purple {
     @apply text-white;
+  }
+  
+  /* Dark text on light backgrounds */
+  .bg-purple-lighter, .bg-purple-bg {
+    @apply text-purple;
   }
 }
