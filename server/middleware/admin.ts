@@ -1,20 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 
 /**
- * Middleware to check if the user is an admin
- * Use this middleware after the isAuthenticated middleware
+ * Middleware to check if the authenticated user is an admin.
+ * This should be used after the isAuthenticated middleware.
  */
-export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
-  // First make sure user is authenticated
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
+export function isAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
     return res.status(401).json({ message: "Authentication required" });
   }
-
-  // Check if user has admin privileges
-  if (!req.user || !req.user.isAdmin) {
-    return res.status(403).json({ message: "Admin privileges required" });
+  
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ message: "Admin access required" });
   }
   
-  // If admin, continue to the next middleware
   next();
-};
+}

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -301,3 +301,113 @@ export type InsertGroupFile = z.infer<typeof insertGroupFileSchema>;
 
 export type GroupMessage = typeof groupMessages.$inferSelect;
 export type InsertGroupMessage = z.infer<typeof insertGroupMessageSchema>;
+
+// Exam system tables
+export const skillExams = pgTable("skill_exams", {
+  id: serial("id").primaryKey(),
+  skillName: text("skill_name").notNull(),
+  proficiencyLevel: text("proficiency_level").notNull(), // beginner, intermediate, advanced
+  passingScore: integer("passing_score").notNull().default(70),
+  timeLimit: integer("time_limit").notNull().default(30), // in minutes
+  isActive: boolean("is_active").notNull().default(true),
+  createdById: integer("created_by_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const examQuestions = pgTable("exam_questions", {
+  id: serial("id").primaryKey(),
+  examId: integer("exam_id").notNull(),
+  questionText: text("question_text").notNull(),
+  questionType: text("question_type").notNull(), // multiple_choice, coding, true_false, short_answer
+  options: text("options").array(), // For multiple choice questions
+  correctAnswer: text("correct_answer").notNull(),
+  explanation: text("explanation"),
+  difficultyLevel: text("difficulty_level").notNull().default("medium"), // easy, medium, hard  
+  points: integer("points").notNull().default(10),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const userExamAttempts = pgTable("user_exam_attempts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  examId: integer("exam_id").notNull(),
+  skillId: integer("skill_id").notNull(),
+  score: integer("score"),
+  maxScore: integer("max_score").notNull(),
+  passed: boolean("passed").notNull().default(false),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+  timeSpentMinutes: integer("time_spent_minutes"),
+  answers: jsonb("answers"), // Store user's answers
+});
+
+export const verificationRequests = pgTable("verification_requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  skillId: integer("skill_id").notNull(),
+  status: text("status").notNull().default("pending"), // pending, approved, rejected
+  requestedAt: timestamp("requested_at").notNull().defaultNow(),
+  reviewedById: integer("reviewed_by_id"),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  examAttemptId: integer("exam_attempt_id"),
+});
+
+// Define insert schemas
+export const insertSkillExamSchema = createInsertSchema(skillExams).pick({
+  skillName: true,
+  proficiencyLevel: true,
+  passingScore: true,
+  timeLimit: true,
+  isActive: true,
+  createdById: true,
+});
+
+export const insertExamQuestionSchema = createInsertSchema(examQuestions).pick({
+  examId: true,
+  questionText: true,
+  questionType: true,
+  options: true,
+  correctAnswer: true,
+  explanation: true, 
+  difficultyLevel: true,
+  points: true,
+});
+
+export const insertUserExamAttemptSchema = createInsertSchema(userExamAttempts).pick({
+  userId: true,
+  examId: true,
+  skillId: true,
+  score: true,
+  maxScore: true,
+  passed: true,
+  timeSpentMinutes: true,
+}).extend({
+  answers: z.record(z.any()).optional(),
+  completedAt: z.date().optional(),
+});
+
+export const insertVerificationRequestSchema = createInsertSchema(verificationRequests).pick({
+  userId: true,
+  skillId: true,
+  status: true,
+  reviewedById: true,
+  reviewNotes: true,
+  examAttemptId: true,
+}).extend({
+  reviewedAt: z.date().optional(),
+});
+
+// Define export types for exam tables
+export type SkillExam = typeof skillExams.$inferSelect;
+export type InsertSkillExam = z.infer<typeof insertSkillExamSchema>;
+
+export type ExamQuestion = typeof examQuestions.$inferSelect;
+export type InsertExamQuestion = z.infer<typeof insertExamQuestionSchema>;
+
+export type UserExamAttempt = typeof userExamAttempts.$inferSelect;
+export type InsertUserExamAttempt = z.infer<typeof insertUserExamAttemptSchema>;
+
+export type VerificationRequest = typeof verificationRequests.$inferSelect;
+export type InsertVerificationRequest = z.infer<typeof insertVerificationRequestSchema>;

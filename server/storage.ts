@@ -9,7 +9,13 @@ import {
   Challenge, InsertChallenge,
   UserChallenge, InsertUserChallenge,
   Review, InsertReview,
-  Group, GroupMember, GroupEvent, GroupFile, GroupMessage
+  Group, GroupMember, GroupEvent, GroupFile, GroupMessage,
+  SkillExam, InsertSkillExam,
+  ExamQuestion, InsertExamQuestion,
+  UserExamAttempt, InsertUserExamAttempt,
+  VerificationRequest, InsertVerificationRequest,
+  InsertGroup, InsertGroupMember, InsertGroupEvent, 
+  InsertGroupFile, InsertGroupMessage
 } from "@shared/schema";
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
@@ -101,6 +107,52 @@ export interface IStorage {
   getGroupMessages(groupId: number): Promise<GroupMessage[]>;
   createGroupMessage(messageData: { groupId: number, userId: number, content: string }): Promise<GroupMessage>;
   
+  // Skill Exam operations
+  getSkillExam(id: number): Promise<SkillExam | undefined>;
+  getSkillExamByNameAndLevel(skillName: string, level: string): Promise<SkillExam | undefined>;
+  getAllSkillExams(): Promise<SkillExam[]>;
+  createSkillExam(exam: InsertSkillExam): Promise<SkillExam>;
+  updateSkillExam(id: number, examData: Partial<SkillExam>): Promise<SkillExam | undefined>;
+  
+  // Exam Question operations
+  getExamQuestion(id: number): Promise<ExamQuestion | undefined>;
+  getExamQuestionsByExam(examId: number): Promise<ExamQuestion[]>;
+  createExamQuestion(question: InsertExamQuestion): Promise<ExamQuestion>;
+  updateExamQuestion(id: number, questionData: Partial<ExamQuestion>): Promise<ExamQuestion | undefined>;
+  
+  // User Exam Attempt operations
+  getUserExamAttempt(id: number): Promise<UserExamAttempt | undefined>;
+  getUserExamAttemptsByUser(userId: number): Promise<UserExamAttempt[]>;
+  getUserExamAttemptsBySkill(userId: number, skillId: number): Promise<UserExamAttempt[]>;
+  createUserExamAttempt(attempt: InsertUserExamAttempt): Promise<UserExamAttempt>;
+  updateUserExamAttempt(id: number, attemptData: Partial<UserExamAttempt>): Promise<UserExamAttempt | undefined>;
+  getRandomExamQuestions(examId: number, count: number): Promise<ExamQuestion[]>;
+  
+  // Verification Request operations
+  getVerificationRequest(id: number): Promise<VerificationRequest | undefined>;
+  getVerificationRequestsByUser(userId: number): Promise<VerificationRequest[]>;
+  getPendingVerificationRequests(): Promise<(VerificationRequest & { user: User, skill: Skill, examAttempt?: UserExamAttempt })[]>;
+  createVerificationRequest(request: InsertVerificationRequest): Promise<VerificationRequest>;
+  updateVerificationRequest(id: number, requestData: Partial<VerificationRequest>): Promise<VerificationRequest | undefined>;
+  
+  // Statistics for Admin Dashboard
+  getVerifiedSkillsStats(): Promise<{ 
+    totalVerifiedSkills: number, 
+    verifiedByLevel: Record<string, number>,
+    verifiedBySkillName: Record<string, number>
+  }>;
+  getVerificationRequestsStats(): Promise<{
+    pendingCount: number,
+    approvedCount: number,
+    rejectedCount: number
+  }>;
+  getExamAttemptStats(): Promise<{
+    totalAttempts: number,
+    passedCount: number,
+    failedCount: number,
+    avgScore: number
+  }>;
+  
   // Leaderboard
   getLeaderboard(): Promise<{id: number, name: string, university: string, exchanges: number, points: number, avatar: string}[]>;
   
@@ -137,6 +189,10 @@ export class MemStorage implements IStorage {
   private groupEvents: Map<number, GroupEvent>;
   private groupFiles: Map<number, GroupFile>;
   private groupMessages: Map<number, GroupMessage>;
+  private skillExams: Map<number, SkillExam>;
+  private examQuestions: Map<number, ExamQuestion>;
+  private userExamAttempts: Map<number, UserExamAttempt>;
+  private verificationRequests: Map<number, VerificationRequest>;
   
   private userIdCounter: number;
   private skillIdCounter: number;
@@ -153,6 +209,10 @@ export class MemStorage implements IStorage {
   private groupEventIdCounter: number;
   private groupFileIdCounter: number;
   private groupMessageIdCounter: number;
+  private skillExamIdCounter: number;
+  private examQuestionIdCounter: number;
+  private userExamAttemptIdCounter: number;
+  private verificationRequestIdCounter: number;
   
   sessionStore: SessionStore;
 
@@ -172,6 +232,10 @@ export class MemStorage implements IStorage {
     this.groupEvents = new Map();
     this.groupFiles = new Map();
     this.groupMessages = new Map();
+    this.skillExams = new Map();
+    this.examQuestions = new Map();
+    this.userExamAttempts = new Map();
+    this.verificationRequests = new Map();
     
     this.userIdCounter = 1;
     this.skillIdCounter = 1;
@@ -188,6 +252,10 @@ export class MemStorage implements IStorage {
     this.groupEventIdCounter = 1;
     this.groupFileIdCounter = 1;
     this.groupMessageIdCounter = 1;
+    this.skillExamIdCounter = 1;
+    this.examQuestionIdCounter = 1;
+    this.userExamAttemptIdCounter = 1;
+    this.verificationRequestIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000
@@ -237,6 +305,9 @@ export class MemStorage implements IStorage {
     
     // Create test users
     await this.createTestUsers();
+    
+    // Create skill exams
+    await this.initializeExams();
     
     // Create some predefined study groups
     const groups = [
@@ -358,6 +429,200 @@ export class MemStorage implements IStorage {
         console.error("Error creating test exchanges:", error);
       }
     }, 2000);
+  }
+  
+  private async initializeExams() {
+    try {
+      // Check if we already have exams
+      const existingExams = Array.from(this.skillExams.values());
+      if (existingExams.length > 0) {
+        console.log("Skill exams already exist, skipping creation");
+        return;
+      }
+      
+      console.log("Creating skill exams and questions...");
+      
+      // Create a JavaScript beginner exam
+      const jsBeginnerExam = await this.createSkillExam({
+        skillName: "JavaScript",
+        proficiencyLevel: "beginner",
+        passingScore: 70,
+        timeLimit: 20,
+        isActive: true,
+        createdById: 1
+      });
+      
+      // Add questions to the JavaScript beginner exam
+      const jsBeginnerQuestions = [
+        {
+          questionText: "What is the correct way to declare a JavaScript variable?",
+          questionType: "multiple-choice",
+          options: ["var myVar = 10;", "variable myVar = 10;", "v myVar = 10;", "let myVar := 10;"],
+          correctAnswer: "var myVar = 10;",
+          explanation: "In JavaScript, variables can be declared using var, let, or const.",
+          difficultyLevel: "easy",
+          points: 10
+        },
+        {
+          questionText: "Which of the following is a JavaScript data type?",
+          questionType: "multiple-choice",
+          options: ["integer", "boolean", "character", "decimal"],
+          correctAnswer: "boolean",
+          explanation: "JavaScript has several data types including boolean, string, number, object, null and undefined.",
+          difficultyLevel: "easy",
+          points: 10
+        },
+        {
+          questionText: "What will be the output of console.log(2 + '2')?",
+          questionType: "multiple-choice",
+          options: ["4", "22", "Error", "undefined"],
+          correctAnswer: "22",
+          explanation: "When adding a number and a string, JavaScript converts the number to a string and performs string concatenation.",
+          difficultyLevel: "medium",
+          points: 20
+        },
+        {
+          questionText: "Which operator is used for strict equality comparison in JavaScript?",
+          questionType: "multiple-choice",
+          options: ["==", "===", "=", "!="],
+          correctAnswer: "===",
+          explanation: "The strict equality operator (===) checks both value and type equality without type conversion.",
+          difficultyLevel: "medium",
+          points: 20
+        },
+        {
+          questionText: "How do you create a function in JavaScript?",
+          questionType: "multiple-choice",
+          options: [
+            "function myFunction() {}",
+            "create function myFunction() {}",
+            "function:myFunction() {}",
+            "function = myFunction() {}"
+          ],
+          correctAnswer: "function myFunction() {}",
+          explanation: "Functions in JavaScript can be declared using the function keyword followed by the function name and parentheses.",
+          difficultyLevel: "easy",
+          points: 10
+        }
+      ];
+      
+      for (const question of jsBeginnerQuestions) {
+        await this.createExamQuestion({
+          examId: jsBeginnerExam.id,
+          ...question
+        });
+      }
+      
+      // Create a JavaScript intermediate exam
+      const jsIntermediateExam = await this.createSkillExam({
+        skillName: "JavaScript",
+        proficiencyLevel: "intermediate",
+        passingScore: 75,
+        timeLimit: 30,
+        isActive: true,
+        createdById: 1
+      });
+      
+      // Add questions to the JavaScript intermediate exam
+      const jsIntermediateQuestions = [
+        {
+          questionText: "What is a closure in JavaScript?",
+          questionType: "multiple-choice",
+          options: [
+            "A function that has access to variables in its lexical scope even after execution has finished",
+            "A built-in method to close browser windows",
+            "A way to lock variables to prevent changes",
+            "A method to end JavaScript execution"
+          ],
+          correctAnswer: "A function that has access to variables in its lexical scope even after execution has finished",
+          explanation: "Closures allow a function to access variables from an enclosing scope even after it leaves the scope in which it was declared.",
+          difficultyLevel: "medium",
+          points: 20
+        },
+        {
+          questionText: "What is the output of: [1, 2, 3].map(num => num * 2)?",
+          questionType: "multiple-choice",
+          options: ["[1, 2, 3]", "[2, 4, 6]", "[1, 4, 9]", "Error"],
+          correctAnswer: "[2, 4, 6]",
+          explanation: "The map method creates a new array with the results of calling a function on every element in the original array.",
+          difficultyLevel: "medium",
+          points: 20
+        },
+        {
+          questionText: "What is the purpose of the 'this' keyword in JavaScript?",
+          questionType: "multiple-choice",
+          options: [
+            "It refers to the current HTML document",
+            "It refers to the object that the function is a property of",
+            "It is a placeholder for function parameters",
+            "It refers to the parent function"
+          ],
+          correctAnswer: "It refers to the object that the function is a property of",
+          explanation: "In most cases, 'this' refers to the object that the method belongs to or the context in which a function is executed.",
+          difficultyLevel: "hard",
+          points: 30
+        }
+      ];
+      
+      for (const question of jsIntermediateQuestions) {
+        await this.createExamQuestion({
+          examId: jsIntermediateExam.id,
+          ...question
+        });
+      }
+      
+      // Create a Python beginner exam
+      const pythonBeginnerExam = await this.createSkillExam({
+        skillName: "Python",
+        proficiencyLevel: "beginner",
+        passingScore: 70,
+        timeLimit: 20,
+        isActive: true,
+        createdById: 1
+      });
+      
+      // Add questions to the Python beginner exam
+      const pythonBeginnerQuestions = [
+        {
+          questionText: "What is the correct way to declare a variable in Python?",
+          questionType: "multiple-choice",
+          options: ["var x = 5", "x := 5", "x = 5", "let x = 5"],
+          correctAnswer: "x = 5",
+          explanation: "In Python, variables are declared by simply assigning a value with the = operator.",
+          difficultyLevel: "easy",
+          points: 10
+        },
+        {
+          questionText: "Which of the following is used for comments in Python?",
+          questionType: "multiple-choice",
+          options: ["//", "/* */", "#", "<!-- -->"],
+          correctAnswer: "#",
+          explanation: "In Python, single-line comments start with the # symbol.",
+          difficultyLevel: "easy",
+          points: 10
+        },
+        {
+          questionText: "What will be the output of print(2 + 2)?",
+          questionType: "multiple-choice",
+          options: ["4", "22", "Error", "None"],
+          correctAnswer: "4",
+          explanation: "The + operator performs arithmetic addition on numbers in Python.",
+          difficultyLevel: "easy",
+          points: 10
+        }
+      ];
+      
+      for (const question of pythonBeginnerQuestions) {
+        await this.createExamQuestion({
+          examId: pythonBeginnerExam.id,
+          ...question
+        });
+      }
+      
+      console.log(`Created ${existingExams.length + 3} skill exams with questions`);
+    } catch (error) {
+      console.error("Error creating skill exams:", error);
+    }
   }
   
   private async createTestUsers() {
@@ -1201,6 +1466,276 @@ export class MemStorage implements IStorage {
     
     // Sort by match percentage
     return matches.sort((a, b) => b.matchPercentage - a.matchPercentage);
+  }
+  
+  // Skill Exam operations
+  async getSkillExam(id: number): Promise<SkillExam | undefined> {
+    return this.skillExams.get(id);
+  }
+  
+  async getSkillExamByNameAndLevel(skillName: string, level: string): Promise<SkillExam | undefined> {
+    return Array.from(this.skillExams.values()).find(
+      (exam) => 
+        exam.skillName.toLowerCase() === skillName.toLowerCase() && 
+        exam.proficiencyLevel.toLowerCase() === level.toLowerCase()
+    );
+  }
+  
+  async getAllSkillExams(): Promise<SkillExam[]> {
+    return Array.from(this.skillExams.values());
+  }
+  
+  async createSkillExam(exam: InsertSkillExam): Promise<SkillExam> {
+    const id = this.skillExamIdCounter++;
+    const now = new Date();
+    const newExam: SkillExam = {
+      id,
+      skillName: exam.skillName,
+      proficiencyLevel: exam.proficiencyLevel,
+      passingScore: exam.passingScore || 70,
+      timeLimit: exam.timeLimit || 30,
+      isActive: exam.isActive || true,
+      createdById: exam.createdById,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.skillExams.set(id, newExam);
+    return newExam;
+  }
+  
+  async updateSkillExam(id: number, examData: Partial<SkillExam>): Promise<SkillExam | undefined> {
+    const exam = await this.getSkillExam(id);
+    if (!exam) return undefined;
+    
+    const updatedExam = { ...exam, ...examData };
+    this.skillExams.set(id, updatedExam);
+    return updatedExam;
+  }
+  
+  // Exam Question operations
+  async getExamQuestion(id: number): Promise<ExamQuestion | undefined> {
+    return this.examQuestions.get(id);
+  }
+  
+  async getExamQuestionsByExam(examId: number): Promise<ExamQuestion[]> {
+    return Array.from(this.examQuestions.values()).filter(
+      (question) => question.examId === examId
+    );
+  }
+  
+  async createExamQuestion(question: InsertExamQuestion): Promise<ExamQuestion> {
+    const id = this.examQuestionIdCounter++;
+    const now = new Date();
+    const newQuestion: ExamQuestion = {
+      id,
+      examId: question.examId,
+      questionText: question.questionText,
+      questionType: question.questionType || "multiple-choice",
+      options: question.options || [],
+      correctAnswer: question.correctAnswer,
+      explanation: question.explanation || "",
+      difficultyLevel: question.difficultyLevel || "medium",
+      points: question.points || 10,
+      createdAt: now
+    };
+    this.examQuestions.set(id, newQuestion);
+    return newQuestion;
+  }
+  
+  async updateExamQuestion(id: number, questionData: Partial<ExamQuestion>): Promise<ExamQuestion | undefined> {
+    const question = await this.getExamQuestion(id);
+    if (!question) return undefined;
+    
+    const updatedQuestion = { ...question, ...questionData };
+    this.examQuestions.set(id, updatedQuestion);
+    return updatedQuestion;
+  }
+  
+  async getRandomExamQuestions(examId: number, count: number): Promise<ExamQuestion[]> {
+    const questions = await this.getExamQuestionsByExam(examId);
+    if (questions.length <= count) return questions;
+    
+    // Shuffle questions and return the requested count
+    return questions
+      .sort(() => 0.5 - Math.random())
+      .slice(0, count);
+  }
+  
+  // User Exam Attempt operations
+  async getUserExamAttempt(id: number): Promise<UserExamAttempt | undefined> {
+    return this.userExamAttempts.get(id);
+  }
+  
+  async getUserExamAttemptsByUser(userId: number): Promise<UserExamAttempt[]> {
+    return Array.from(this.userExamAttempts.values())
+      .filter((attempt) => attempt.userId === userId)
+      .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  }
+  
+  async getUserExamAttemptsBySkill(userId: number, skillId: number): Promise<UserExamAttempt[]> {
+    return Array.from(this.userExamAttempts.values())
+      .filter((attempt) => attempt.userId === userId && attempt.skillId === skillId)
+      .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  }
+  
+  async createUserExamAttempt(attempt: InsertUserExamAttempt): Promise<UserExamAttempt> {
+    const id = this.userExamAttemptIdCounter++;
+    const now = new Date();
+    const newAttempt: UserExamAttempt = {
+      id,
+      userId: attempt.userId,
+      examId: attempt.examId,
+      skillId: attempt.skillId,
+      startedAt: now,
+      completedAt: null,
+      timeSpentMinutes: 0,
+      score: 0,
+      maxScore: attempt.maxScore,
+      passed: false,
+      answers: []
+    };
+    this.userExamAttempts.set(id, newAttempt);
+    return newAttempt;
+  }
+  
+  async updateUserExamAttempt(id: number, attemptData: Partial<UserExamAttempt>): Promise<UserExamAttempt | undefined> {
+    const attempt = await this.getUserExamAttempt(id);
+    if (!attempt) return undefined;
+    
+    const updatedAttempt = { ...attempt, ...attemptData };
+    this.userExamAttempts.set(id, updatedAttempt);
+    return updatedAttempt;
+  }
+  
+  // Verification Request operations
+  async getVerificationRequest(id: number): Promise<VerificationRequest | undefined> {
+    return this.verificationRequests.get(id);
+  }
+  
+  async getVerificationRequestsByUser(userId: number): Promise<VerificationRequest[]> {
+    return Array.from(this.verificationRequests.values())
+      .filter((request) => request.userId === userId)
+      .sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+  }
+  
+  async getPendingVerificationRequests(): Promise<(VerificationRequest & { user: User, skill: Skill, examAttempt?: UserExamAttempt })[]> {
+    const pendingRequests = Array.from(this.verificationRequests.values())
+      .filter((request) => request.status === "pending")
+      .sort((a, b) => new Date(a.requestedAt).getTime() - new Date(b.requestedAt).getTime());
+    
+    // Get the user, skill, and exam attempt for each request
+    const result = await Promise.all(pendingRequests.map(async (request) => {
+      const user = await this.getUser(request.userId);
+      const skill = await this.getSkill(request.skillId);
+      const examAttempt = request.examAttemptId ? await this.getUserExamAttempt(request.examAttemptId) : undefined;
+      
+      if (!user || !skill) {
+        return null;
+      }
+      
+      return {
+        ...request,
+        user,
+        skill,
+        examAttempt
+      };
+    }));
+    
+    return result.filter((item): item is NonNullable<typeof item> => item !== null);
+  }
+  
+  async createVerificationRequest(request: InsertVerificationRequest): Promise<VerificationRequest> {
+    const id = this.verificationRequestIdCounter++;
+    const now = new Date();
+    const newRequest: VerificationRequest = {
+      id,
+      userId: request.userId,
+      skillId: request.skillId,
+      examAttemptId: request.examAttemptId ?? null,
+      status: request.status || "pending",
+      reviewNotes: request.reviewNotes || null,
+      reviewedById: request.reviewedById || null,
+      reviewedAt: null,
+      requestedAt: now
+    };
+    this.verificationRequests.set(id, newRequest);
+    return newRequest;
+  }
+  
+  async updateVerificationRequest(id: number, requestData: Partial<VerificationRequest>): Promise<VerificationRequest | undefined> {
+    const request = await this.getVerificationRequest(id);
+    if (!request) return undefined;
+    
+    const updatedRequest = { ...request, ...requestData };
+    this.verificationRequests.set(id, updatedRequest);
+    return updatedRequest;
+  }
+  
+  // Statistics for Admin Dashboard
+  async getVerifiedSkillsStats(): Promise<{ 
+    totalVerifiedSkills: number, 
+    verifiedByLevel: Record<string, number>,
+    verifiedBySkillName: Record<string, number>
+  }> {
+    const verifiedSkills = Array.from(this.skills.values()).filter(skill => skill.isVerified);
+    
+    const verifiedByLevel: Record<string, number> = {};
+    const verifiedBySkillName: Record<string, number> = {};
+    
+    verifiedSkills.forEach(skill => {
+      // Count by level
+      const level = skill.proficiencyLevel;
+      verifiedByLevel[level] = (verifiedByLevel[level] || 0) + 1;
+      
+      // Count by skill name
+      const name = skill.name;
+      verifiedBySkillName[name] = (verifiedBySkillName[name] || 0) + 1;
+    });
+    
+    return {
+      totalVerifiedSkills: verifiedSkills.length,
+      verifiedByLevel,
+      verifiedBySkillName
+    };
+  }
+  
+  async getVerificationRequestsStats(): Promise<{
+    pendingCount: number,
+    approvedCount: number,
+    rejectedCount: number
+  }> {
+    const requests = Array.from(this.verificationRequests.values());
+    
+    const pendingCount = requests.filter(r => r.status === "pending").length;
+    const approvedCount = requests.filter(r => r.status === "approved").length;
+    const rejectedCount = requests.filter(r => r.status === "rejected").length;
+    
+    return {
+      pendingCount,
+      approvedCount,
+      rejectedCount
+    };
+  }
+  
+  async getExamAttemptStats(): Promise<{
+    totalAttempts: number,
+    passedCount: number,
+    failedCount: number,
+    avgScore: number
+  }> {
+    const attempts = Array.from(this.userExamAttempts.values())
+      .filter(attempt => attempt.completedAt !== null);
+    
+    const passedCount = attempts.filter(a => a.passed).length;
+    const totalScore = attempts.reduce((sum, attempt) => sum + (attempt.score || 0), 0);
+    const avgScore = attempts.length > 0 ? totalScore / attempts.length : 0;
+    
+    return {
+      totalAttempts: attempts.length,
+      passedCount,
+      failedCount: attempts.length - passedCount,
+      avgScore
+    };
   }
 }
 
