@@ -225,16 +225,16 @@ export default function HomePage() {
                         <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                           <div className="flex">
                             <div className="flex-shrink-0">
-                              <div className="h-14 w-14 rounded-lg bg-primary bg-opacity-10 flex items-center justify-center">
-                                <GraduationCap className="text-2xl text-primary" />
+                              <div className="h-14 w-14 rounded-lg bg-blue-500 bg-opacity-10 flex items-center justify-center">
+                                <GraduationCap className="text-2xl text-blue-500" />
                               </div>
                             </div>
                             <div className="ml-4 flex-1">
                               <h5 className="text-md font-medium text-neutral-900">Book Expert Session</h5>
                               <p className="mt-1 text-sm text-neutral-500">30-minute 1:1 session with a verified expert</p>
-                              <div className="mt-3 flex items-center justify-between">
+                              <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                                 <span className="text-xs text-neutral-500">Various subjects available</span>
-                                <Button size="sm">500 points</Button>
+                                <Button size="sm" className="bg-blue-500 hover:bg-blue-600">500 points</Button>
                               </div>
                             </div>
                           </div>
@@ -250,7 +250,7 @@ export default function HomePage() {
                             <div className="ml-4 flex-1">
                               <h5 className="text-md font-medium text-neutral-900">Access Premium Courses</h5>
                               <p className="mt-1 text-sm text-neutral-500">Unlock curated advanced learning materials</p>
-                              <div className="mt-3 flex items-center justify-between">
+                              <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                                 <span className="text-xs text-neutral-500">20+ courses available</span>
                                 <Button 
                                   size="sm"
