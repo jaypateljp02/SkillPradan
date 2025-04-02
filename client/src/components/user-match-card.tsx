@@ -60,7 +60,7 @@ export function UserMatchCard({ match, onRequestExchange, isRequestingExchange }
               <div className="mt-1 flex">
                 <SkillTag
                   name={match.learningSkill.name}
-                  color="primary"
+                  color="accent"
                 />
               </div>
             </div>
@@ -72,7 +72,7 @@ export function UserMatchCard({ match, onRequestExchange, isRequestingExchange }
               size="sm" 
               onClick={onRequestExchange}
               disabled={isRequestingExchange}
-              className="bg-purple text-white hover:bg-opacity-90"
+              className="bg-white border border-primary text-primary hover:bg-purple-bg"
             >
               Request Exchange
             </Button>

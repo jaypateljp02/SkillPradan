@@ -444,7 +444,7 @@ export function ExchangeCard({ exchange, isCurrentUserTeacher }: ExchangeCardPro
               <div className="mt-1 flex">
                 <SkillTag 
                   name={teachingSkill?.name || "Skill"} 
-                  color="primary"
+                  color="accent"
                 />
               </div>
               <div className="mt-2">

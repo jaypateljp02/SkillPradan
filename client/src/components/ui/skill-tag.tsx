@@ -16,7 +16,7 @@ export function SkillTag({
   className 
 }: SkillTagProps) {
   const colorClasses = {
-    primary: "bg-primary bg-opacity-10 text-primary",
+    primary: "bg-purple-bg text-primary",
     secondary: "bg-emerald-500 bg-opacity-10 text-emerald-600",
     accent: "bg-amber-500 bg-opacity-10 text-amber-600",
     neutral: "bg-neutral-200 text-neutral-700"
