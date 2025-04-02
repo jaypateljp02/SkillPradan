@@ -7,14 +7,19 @@ const app = express();
 
 // Enable CORS for all routes
 app.use(cors({
-  origin: true, // Allow all origins with credentials
+  origin: ['https://replit.com', 'https://*.replit.app', true], // Allow Replit domains and all others
   credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Add a health check route for Replit
+app.get('/__replit_health_check', (_req, res) => {
+  res.status(200).send('OK');
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -66,13 +71,12 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
+  // ALWAYS serve the app on port 5000 or the port specified by the environment
   // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = process.env.PORT || 5000;
   server.listen({
-    port: 5000,
-    host: "0.0.0.0",
+    port: Number(port),
+    host: "0.0.0.0", // Bind to all interfaces
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);

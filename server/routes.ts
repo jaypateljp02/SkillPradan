@@ -14,6 +14,14 @@ import {
 import adminRouter from "./routes/admin";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add a debug route to check server status
+  app.get('/api/debug/status', (_req, res) => {
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV || 'development'
+    });
+  });
   // Set up authentication routes
   setupAuth(app);
 
