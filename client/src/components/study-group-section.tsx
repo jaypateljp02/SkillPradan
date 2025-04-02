@@ -580,14 +580,6 @@ export function StudyGroupSection() {
                   <Button 
                     variant="outline" 
                     className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment("Video Session")}
-                  >
-                    <Video className="h-4 w-4 mr-2" />
-                    Start Session
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 flex items-center justify-center"
                     onClick={() => handleFeatureInDevelopment("File Sharing")}
                   >
                     <FolderUp className="h-4 w-4 mr-2" />
