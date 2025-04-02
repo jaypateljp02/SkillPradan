@@ -27,9 +27,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser | undefined, Error>({
+  } = useQuery<SelectUser | null | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    retry: false, // Don't retry on authentication failure
+    staleTime: 0,  // Consider data fresh for 0ms to force refresh on navigation
   });
 
   const loginMutation = useMutation({

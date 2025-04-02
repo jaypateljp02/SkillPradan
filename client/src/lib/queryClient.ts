@@ -198,21 +198,43 @@ export function initializeAuthFromStorage(): void {
     fetch("/api/user", {
       headers: {
         "Authorization": `Bearer ${token}`
-      }
+      },
+      cache: "no-cache" // Ensure we don't get a cached response
     }).then(async res => {
       if (res.ok) {
         console.log("Token is valid, user is authenticated");
         const userData = await res.json();
         queryClient.setQueryData(["/api/user"], userData);
+        
+        // Force a refresh of all queries to ensure we have fresh data
+        queryClient.invalidateQueries();
       } else {
         console.log("Token is invalid, clearing local storage");
         removeToken();
+        
+        // Redirect to auth page if not already there
+        if (window.location.pathname !== '/auth') {
+          console.log("Redirecting to auth page due to invalid token");
+          window.location.href = "/auth";
+        }
       }
-    }).catch(() => {
-      console.log("Error checking token, clearing local storage");
+    }).catch((error) => {
+      console.log("Error checking token, clearing local storage:", error);
       removeToken();
+      
+      // Redirect to auth page if not already there
+      if (window.location.pathname !== '/auth') {
+        console.log("Redirecting to auth page due to token validation error");
+        window.location.href = "/auth";
+      }
     });
   } else {
     console.log("No auth token found in local storage");
+    
+    // If no token and not on auth page, redirect to auth
+    if (window.location.pathname !== '/auth') {
+      console.log("No token, redirecting to auth page");
+      window.location.href = "/auth";
+    }
   }
 }

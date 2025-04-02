@@ -59,9 +59,19 @@ const AdminRoute = ({ component: Component, ...rest }: any) => {
 
 function Router() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   
-  // Don't show layout on auth page
+  // Display loading spinner when authentication status is being checked
+  if (isLoading && location !== "/auth") {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
+        <div className="ml-4 text-primary">Loading application...</div>
+      </div>
+    );
+  }
+  
+  // Don't show layout on auth page or when user is not authenticated
   const showLayout = location !== "/auth" && user !== null;
 
   const routes = (
