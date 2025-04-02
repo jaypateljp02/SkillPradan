@@ -22,6 +22,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       env: process.env.NODE_ENV || 'development'
     });
   });
+  
+  // Add a debug route to check token
+  app.get('/api/debug/token', (req, res) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    
+    res.json({
+      authenticated: !!req.user,
+      token: token ? `${token.substring(0, 5)}...` : null,
+      user: req.user ? {
+        id: req.user.id,
+        username: req.user.username,
+        name: req.user.name
+      } : null
+    });
+  });
   // Set up authentication routes
   setupAuth(app);
 
