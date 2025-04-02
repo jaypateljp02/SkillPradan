@@ -101,7 +101,7 @@ export function StudyGroupSection() {
       // Get all groups and filter on client side
       const allGroups = await response.json();
       return allGroups.filter((group: GroupItem) => 
-        activeTab === 'team-projects' ? group.isTeamProject === true : group.isTeamProject !== true
+        activeTab === 'team-projects' ? group.isTeamProject === true : group.isTeamProject === false
       );
     },
     enabled: !!user,
@@ -132,7 +132,7 @@ export function StudyGroupSection() {
       // Get all user groups and filter on client side
       const allUserGroups = await response.json();
       return allUserGroups.filter((group: GroupItem) => 
-        activeTab === 'team-projects' ? group.isTeamProject === true : group.isTeamProject !== true
+        activeTab === 'team-projects' ? group.isTeamProject === true : group.isTeamProject === false
       );
     },
     enabled: !!user,
