@@ -60,7 +60,7 @@ export function BadgesSection() {
     <div className="mt-8">
       <h4 className="text-md font-medium text-neutral-900">Your Badges</h4>
       
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+      <div className="mt-4 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 overflow-hidden">
         {userBadges.length === 0 ? (
           <>
             {/* Show sample badges if user doesn't have any yet */}
@@ -77,10 +77,10 @@ export function BadgesSection() {
               color="purple"
             />
             <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded-lg p-4 text-center flex flex-col items-center justify-center">
-              <div className="h-16 w-16 rounded-full bg-neutral-100 flex items-center justify-center">
-                <Plus className="h-6 w-6 text-neutral-400" />
+              <div className="h-14 w-14 rounded-full bg-neutral-100 flex items-center justify-center">
+                <Plus className="h-5 w-5 text-neutral-400" />
               </div>
-              <p className="mt-2 text-sm text-neutral-500">Complete exchanges to earn badges</p>
+              <p className="mt-2 text-xs text-neutral-500 line-clamp-2">Complete exchanges to earn badges</p>
             </div>
           </>
         ) : (
@@ -96,10 +96,10 @@ export function BadgesSection() {
             ))}
             
             <div className="bg-neutral-50 border border-dashed border-neutral-300 rounded-lg p-4 text-center flex flex-col items-center justify-center">
-              <div className="h-16 w-16 rounded-full bg-neutral-100 flex items-center justify-center">
-                <Plus className="h-6 w-6 text-neutral-400" />
+              <div className="h-14 w-14 rounded-full bg-neutral-100 flex items-center justify-center">
+                <Plus className="h-5 w-5 text-neutral-400" />
               </div>
-              <p className="mt-2 text-sm text-neutral-500">Unlock more badges</p>
+              <p className="mt-2 text-xs text-neutral-500 line-clamp-2">Unlock more badges</p>
             </div>
           </>
         )}

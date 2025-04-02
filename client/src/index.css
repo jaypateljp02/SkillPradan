@@ -8,6 +8,11 @@
     --purple-button: 272 60% 55%;
     --purple-light: 272 85% 75%;
     --purple-background: 272 30% 95%;
+    --badge-primary: 272 60% 50%;
+    --badge-secondary: 160 84% 39%;
+    --badge-accent: 35 92% 55%;
+    --badge-purple: 272 60% 60%;
+    --badge-pink: 330 65% 65%;
   }
 
   * {
@@ -54,5 +59,31 @@
   /* Dark text on light backgrounds */
   .bg-purple-lighter, .bg-purple-bg {
     @apply text-purple;
+  }
+
+  /* Badge colors with proper contrast */
+  .badge-primary {
+    @apply bg-[hsl(var(--badge-primary)/0.2)] text-[hsl(var(--badge-primary))];
+  }
+  
+  .badge-secondary {
+    @apply bg-[hsl(var(--badge-secondary)/0.2)] text-[hsl(var(--badge-secondary))];
+  }
+  
+  .badge-accent {
+    @apply bg-[hsl(var(--badge-accent)/0.2)] text-[hsl(var(--badge-accent)/0.8)];
+  }
+  
+  .badge-purple {
+    @apply bg-[hsl(var(--badge-purple)/0.2)] text-[hsl(var(--badge-purple))];
+  }
+  
+  .badge-pink {
+    @apply bg-[hsl(var(--badge-pink)/0.2)] text-[hsl(var(--badge-pink))];
+  }
+  
+  /* Card improvements */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-md hover:scale-[1.01] border border-neutral-200;
   }
 }

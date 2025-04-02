@@ -72,7 +72,7 @@ export function UserMatchCard({ match, onRequestExchange, isRequestingExchange }
               size="sm" 
               onClick={onRequestExchange}
               disabled={isRequestingExchange}
-              className="bg-white border border-primary text-primary hover:bg-purple-bg"
+              className="text-white bg-[hsl(var(--badge-primary))] hover:bg-[hsl(var(--badge-primary)/0.9)] border-none"
             >
               Request Exchange
             </Button>

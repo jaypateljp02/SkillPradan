@@ -221,40 +221,40 @@ export default function HomePage() {
                     <div className="mt-8">
                       <h4 className="text-md font-medium text-neutral-900">Spend Your Points</h4>
                       
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="mt-4 grid grid-cols-1 gap-4 overflow-hidden">
                         <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex">
-                            <div className="flex-shrink-0">
+                          <div className="flex flex-wrap md:flex-nowrap">
+                            <div className="flex-shrink-0 mb-3 md:mb-0">
                               <div className="h-14 w-14 rounded-lg bg-blue-500 bg-opacity-10 flex items-center justify-center">
                                 <GraduationCap className="text-2xl text-blue-500" />
                               </div>
                             </div>
-                            <div className="ml-4 flex-1">
-                              <h5 className="text-md font-medium text-neutral-900">Book Expert Session</h5>
-                              <p className="mt-1 text-sm text-neutral-500">30-minute 1:1 session with a verified expert</p>
+                            <div className="ml-0 md:ml-4 flex-1 min-w-0">
+                              <h5 className="text-md font-medium text-neutral-900 truncate">Book Expert Session</h5>
+                              <p className="mt-1 text-sm text-neutral-500 line-clamp-2">30-minute 1:1 session with a verified expert</p>
                               <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <span className="text-xs text-neutral-500">Various subjects available</span>
-                                <Button size="sm" className="bg-blue-500 hover:bg-blue-600">500 points</Button>
+                                <span className="text-xs text-neutral-500 truncate">Various subjects available</span>
+                                <Button size="sm" className="bg-blue-500 hover:bg-blue-600 whitespace-nowrap">500 points</Button>
                               </div>
                             </div>
                           </div>
                         </div>
                         
                         <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex">
-                            <div className="flex-shrink-0">
+                          <div className="flex flex-wrap md:flex-nowrap">
+                            <div className="flex-shrink-0 mb-3 md:mb-0">
                               <div className="h-14 w-14 rounded-lg bg-emerald-500 bg-opacity-10 flex items-center justify-center">
                                 <Star className="text-2xl text-emerald-500" />
                               </div>
                             </div>
-                            <div className="ml-4 flex-1">
-                              <h5 className="text-md font-medium text-neutral-900">Access Premium Courses</h5>
-                              <p className="mt-1 text-sm text-neutral-500">Unlock curated advanced learning materials</p>
+                            <div className="ml-0 md:ml-4 flex-1 min-w-0">
+                              <h5 className="text-md font-medium text-neutral-900 truncate">Access Premium Courses</h5>
+                              <p className="mt-1 text-sm text-neutral-500 line-clamp-2">Unlock curated advanced learning materials</p>
                               <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <span className="text-xs text-neutral-500">20+ courses available</span>
+                                <span className="text-xs text-neutral-500 truncate">20+ courses available</span>
                                 <Button 
                                   size="sm"
-                                  className="bg-emerald-500 hover:bg-emerald-600"
+                                  className="bg-emerald-500 hover:bg-emerald-600 whitespace-nowrap"
                                 >
                                   300 points
                                 </Button>
