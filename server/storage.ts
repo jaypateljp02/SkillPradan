@@ -238,6 +238,55 @@ export class MemStorage implements IStorage {
     // Create test users
     await this.createTestUsers();
     
+    // Create some predefined study groups
+    const groups = [
+      { 
+        name: "JavaScript Study Group", 
+        description: "Weekly meetings to discuss JavaScript concepts and best practices", 
+        isPrivate: false,
+        isTeamProject: false,
+        createdById: 2 // Created by testuser
+      },
+      { 
+        name: "Python Programming Team", 
+        description: "Collaborate on Python projects and learn together", 
+        isPrivate: false,
+        isTeamProject: true,
+        createdById: 3 // Created by student1
+      },
+      { 
+        name: "Web Development Club", 
+        description: "Learn HTML, CSS, and JavaScript for building modern websites", 
+        isPrivate: false,
+        isTeamProject: false,
+        createdById: 1 // Created by admin
+      }
+    ];
+    
+    console.log("Creating predefined study groups...");
+    
+    for (const groupData of groups) {
+      const group = await this.createGroup(groupData);
+      
+      // Add creator as admin member
+      await this.addGroupMember({
+        groupId: group.id,
+        userId: groupData.createdById,
+        role: 'admin'
+      });
+      
+      // For demo purposes, add some other members to each group
+      const otherUserIds = [1, 2, 3, 4].filter(id => id !== groupData.createdById);
+      
+      for (const userId of otherUserIds.slice(0, 2)) {
+        await this.addGroupMember({
+          groupId: group.id,
+          userId,
+          role: 'member'
+        });
+      }
+    }
+    
     // Create test exchanges for the demo - with 2-second delay to ensure users are created
     setTimeout(async () => {
       try {
