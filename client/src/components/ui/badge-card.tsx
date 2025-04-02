@@ -37,36 +37,36 @@ export function BadgeCard({
     }
   };
   const colorClasses = {
-    primary: "bg-[hsl(var(--badge-primary)/0.2)]",
-    secondary: "bg-[hsl(var(--badge-secondary)/0.2)]",
-    accent: "bg-[hsl(var(--badge-accent)/0.2)]",
-    purple: "bg-[hsl(var(--badge-purple)/0.2)]",
-    pink: "bg-[hsl(var(--badge-pink)/0.2)]"
+    primary: "bg-primary/20",
+    secondary: "bg-emerald-500/20",
+    accent: "bg-amber-500/20",
+    purple: "bg-purple-500/20",
+    pink: "bg-pink-500/20"
   };
   
   const iconColorClasses = {
-    primary: "text-[hsl(var(--badge-primary))]",
-    secondary: "text-[hsl(var(--badge-secondary))]",
-    accent: "text-[hsl(var(--badge-accent)/0.8)]",
-    purple: "text-[hsl(var(--badge-purple))]",
-    pink: "text-[hsl(var(--badge-pink))]"
+    primary: "text-primary",
+    secondary: "text-emerald-600",
+    accent: "text-amber-600",
+    purple: "text-purple-600",
+    pink: "text-pink-600"
   };
 
   return (
     <div className={cn(
-      "bg-white border border-neutral-200 rounded-lg p-3 text-center hover:shadow-md transition-shadow h-full flex flex-col items-center",
+      "bg-white border border-neutral-200 rounded-lg p-4 text-center hover:shadow-md transition-shadow",
       className
     )}>
       <div className={cn(
-        "inline-flex items-center justify-center h-14 w-14 rounded-full",
+        "inline-flex items-center justify-center h-16 w-16 rounded-full",
         colorClasses[color]
       )}>
         <span className={cn(iconColorClasses[color])}>
           {getIcon()}
         </span>
       </div>
-      <h5 className="mt-2 text-sm font-medium text-neutral-900 line-clamp-1 w-full">{name}</h5>
-      <p className="text-xs text-neutral-500 line-clamp-2 w-full">{description}</p>
+      <h5 className="mt-2 text-sm font-medium text-neutral-900">{name}</h5>
+      <p className="text-xs text-neutral-500">{description}</p>
     </div>
   );
 }

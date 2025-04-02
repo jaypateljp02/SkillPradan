@@ -4,7 +4,6 @@ import { storage } from "./storage";
 import { WebSocketServer } from "ws";
 import { setupAuth, isAuthenticated } from "./token-auth";
 import { setupWebSockets } from "./socket";
-import { registerExamRoutes } from "./routes/exam-routes";
 import { 
   insertGroupSchema, 
   insertGroupMemberSchema, 
@@ -1255,9 +1254,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register admin routes
   app.use("/api/admin", adminRouter);
-  
-  // Register exam and skill verification routes
-  registerExamRoutes(app);
 
   // Create the HTTP server
   const httpServer = createServer(app);
