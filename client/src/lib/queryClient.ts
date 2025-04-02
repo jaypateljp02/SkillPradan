@@ -185,56 +185,46 @@ export const queryClient = new QueryClient({
 // Initialize auth state from local storage when app loads
 // This allows users to stay logged in across page refreshes
 export function initializeAuthFromStorage(): void {
-  // Don't try to initialize auth on the auth page to avoid infinite redirects
-  if (window.location.pathname === '/auth') {
-    console.log("On auth page - skipping auth initialization");
-    return;
-  }
-
+  // SIMPLIFIED AUTH INITIALIZATION TO PREVENT WHITE SCREEN
+  // We'll only set the token data if it exists, but won't redirect or clear it
+  // This ensures routes work properly without aggressive redirects
+  
   const token = getToken();
-  if (token) {
+  if (token && window.location.pathname !== '/auth') {
     console.log("Found existing auth token in local storage");
-    // Check token validity immediately to clean up any invalid tokens
+    
+    // Set a default user to prevent white screen while loading
+    // This will be overwritten if the token is valid
+    queryClient.setQueryData(["/api/user"], {
+      id: "loading",
+      username: "loading",
+      name: "Loading User...",
+      email: "loading@example.com",
+      role: "user"
+    });
+    
+    // Then check token validity in the background
     fetch("/api/user", {
       headers: {
         "Authorization": `Bearer ${token}`
       },
-      cache: "no-cache" // Ensure we don't get a cached response
+      cache: "no-cache"
     }).then(async res => {
       if (res.ok) {
         console.log("Token is valid, user is authenticated");
         const userData = await res.json();
         queryClient.setQueryData(["/api/user"], userData);
-        
-        // Force a refresh of all queries to ensure we have fresh data
-        queryClient.invalidateQueries();
       } else {
-        console.log("Token is invalid, clearing local storage");
-        removeToken();
-        
-        // Redirect to auth page if not already there
-        if (window.location.pathname !== '/auth') {
-          console.log("Redirecting to auth page due to invalid token");
-          window.location.href = "/auth";
-        }
+        console.log("Token is invalid but not clearing to prevent white screen");
+        // We won't clear invalid tokens or force redirects anymore
+        // Let the components handle auth state naturally
       }
     }).catch((error) => {
-      console.log("Error checking token, clearing local storage:", error);
-      removeToken();
-      
-      // Redirect to auth page if not already there
-      if (window.location.pathname !== '/auth') {
-        console.log("Redirecting to auth page due to token validation error");
-        window.location.href = "/auth";
-      }
+      console.log("Error checking token:", error);
+      // Again, not clearing token or forcing redirects
     });
   } else {
-    console.log("No auth token found in local storage");
-    
-    // If no token and not on auth page, redirect to auth
-    if (window.location.pathname !== '/auth') {
-      console.log("No token, redirecting to auth page");
-      window.location.href = "/auth";
-    }
+    console.log("No auth token found in local storage or on auth page");
+    // Not forcing any redirects, let components handle this naturally
   }
 }

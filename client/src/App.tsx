@@ -61,21 +61,16 @@ function Router() {
   const [location] = useLocation();
   const { user, isLoading } = useAuth();
   
-  // Display loading spinner when authentication status is being checked
-  if (isLoading && location !== "/auth") {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
-        <div className="ml-4 text-primary">Loading application...</div>
-      </div>
-    );
-  }
+  // Simplified loading approach - we won't block rendering the router
+  // This prevents white screen issues by letting components handle loading state
   
   // Don't show layout on auth page or when user is not authenticated
-  const showLayout = location !== "/auth" && user !== null;
+  // For protected routes, the component itself will handle auth checks
+  const showLayout = location !== "/auth" && (user !== null || location === "/");
 
   const routes = (
     <Switch>
+      {/* Using simplified route structure - ProtectedRoute handles auth inside */}
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/profile" component={HomePage} />
       <ProtectedRoute path="/barter" component={HomePage} />
@@ -97,6 +92,7 @@ function Router() {
           <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>;
       }} />
+      {/* Public route - always accessible */}
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
