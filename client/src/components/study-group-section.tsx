@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { 
@@ -45,6 +45,13 @@ const createGroupSchema = z.object({
 
 export function StudyGroupSection() {
   const [activeTab, setActiveTab] = useState("study-groups");
+  
+  // Effect to refetch data when tab changes
+  useEffect(() => {
+    // Invalidate queries with the new activeTab value to force refetch
+    queryClient.invalidateQueries({ queryKey: ['/api/groups', activeTab] });
+    queryClient.invalidateQueries({ queryKey: ['/api/groups/user', activeTab] });
+  }, [activeTab, queryClient]);
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -81,14 +88,15 @@ export function StudyGroupSection() {
     isLoading: isLoadingGroups,
     error: groupsError 
   } = useQuery<GroupItem[]>({
-    queryKey: ['/api/groups'],
+    queryKey: ['/api/groups', activeTab],
     queryFn: async () => {
       const token = getToken();
       if (!token) {
         return [];
       }
       
-      const response = await fetch(`/api/groups`, {
+      const isTeamProject = activeTab === 'team-projects';
+      const response = await fetch(`/api/groups?isTeamProject=${isTeamProject}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -98,11 +106,7 @@ export function StudyGroupSection() {
         throw new Error('Failed to fetch groups');
       }
       
-      // Get all groups and filter on client side
-      const allGroups = await response.json();
-      return allGroups.filter((group: GroupItem) => 
-        activeTab === 'team-projects' ? group.isTeamProject === true : group.isTeamProject === false
-      );
+      return await response.json();
     },
     enabled: !!user,
   });
@@ -112,14 +116,15 @@ export function StudyGroupSection() {
     data: userGroups = [] as GroupItem[], 
     isLoading: isLoadingUserGroups 
   } = useQuery<GroupItem[]>({
-    queryKey: ['/api/groups/user'],
+    queryKey: ['/api/groups/user', activeTab],
     queryFn: async () => {
       const token = getToken();
       if (!token) {
         return [];
       }
       
-      const response = await fetch(`/api/groups/user`, {
+      const isTeamProject = activeTab === 'team-projects';
+      const response = await fetch(`/api/groups/user?isTeamProject=${isTeamProject}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -129,11 +134,7 @@ export function StudyGroupSection() {
         throw new Error('Failed to fetch user groups');
       }
       
-      // Get all user groups and filter on client side
-      const allUserGroups = await response.json();
-      return allUserGroups.filter((group: GroupItem) => 
-        activeTab === 'team-projects' ? group.isTeamProject === true : group.isTeamProject === false
-      );
+      return await response.json();
     },
     enabled: !!user,
   });
@@ -172,8 +173,8 @@ export function StudyGroupSection() {
       setOpenCreateDialog(false);
       form.reset();
       // Invalidate all groups queries
-      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeTab] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', activeTab] });
     },
     onError: () => {
       toast({
@@ -223,8 +224,8 @@ export function StudyGroupSection() {
         description: "Joined group successfully",
       });
       // Invalidate all groups queries
-      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeTab] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', activeTab] });
     },
     onError: (error: any) => {
       const errorMessage = error?.message || "Failed to join group. Please try again.";
@@ -327,8 +328,8 @@ export function StudyGroupSection() {
         setSelectedGroup(null);
       }
       // Invalidate all groups queries
-      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/groups/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups', activeTab] });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups/user', activeTab] });
     },
     onError: (error: any) => {
       const errorMessage = error?.message || "Failed to delete group. Please try again.";

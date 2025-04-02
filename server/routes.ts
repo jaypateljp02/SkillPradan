@@ -577,10 +577,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   app.get("/api/groups", isAuthenticated, async (req, res) => {
     try {
+      const isTeamProject = req.query.isTeamProject === 'true';
       const groups = await storage.getAllGroups();
       
+      // Filter groups by type (team project or study group)
+      const filteredGroups = groups.filter(group => 
+        isTeamProject ? group.isTeamProject === true : group.isTeamProject === false
+      );
+      
       // For each group, get the member count
-      const enrichedGroups = await Promise.all(groups.map(async (group) => {
+      const enrichedGroups = await Promise.all(filteredGroups.map(async (group) => {
         const members = await storage.getGroupMembers(group.id);
         return {
           ...group,
@@ -598,11 +604,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/groups/user", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.id;
+      const isTeamProject = req.query.isTeamProject === 'true';
       const allGroups = await storage.getAllGroups();
       
-      // For each group, get the members and check if current user is a member
+      // Filter groups by type and user membership
       const userGroups = [];
       for (const group of allGroups) {
+        // Skip if group type doesn't match query filter
+        if (isTeamProject ? group.isTeamProject !== true : group.isTeamProject !== false) {
+          continue;
+        }
+        
         const members = await storage.getGroupMembers(group.id);
         const isMember = members.some(member => member.userId === userId);
         
