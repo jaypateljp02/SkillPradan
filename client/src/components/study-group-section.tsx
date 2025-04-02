@@ -497,7 +497,7 @@ export function StudyGroupSection() {
                           <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full">Private</span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{group.description}</p>
+                      <p className="mt-1 text-sm text-neutral-500 line-clamp-3">{group.description}</p>
                       <div className="mt-3 flex items-center justify-between">
                         <span className="text-xs text-neutral-500">
                           {group.memberCount || 0} members
@@ -689,7 +689,7 @@ export function StudyGroupSection() {
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Members ({selectedGroupData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
+                    {Array.from({ length: Math.min(selectedGroupData.memberCount || 0, 5) }).map((_, i) => (
                       <UserAvatar 
                         key={i} 
                         name={`Member ${i+1}`} 
@@ -826,7 +826,7 @@ export function StudyGroupSection() {
                     </div>
                     <div className="p-4">
                       <h4 className="font-medium text-neutral-900">{team.name}</h4>
-                      <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{team.description}</p>
+                      <p className="mt-1 text-sm text-neutral-500 line-clamp-3">{team.description}</p>
                       <div className="mt-3 flex items-center justify-between">
                         <span className="text-xs text-neutral-500">{team.memberCount || 0} members</span>
                         <span className="text-xs font-medium text-primary">
