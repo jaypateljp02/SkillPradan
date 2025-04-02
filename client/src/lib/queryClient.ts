@@ -28,66 +28,26 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  urlOrMethod: string,
-  urlOrOptions?: string | RequestInit,
+  method: string,
+  url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  let method: string;
-  let url: string;
-  let options: RequestInit | undefined;
-  
-  // Handle different calling styles:
-  // apiRequest(url) - GET request to url
-  // apiRequest(url, options) - request to url with options
-  // apiRequest(method, url, data) - legacy style
-  
-  if (typeof urlOrOptions === 'string') {
-    // Legacy style: apiRequest(method, url, data)
-    method = urlOrMethod;
-    url = urlOrOptions;
-    options = {
-      method,
-      body: data ? JSON.stringify(data) : undefined,
-    };
-    console.log(`Making ${method} request to ${url}`, data);
-  } else {
-    // New style: apiRequest(url, options)
-    url = urlOrMethod;
-    options = urlOrOptions || {};
-    method = options.method || 'GET';
-    console.log(`Making ${method} request to ${url}`, options);
-  }
+  console.log(`Making ${method} request to ${url}`, data);
   
   try {
     // Get auth token from storage
     const token = getToken();
     
     // Prepare headers with auth token if available
-    const headersObj: Record<string, string> = {};
-    
-    // Add existing headers if any
-    if (options?.headers) {
-      Object.entries(options.headers).forEach(([key, value]) => {
-        if (typeof value === 'string') {
-          headersObj[key] = value;
-        }
-      });
-    }
-    
-    // Add Content-Type if we have a body
-    if (options?.body) {
-      headersObj["Content-Type"] = "application/json";
-    }
-    
-    // Add Authorization if we have a token
-    if (token) {
-      headersObj["Authorization"] = `Bearer ${token}`;
-    }
+    const headers: Record<string, string> = {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { "Authorization": `Bearer ${token}` } : {})
+    };
     
     const res = await fetch(url, {
-      ...options,
       method,
-      headers: headersObj,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
       cache: "no-cache"
     });
     
@@ -185,46 +145,34 @@ export const queryClient = new QueryClient({
 // Initialize auth state from local storage when app loads
 // This allows users to stay logged in across page refreshes
 export function initializeAuthFromStorage(): void {
-  // SIMPLIFIED AUTH INITIALIZATION TO PREVENT WHITE SCREEN
-  // We'll only set the token data if it exists, but won't redirect or clear it
-  // This ensures routes work properly without aggressive redirects
-  
+  // Don't try to initialize auth on the auth page to avoid infinite redirects
+  if (window.location.pathname === '/auth') {
+    console.log("On auth page - skipping auth initialization");
+    return;
+  }
+
   const token = getToken();
-  if (token && window.location.pathname !== '/auth') {
+  if (token) {
     console.log("Found existing auth token in local storage");
-    
-    // Set a default user to prevent white screen while loading
-    // This will be overwritten if the token is valid
-    queryClient.setQueryData(["/api/user"], {
-      id: "loading",
-      username: "loading",
-      name: "Loading User...",
-      email: "loading@example.com",
-      role: "user"
-    });
-    
-    // Then check token validity in the background
+    // Check token validity immediately to clean up any invalid tokens
     fetch("/api/user", {
       headers: {
         "Authorization": `Bearer ${token}`
-      },
-      cache: "no-cache"
+      }
     }).then(async res => {
       if (res.ok) {
         console.log("Token is valid, user is authenticated");
         const userData = await res.json();
         queryClient.setQueryData(["/api/user"], userData);
       } else {
-        console.log("Token is invalid but not clearing to prevent white screen");
-        // We won't clear invalid tokens or force redirects anymore
-        // Let the components handle auth state naturally
+        console.log("Token is invalid, clearing local storage");
+        removeToken();
       }
-    }).catch((error) => {
-      console.log("Error checking token:", error);
-      // Again, not clearing token or forcing redirects
+    }).catch(() => {
+      console.log("Error checking token, clearing local storage");
+      removeToken();
     });
   } else {
-    console.log("No auth token found in local storage or on auth page");
-    // Not forcing any redirects, let components handle this naturally
+    console.log("No auth token found in local storage");
   }
 }
