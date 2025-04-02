@@ -4,7 +4,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { 
   Users, Calendar, MessageCircle, Video, Plus, FileText, 
   Settings, FolderUp, Globe, Lock, Code, Hammer, Loader2,
-  Building2, Trash2
+  Building2, Trash2, Phone
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -588,6 +588,68 @@ export function StudyGroupSection() {
                 </div>
                 
                 <div className="mt-6">
+                  <h5 className="text-md font-medium text-neutral-900 mb-3">💬 Group Chat</h5>
+                  <div className="bg-neutral-50 rounded-md p-4 h-48 overflow-y-auto mb-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start">
+                        <UserAvatar name="Ankit Sharma" size="sm" />
+                        <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium">Ankit Sharma</span>
+                            <span className="ml-2 text-xs text-neutral-500">9:15 AM</span>
+                          </div>
+                          <p className="text-sm mt-1">Hey everyone, I'm having trouble understanding the callback concept in JavaScript. Can someone explain?</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <UserAvatar name="Neha Patel" size="sm" />
+                        <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium">Neha Patel</span>
+                            <span className="ml-2 text-xs text-neutral-500">9:20 AM</span>
+                          </div>
+                          <p className="text-sm mt-1">Callbacks are functions passed as arguments to other functions. They're executed after the parent function completes.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <UserAvatar name="Rahul Kumar" size="sm" />
+                        <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium">Rahul Kumar</span>
+                            <span className="ml-2 text-xs text-neutral-500">9:25 AM</span>
+                          </div>
+                          <p className="text-sm mt-1">I can share some examples from our last session if that helps. Check the file I just uploaded.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <UserAvatar name="Ankit Sharma" size="sm" />
+                        <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium">Ankit Sharma</span>
+                            <span className="ml-2 text-xs text-neutral-500">9:30 AM</span>
+                          </div>
+                          <p className="text-sm mt-1">That would be great, thanks! Can we also discuss this in our next session?</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex">
+                    <input 
+                      type="text" 
+                      placeholder="Type your message..." 
+                      className="flex-1 py-2 px-3 border border-neutral-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+                    />
+                    <Button 
+                      className="rounded-l-none"
+                      onClick={() => handleFeatureInDevelopment("Chat Messaging")}
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">📂 Shared Files</h5>
                   <div className="space-y-2">
                     <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
@@ -603,6 +665,13 @@ export function StudyGroupSection() {
                         <span className="ml-2 text-sm font-medium">Algorithms Cheat Sheet.docx</span>
                       </div>
                       <span className="text-xs text-neutral-500">Shared 1 week ago</span>
+                    </div>
+                    <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
+                      <div className="flex items-center">
+                        <FileText className="h-5 w-5 text-blue-500" />
+                        <span className="ml-2 text-sm font-medium">JavaScript Callbacks Examples.js</span>
+                      </div>
+                      <span className="text-xs text-neutral-500">Shared just now</span>
                     </div>
                     <Button 
                       variant="ghost" 
@@ -801,7 +870,18 @@ export function StudyGroupSection() {
               </div>
               
               <div className="p-4">
-                <h5 className="text-md font-medium text-neutral-900 mb-3">💬 Team Chat</h5>
+                <div className="flex justify-between items-center mb-4">
+                  <h5 className="text-md font-medium text-neutral-900">💬 Team Chat</h5>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center text-emerald-600"
+                    onClick={() => handleFeatureInDevelopment("Video Call")}
+                  >
+                    <Phone className="h-4 w-4 mr-1" />
+                    Start Call
+                  </Button>
+                </div>
                 <div className="bg-neutral-50 rounded-md p-4 h-48 overflow-y-auto mb-4">
                   <div className="space-y-4">
                     <div className="flex items-start">
