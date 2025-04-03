@@ -82,11 +82,31 @@ export default function HomePage() {
   return (
     <SocketProvider>
       <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
+        {/* Header with logo and user info */}
+        <header className="bg-white border-b border-neutral-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+            <div className="flex items-center">
+              <img src={logoImage} alt="Skill Pradan" className="h-8" />
+              <h1 className="ml-3 text-xl font-medium text-neutral-800">Skill प्रदान</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center bg-neutral-100 px-3 py-1 rounded-md">
+                <CreditCard className="h-4 w-4 text-neutral-500 mr-1" />
+                <span className="text-sm font-medium">0 Points</span>
+              </div>
+              <div className="flex items-center">
+                <UserAvatar user={user} size="sm" />
+                <span className="ml-2 text-sm font-medium">{user?.name || 'User'}</span>
+              </div>
+            </div>
+          </div>
+        </header>
+        
         {/* Main Content */}
         <main className="flex-grow">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
             {/* Icon-only navigation buttons */}
-            <div className="flex justify-center mb-6 gap-2">
+            <div className="flex gap-2 mb-6">
               {navItems.map((item) => (
                 <button
                   key={item.label}
