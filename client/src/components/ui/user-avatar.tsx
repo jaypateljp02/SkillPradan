@@ -6,16 +6,27 @@ interface UserAvatarProps {
   name: string;
   size?: "sm" | "md" | "lg";
   className?: string;
+  user?: any; // For backward compatibility
 }
 
-export function UserAvatar({ src, avatarUrl, name, size = "md", className = "" }: UserAvatarProps) {
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+export function UserAvatar({ src, avatarUrl, name, size = "md", className = "", user }: UserAvatarProps) {
+  // Handle both direct props and user object for backward compatibility
+  const displayName = user?.name || name || "User";
+  const avatarSrc = user?.avatar || avatarUrl || src;
+  
+  const getInitials = (nameStr: string) => {
+    if (!nameStr) return "U";
+    
+    try {
+      return nameStr
+        .split(' ')
+        .map(part => part[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2);
+    } catch (e) {
+      return "U";
+    }
   };
   
   const sizeClasses = {
@@ -25,13 +36,12 @@ export function UserAvatar({ src, avatarUrl, name, size = "md", className = "" }
   };
   
   const avatarSize = sizeClasses[size];
-  const imageSrc = avatarUrl || src;
   
   return (
     <Avatar className={`${avatarSize} ${className}`}>
-      <AvatarImage src={imageSrc} alt={name} />
+      <AvatarImage src={avatarSrc} alt={displayName} />
       <AvatarFallback className="bg-primary text-primary-foreground">
-        {getInitials(name)}
+        {getInitials(displayName)}
       </AvatarFallback>
     </Avatar>
   );

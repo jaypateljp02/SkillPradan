@@ -92,10 +92,14 @@ export default function HomePage() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center bg-neutral-100 px-3 py-1 rounded-md">
                 <CreditCard className="h-4 w-4 text-neutral-500 mr-1" />
-                <span className="text-sm font-medium">0 Points</span>
+                <span className="text-sm font-medium">{user?.points || 0} Points</span>
               </div>
               <div className="flex items-center">
-                <UserAvatar user={user} size="sm" />
+                <UserAvatar 
+                  name={user?.name || 'User'} 
+                  avatarUrl={user?.avatar} 
+                  size="sm" 
+                />
                 <span className="ml-2 text-sm font-medium">{user?.name || 'User'}</span>
               </div>
             </div>

@@ -40,7 +40,10 @@ export function Navbar() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <UserAvatar user={user} />
+                    <UserAvatar 
+                      name={user?.name || 'User'}
+                      avatarUrl={user?.avatar}
+                    />
                     <span className="text-sm font-medium">{user?.name}</span>
                     <button onClick={handleLogout}>
                       <LogOut className="h-4 w-4 text-neutral-500 hover:text-neutral-700" />
