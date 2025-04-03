@@ -20,6 +20,7 @@ import { ChallengesSection } from "@/components/challenges-section";
 import { Leaderboard } from "@/components/leaderboard";
 import { StudyGroupSection } from "@/components/study-group-section";
 import { Challenge } from "@/types/challenge";
+import logoImage from "../assets/logo.png";
 import { 
   GraduationCap, 
   ExternalLink,
@@ -83,231 +84,227 @@ export default function HomePage() {
       <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
         {/* Main Content */}
         <main className="flex-grow">
-          {/* Minimal Tab Buttons - Top of the Content */}
-          <div className="flex justify-center py-4">
-            <div className="flex items-center space-x-1 bg-white rounded-full px-1 py-1 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+            {/* Minimal discrete buttons for navigation */}
+            <div className="flex justify-center mb-6 flex-wrap gap-3">
               {navItems.map((item) => (
                 <button
                   key={item.label}
                   onClick={() => setActiveTab(item.target)}
-                  className={`flex items-center px-3 py-1.5 text-sm rounded-full transition-colors ${
+                  className={`flex items-center px-4 py-2 rounded-md ${
                     activeTab === item.target 
-                      ? 'bg-primary text-white' 
-                      : 'text-neutral-500 hover:bg-neutral-100'
+                      ? 'bg-primary text-white shadow-sm' 
+                      : 'bg-white text-neutral-600 hover:bg-neutral-50'
                   }`}
                 >
                   {React.cloneElement(item.icon as React.ReactElement, { 
-                    className: `h-4 w-4 ${activeTab === item.target ? 'mr-1' : ''}` 
+                    className: "h-5 w-5 mr-2" 
                   })}
-                  {activeTab === item.target && <span>{item.label}</span>}
+                  {item.label}
                 </button>
               ))}
             </div>
-          </div>
           
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col">
-              {/* Tab Content - Full Width */}
-              <div className="flex-1 pt-0 pb-12">
-                {/* Profile Tab */}
-                <div 
-                  id="profile-tab" 
-                  className={`bg-white shadow rounded-lg ${activeTab !== 'profile-tab' ? 'hidden' : ''}`}
-                >
-                  <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-                    <h3 className="text-lg font-medium leading-6 text-neutral-900">Your Profile</h3>
-                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">Manage your skills and preferences</p>
-                  </div>
-
-                  <div className="p-6">
-                    {/* Profile Header */}
-                    <ProfileHeader />
-
-                    {/* Skills Section */}
-                    <SkillsSection />
-
-                    {/* Recent Activity */}
-                    <ActivityFeed />
-                  </div>
+            {/* Content area with no sidebar */}
+            <div className="pt-0 pb-12">
+              {/* Profile Tab */}
+              <div 
+                id="profile-tab" 
+                className={`bg-white shadow rounded-lg ${activeTab !== 'profile-tab' ? 'hidden' : ''}`}
+              >
+                <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+                  <h3 className="text-lg font-medium leading-6 text-neutral-900">Your Profile</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-neutral-500">Manage your skills and preferences</p>
                 </div>
 
-                {/* Barter Tab */}
-                <div 
-                  id="barter-tab"
-                  className={`bg-white shadow rounded-lg ${activeTab !== 'barter-tab' ? 'hidden' : ''}`}
-                >
-                  <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-                    <h3 className="text-lg font-medium leading-6 text-neutral-900">Skill Exchange</h3>
-                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">Find others to swap skills with</p>
-                  </div>
+                <div className="p-6">
+                  {/* Profile Header */}
+                  <ProfileHeader />
 
-                  <div className="p-6">
-                    <BarterSection />
-                  </div>
+                  {/* Skills Section */}
+                  <SkillsSection />
+
+                  {/* Recent Activity */}
+                  <ActivityFeed />
+                </div>
+              </div>
+
+              {/* Barter Tab */}
+              <div 
+                id="barter-tab"
+                className={`bg-white shadow rounded-lg ${activeTab !== 'barter-tab' ? 'hidden' : ''}`}
+              >
+                <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+                  <h3 className="text-lg font-medium leading-6 text-neutral-900">Skill Exchange</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-neutral-500">Find others to swap skills with</p>
                 </div>
 
-                {/* Points Tab */}
-                <div 
-                  id="points-tab"
-                  className={`bg-white shadow rounded-lg ${activeTab !== 'points-tab' ? 'hidden' : ''}`}
-                >
-                  <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-                    <h3 className="text-lg font-medium leading-6 text-neutral-900">Points & Rewards</h3>
-                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">Earn and spend points on the platform</p>
-                  </div>
+                <div className="p-6">
+                  <BarterSection />
+                </div>
+              </div>
 
-                  <div className="p-6">
-                    {/* Points Overview */}
-                    <PointsOverview />
+              {/* Points Tab */}
+              <div 
+                id="points-tab"
+                className={`bg-white shadow rounded-lg ${activeTab !== 'points-tab' ? 'hidden' : ''}`}
+              >
+                <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+                  <h3 className="text-lg font-medium leading-6 text-neutral-900">Points & Rewards</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-neutral-500">Earn and spend points on the platform</p>
+                </div>
 
-                    {/* Earning Options */}
-                    <div className="mt-8">
-                      <h4 className="text-md font-medium text-neutral-900">Ways to Earn Points</h4>
+                <div className="p-6">
+                  {/* Points Overview */}
+                  <PointsOverview />
+
+                  {/* Earning Options */}
+                  <div className="mt-8">
+                    <h4 className="text-md font-medium text-neutral-900">Ways to Earn Points</h4>
+                    
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <PointsCard
+                        icon={GraduationCap}
+                        title="Complete Daily Quiz"
+                        description="Test your knowledge and earn points"
+                        points={20}
+                        color="accent"
+                        actionHandler={async () => {
+                          // Simulated quiz completion
+                          return Promise.resolve();
+                        }}
+                      />
                       
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <PointsCard
-                          icon={GraduationCap}
-                          title="Complete Daily Quiz"
-                          description="Test your knowledge and earn points"
-                          points={20}
-                          color="accent"
-                          actionHandler={async () => {
-                            // Simulated quiz completion
-                            return Promise.resolve();
-                          }}
-                        />
-                        
-                        <PointsCard
-                          icon={ExternalLink}
-                          title="Complete Exchange"
-                          description="Earn points for each completed skill exchange"
-                          points={100}
-                          color="primary"
-                        />
-                        
-                        <PointsCard
-                          icon={Award}
-                          title="Verify a Skill"
-                          description="Take a test to verify your expertise level"
-                          points={50}
-                          color="secondary"
-                        />
-                      </div>
+                      <PointsCard
+                        icon={ExternalLink}
+                        title="Complete Exchange"
+                        description="Earn points for each completed skill exchange"
+                        points={100}
+                        color="primary"
+                      />
+                      
+                      <PointsCard
+                        icon={Award}
+                        title="Verify a Skill"
+                        description="Take a test to verify your expertise level"
+                        points={50}
+                        color="secondary"
+                      />
                     </div>
+                  </div>
 
-                    {/* Spending Options */}
-                    <div className="mt-8">
-                      <h4 className="text-md font-medium text-neutral-900">Spend Your Points</h4>
-                      
-                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex">
-                            <div className="flex-shrink-0">
-                              <div className="h-14 w-14 rounded-lg bg-blue-500 bg-opacity-10 flex items-center justify-center">
-                                <GraduationCap className="text-2xl text-blue-500" />
-                              </div>
+                  {/* Spending Options */}
+                  <div className="mt-8">
+                    <h4 className="text-md font-medium text-neutral-900">Spend Your Points</h4>
+                    
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <div className="h-14 w-14 rounded-lg bg-blue-500 bg-opacity-10 flex items-center justify-center">
+                              <GraduationCap className="text-2xl text-blue-500" />
                             </div>
-                            <div className="ml-4 flex-1">
-                              <h5 className="text-md font-medium text-neutral-900">Book Expert Session</h5>
-                              <p className="mt-1 text-sm text-neutral-500">30-minute 1:1 session with a verified expert</p>
-                              <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <span className="text-xs text-neutral-500">Various subjects available</span>
-                                <Button size="sm" className="bg-blue-500 hover:bg-blue-600">500 points</Button>
-                              </div>
+                          </div>
+                          <div className="ml-4 flex-1">
+                            <h5 className="text-md font-medium text-neutral-900">Book Expert Session</h5>
+                            <p className="mt-1 text-sm text-neutral-500">30-minute 1:1 session with a verified expert</p>
+                            <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <span className="text-xs text-neutral-500">Various subjects available</span>
+                              <Button size="sm" className="bg-blue-500 hover:bg-blue-600">500 points</Button>
                             </div>
                           </div>
                         </div>
-                        
-                        <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex">
-                            <div className="flex-shrink-0">
-                              <div className="h-14 w-14 rounded-lg bg-emerald-500 bg-opacity-10 flex items-center justify-center">
-                                <Star className="text-2xl text-emerald-500" />
-                              </div>
+                      </div>
+                      
+                      <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <div className="h-14 w-14 rounded-lg bg-emerald-500 bg-opacity-10 flex items-center justify-center">
+                              <Star className="text-2xl text-emerald-500" />
                             </div>
-                            <div className="ml-4 flex-1">
-                              <h5 className="text-md font-medium text-neutral-900">Access Premium Courses</h5>
-                              <p className="mt-1 text-sm text-neutral-500">Unlock curated advanced learning materials</p>
-                              <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                <span className="text-xs text-neutral-500">20+ courses available</span>
-                                <Button 
-                                  size="sm"
-                                  className="bg-emerald-500 hover:bg-emerald-600"
-                                >
-                                  300 points
-                                </Button>
-                              </div>
+                          </div>
+                          <div className="ml-4 flex-1">
+                            <h5 className="text-md font-medium text-neutral-900">Access Premium Courses</h5>
+                            <p className="mt-1 text-sm text-neutral-500">Unlock curated advanced learning materials</p>
+                            <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <span className="text-xs text-neutral-500">20+ courses available</span>
+                              <Button 
+                                size="sm"
+                                className="bg-emerald-500 hover:bg-emerald-600"
+                              >
+                                300 points
+                              </Button>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Points History */}
-                    <PointsHistory />
                   </div>
+
+                  {/* Points History */}
+                  <PointsHistory />
+                </div>
+              </div>
+
+              {/* Learn Tab */}
+              <div 
+                id="learn-tab"
+                className={`bg-white shadow rounded-lg ${activeTab !== 'learn-tab' ? 'hidden' : ''}`}
+              >
+                <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+                  <h3 className="text-lg font-medium leading-6 text-neutral-900">Learning Center</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-neutral-500">Connect, learn, and collaborate with others</p>
                 </div>
 
-                {/* Learn Tab */}
-                <div 
-                  id="learn-tab"
-                  className={`bg-white shadow rounded-lg ${activeTab !== 'learn-tab' ? 'hidden' : ''}`}
-                >
-                  <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-                    <h3 className="text-lg font-medium leading-6 text-neutral-900">Learning Center</h3>
-                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">Connect, learn, and collaborate with others</p>
-                  </div>
+                <div className="p-6">
+                  {/* Upcoming Sessions */}
+                  <LearningSession />
 
-                  <div className="p-6">
-                    {/* Upcoming Sessions */}
-                    <LearningSession />
+                  {/* Learning Tools */}
+                  <LearningTools />
 
-                    {/* Learning Tools */}
-                    <LearningTools />
+                  {/* Session History */}
+                  <SessionHistory />
+                </div>
+              </div>
 
-                    {/* Session History */}
-                    <SessionHistory />
-                  </div>
+              {/* Achievements Tab */}
+              <div 
+                id="achievements-tab"
+                className={`bg-white shadow rounded-lg ${activeTab !== 'achievements-tab' ? 'hidden' : ''}`}
+              >
+                <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+                  <h3 className="text-lg font-medium leading-6 text-neutral-900">Achievements & Leaderboard</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-neutral-500">Track your progress and compete with others</p>
                 </div>
 
-                {/* Achievements Tab */}
-                <div 
-                  id="achievements-tab"
-                  className={`bg-white shadow rounded-lg ${activeTab !== 'achievements-tab' ? 'hidden' : ''}`}
-                >
-                  <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-                    <h3 className="text-lg font-medium leading-6 text-neutral-900">Achievements & Leaderboard</h3>
-                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">Track your progress and compete with others</p>
-                  </div>
+                <div className="p-6">
+                  {/* Achievement Stats */}
+                  <AchievementStats />
 
-                  <div className="p-6">
-                    {/* Achievement Stats */}
-                    <AchievementStats />
+                  {/* Badges */}
+                  <BadgesSection />
 
-                    {/* Badges */}
-                    <BadgesSection />
+                  {/* Current Challenges */}
+                  <ChallengesSection />
 
-                    {/* Current Challenges */}
-                    <ChallengesSection />
+                  {/* Leaderboard */}
+                  <Leaderboard />
+                </div>
+              </div>
 
-                    {/* Leaderboard */}
-                    <Leaderboard />
-                  </div>
+              {/* Community Tab */}
+              <div 
+                id="study-group-tab"
+                className={`bg-white shadow rounded-lg ${activeTab !== 'study-group-tab' ? 'hidden' : ''}`}
+              >
+                <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
+                  <h3 className="text-lg font-medium leading-6 text-neutral-900">Study Groups</h3>
+                  <p className="mt-1 max-w-2xl text-sm text-neutral-500">Create and join study groups with peers</p>
                 </div>
 
-                {/* Community Tab */}
-                <div 
-                  id="study-group-tab"
-                  className={`bg-white shadow rounded-lg ${activeTab !== 'study-group-tab' ? 'hidden' : ''}`}
-                >
-                  <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-                    <h3 className="text-lg font-medium leading-6 text-neutral-900">Study Groups</h3>
-                    <p className="mt-1 max-w-2xl text-sm text-neutral-500">Create and join study groups with peers</p>
-                  </div>
-
-                  <div className="p-6">
-                    <StudyGroupSection />
-                  </div>
+                <div className="p-6">
+                  <StudyGroupSection />
                 </div>
               </div>
             </div>
