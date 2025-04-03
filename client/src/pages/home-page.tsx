@@ -31,9 +31,11 @@ import {
   User,
   Repeat,
   Trophy,
-  Users
+  Users,
+  Settings
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -90,6 +92,19 @@ export default function HomePage() {
               <h1 className="ml-3 text-xl font-medium text-neutral-800">Skill प्रदान</h1>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Admin Dashboard Button - Only visible for admin users */}
+              {user?.isAdmin && (
+                <Link to="/admin-dashboard">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex items-center gap-1 text-primary border-primary hover:bg-primary/10"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Admin Dashboard</span>
+                  </Button>
+                </Link>
+              )}
               <div className="flex items-center bg-neutral-100 px-3 py-1 rounded-md">
                 <CreditCard className="h-4 w-4 text-neutral-500 mr-1" />
                 <span className="text-sm font-medium">{user?.points || 0} Points</span>
