@@ -49,32 +49,32 @@ export default function HomePage() {
   const navItems = [
     {
       label: 'Profile',
-      icon: <User className="w-5 h-5 mr-3 text-neutral-400" />,
+      icon: <User className="w-5 h-5 text-neutral-700" />,
       target: 'profile-tab'
     },
     {
       label: 'Barter',
-      icon: <Repeat className="w-5 h-5 mr-3 text-neutral-400" />,
+      icon: <Repeat className="w-5 h-5 text-neutral-700" />,
       target: 'barter-tab'
     },
     {
       label: 'Points',
-      icon: <CreditCard className="w-5 h-5 mr-3 text-neutral-400" />,
+      icon: <CreditCard className="w-5 h-5 text-neutral-700" />,
       target: 'points-tab'
     },
     {
       label: 'Learn',
-      icon: <GraduationCap className="w-5 h-5 mr-3 text-neutral-400" />,
+      icon: <GraduationCap className="w-5 h-5 text-neutral-700" />,
       target: 'learn-tab'
     },
     {
       label: 'Achievements',
-      icon: <Trophy className="w-5 h-5 mr-3 text-neutral-400" />,
+      icon: <Trophy className="w-5 h-5 text-neutral-700" />,
       target: 'achievements-tab'
     },
     {
       label: 'Community',
-      icon: <Users className="w-5 h-5 mr-3 text-neutral-400" />,
+      icon: <Users className="w-5 h-5 text-neutral-700" />,
       target: 'study-group-tab'
     }
   ];
@@ -85,22 +85,22 @@ export default function HomePage() {
         {/* Main Content */}
         <main className="flex-grow">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-            {/* Minimal discrete buttons for navigation */}
-            <div className="flex justify-center mb-6 flex-wrap gap-3">
+            {/* Icon-only navigation buttons */}
+            <div className="flex justify-center mb-6 gap-2">
               {navItems.map((item) => (
                 <button
                   key={item.label}
                   onClick={() => setActiveTab(item.target)}
-                  className={`flex items-center px-4 py-2 rounded-md ${
+                  className={`flex items-center justify-center w-12 h-12 rounded-md ${
                     activeTab === item.target 
                       ? 'bg-primary text-white shadow-sm' 
                       : 'bg-white text-neutral-600 hover:bg-neutral-50'
                   }`}
+                  aria-label={item.label}
                 >
                   {React.cloneElement(item.icon as React.ReactElement, { 
-                    className: "h-5 w-5 mr-2" 
+                    className: "h-6 w-6" 
                   })}
-                  {item.label}
                 </button>
               ))}
             </div>
