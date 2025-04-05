@@ -10,7 +10,7 @@ app.use(cors({
   origin: ['https://replit.com', 'https://*.replit.app', true], // Allow Replit domains and all others
   credentials: true, // Allow cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Firebase-Uid']
 }));
 
 app.use(express.json());

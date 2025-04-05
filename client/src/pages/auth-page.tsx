@@ -1,12 +1,15 @@
-import { useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { AuthForm } from "@/components/auth-form";
+import { FirebaseAuthForm } from "@/components/firebase-auth-form";
 import { Redirect } from "wouter";
 import { GraduationCap, Repeat, Award } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import logoImage from "../assets/logo.png";
 
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
+  const [authProvider, setAuthProvider] = useState<"firebase" | "token">("firebase");
   
   // If user is logged in, redirect to home page
   if (user) {
@@ -26,7 +29,36 @@ export default function AuthPage() {
           <p className="mt-2 text-neutral-600">Connect.Collaborate.Create</p>
         </div>
         
-        <AuthForm />
+        <Tabs 
+          defaultValue="firebase" 
+          onValueChange={(value) => setAuthProvider(value as "firebase" | "token")}
+          className="mb-4"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="firebase">Firebase Auth</TabsTrigger>
+            <TabsTrigger value="token">Token Auth</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="firebase">
+            <div className="mt-4">
+              <FirebaseAuthForm />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="token">
+            <div className="mt-4">
+              <AuthForm />
+            </div>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="mt-4 text-center text-sm text-gray-500">
+          {authProvider === "firebase" ? (
+            <p>Using Firebase Authentication (recommended)</p>
+          ) : (
+            <p>Using legacy token-based authentication</p>
+          )}
+        </div>
       </div>
     </div>
   );

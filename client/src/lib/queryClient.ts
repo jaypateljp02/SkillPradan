@@ -27,6 +27,30 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Add firebase to window type
+declare global {
+  interface Window {
+    firebase?: {
+      auth?: () => {
+        currentUser?: {
+          uid: string;
+        } | null;
+      };
+    };
+  }
+}
+
+// Get Firebase UID from current user if available
+export function getFirebaseUID(): string | null {
+  try {
+    const auth = window.firebase?.auth?.();
+    return auth?.currentUser?.uid || null;
+  } catch (error) {
+    console.error("Error getting Firebase UID:", error);
+    return null;
+  }
+}
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -37,11 +61,14 @@ export async function apiRequest(
   try {
     // Get auth token from storage
     const token = getToken();
+    // Get Firebase UID
+    const firebaseUid = getFirebaseUID();
     
     // Prepare headers with auth token if available
     const headers: Record<string, string> = {
       ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+      ...(firebaseUid ? { "X-Firebase-UID": firebaseUid } : {})
     };
     
     const res = await fetch(url, {
@@ -83,10 +110,13 @@ export const getQueryFn: <T>(options: {
     try {
       // Get auth token from storage
       const token = getToken();
+      // Get Firebase UID
+      const firebaseUid = getFirebaseUID();
       
       // Prepare headers with auth token if available
       const headers: Record<string, string> = {
-        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        ...(firebaseUid ? { "X-Firebase-UID": firebaseUid } : {})
       };
       
       const res = await fetch(queryKey[0] as string, {
@@ -151,6 +181,30 @@ export function initializeAuthFromStorage(): void {
     return;
   }
 
+  // Check for Firebase auth first (handled by Firebase SDK automatically)
+  const firebaseUid = getFirebaseUID();
+  if (firebaseUid) {
+    console.log("Firebase user is authenticated, fetching user data");
+    // Fetch user data using Firebase UID header
+    fetch("/api/user", {
+      headers: {
+        "X-Firebase-UID": firebaseUid
+      }
+    }).then(async res => {
+      if (res.ok) {
+        console.log("Firebase auth is valid, user is authenticated");
+        const userData = await res.json();
+        queryClient.setQueryData(["/api/user"], userData);
+      } else {
+        console.log("Firebase auth data not found in backend");
+      }
+    }).catch((error) => {
+      console.log("Error checking Firebase auth:", error);
+    });
+    return;
+  }
+
+  // Fall back to token auth
   const token = getToken();
   if (token) {
     console.log("Found existing auth token in local storage");
@@ -173,6 +227,6 @@ export function initializeAuthFromStorage(): void {
       removeToken();
     });
   } else {
-    console.log("No auth token found in local storage");
+    console.log("No authentication method found");
   }
 }

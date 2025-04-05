@@ -6,6 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { SocketProvider } from "@/hooks/use-socket";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import VideoSession from "@/pages/video-session";
@@ -99,8 +100,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router />
-        <Toaster />
+        <SocketProvider>
+          <Router />
+          <Toaster />
+        </SocketProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

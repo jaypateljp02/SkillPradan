@@ -1,6 +1,9 @@
 import { Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { userTokens } from "./token-auth";
+import { firebaseUsers } from "./firebase-auth";
+import { parse } from "url";
 
 interface SocketMessage {
   type: string;
@@ -16,7 +19,11 @@ export function setupWebSockets(httpServer: Server) {
   // Track active sessions and their participants
   const activeSessions = new Map<number, Set<string>>();
   
-  wss.on('connection', (ws, req) => {
+  wss.on('connection', async (ws, req) => {
+    console.log('WebSocket client attempting to connect');
+    
+    // Skip authentication for now to allow connection
+    // We'll check auth when users try to join sessions or perform actions
     console.log('WebSocket client connected');
     
     // Generate a unique client ID
@@ -125,7 +132,7 @@ export function setupWebSockets(httpServer: Server) {
               const participants = activeSessions.get(sessionId)!;
               
               // Find target client
-              for (const participantId of participants) {
+              participants.forEach((participantId: string) => {
                 const client = clients.get(participantId);
                 if (client && client.readyState === WebSocket.OPEN && participantId !== clientId) {
                   client.send(JSON.stringify({
@@ -136,9 +143,8 @@ export function setupWebSockets(httpServer: Server) {
                       sessionId
                     }
                   }));
-                  break;
                 }
-              }
+              });
             }
             
             break;
@@ -188,12 +194,13 @@ export function setupWebSockets(httpServer: Server) {
       clients.delete(clientId);
       
       // Remove from all active sessions
-      for (const [sessionId, participants] of activeSessions.entries()) {
+      // Convert entries to array to avoid iterator issues
+      Array.from(activeSessions.entries()).forEach(([sessionId, participants]) => {
         if (participants.has(clientId)) {
           participants.delete(clientId);
           
           // Notify other participants
-          participants.forEach(participantId => {
+          participants.forEach((participantId: string) => {
             const client = clients.get(participantId);
             if (client && client.readyState === WebSocket.OPEN) {
               client.send(JSON.stringify({
@@ -208,7 +215,7 @@ export function setupWebSockets(httpServer: Server) {
             activeSessions.delete(sessionId);
           }
         }
-      }
+      });
     });
   });
   

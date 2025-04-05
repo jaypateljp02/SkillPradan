@@ -5,7 +5,7 @@ import { User as SelectUser } from "@shared/schema";
 import { storage } from "./storage";
 
 // Simple token storage for authentication
-const userTokens = new Map<string, number>();
+export const userTokens = new Map<string, number>();
 
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");

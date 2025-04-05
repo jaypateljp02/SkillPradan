@@ -1,8 +1,9 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { WebSocketServer } from "ws";
-import { setupAuth, isAuthenticated } from "./token-auth";
+import { setupAuth, isAuthenticated, userTokens } from "./token-auth";
+import { setupFirebaseAuth, isFirebaseAuthenticated, firebaseUsers } from "./firebase-auth";
 import { setupWebSockets } from "./socket";
 import { 
   insertGroupSchema, 
@@ -40,6 +41,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   // Set up authentication routes
   setupAuth(app);
+  setupFirebaseAuth(app);
+  
+  // Create a combined authentication middleware that accepts either token or Firebase auth
+  const isAuthenticatedEither = async (req: Request, res: Response, next: NextFunction) => {
+    // Check for token-based auth first
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      // Continue with token auth
+      return isAuthenticated(req, res, next);
+    }
+    
+    // Then check for Firebase auth
+    const firebaseUid = req.headers['x-firebase-uid'] as string;
+    if (firebaseUid) {
+      // Continue with Firebase auth
+      return isFirebaseAuthenticated(req, res, next);
+    }
+    
+    // No auth provided
+    return res.status(401).json({ message: "Authentication required" });
+  };
 
   // API Routes
   // Skills routes
@@ -1276,6 +1298,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Combined authentication endpoint that accepts both Firebase and token authentication
+  app.get("/api/user", async (req, res) => {
+    // First try token-based auth
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      const userId = userTokens.get(token);
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          const { password, ...userData } = user;
+          return res.json(userData);
+        }
+      }
+    }
+    
+    // Then try Firebase auth
+    const firebaseUid = req.headers['x-firebase-uid'] as string;
+    if (firebaseUid) {
+      const userId = firebaseUsers.get(firebaseUid);
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          const { password, ...userData } = user;
+          return res.json(userData);
+        }
+      }
+    }
+    
+    // Not authenticated
+    return res.status(401).json({ message: "Authentication required" });
+  });
+  
   // Register admin routes
   app.use("/api/admin", adminRouter);
 
