@@ -90,7 +90,7 @@ export function StudyGroupSection() {
   } = useQuery<GroupItem[]>({
     queryKey: ['/api/groups', activeTab],
     queryFn: async () => {
-      const token = await getFirebaseIdToken();
+      const token = getToken();
       if (!token) {
         return [];
       }
@@ -118,7 +118,7 @@ export function StudyGroupSection() {
   } = useQuery<GroupItem[]>({
     queryKey: ['/api/groups/user', activeTab],
     queryFn: async () => {
-      const token = await getFirebaseIdToken();
+      const token = getToken();
       if (!token) {
         return [];
       }
@@ -142,8 +142,8 @@ export function StudyGroupSection() {
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createGroupSchema>) => {
-      // Get Firebase ID token using the helper function from queryClient
-      const token = await getFirebaseIdToken();
+      // Get auth token using the helper function from queryClient
+      const token = getToken();
       
       if (!token) {
         throw new Error('You must be logged in to create a study group');
@@ -188,8 +188,8 @@ export function StudyGroupSection() {
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
-      // Get Firebase ID token using the helper function from queryClient
-      const token = await getFirebaseIdToken();
+      // Get auth token using the helper function from queryClient
+      const token = getToken();
       
       if (!token) {
         throw new Error('You must be logged in to join a group');
@@ -300,7 +300,7 @@ export function StudyGroupSection() {
   // Delete group mutation
   const deleteGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
-      const token = await getFirebaseIdToken();
+      const token = getToken();
       
       if (!token) {
         throw new Error('You must be logged in to delete a group');
@@ -497,37 +497,19 @@ export function StudyGroupSection() {
                           <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full">Private</span>
                         )}
                       </div>
-                      <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{group.description}</p>
+                      <p className="mt-1 text-sm text-neutral-500 line-clamp-3">{group.description}</p>
                       <div className="mt-3 flex items-center justify-between">
                         <span className="text-xs text-neutral-500">
                           {group.memberCount || 0} members
                         </span>
                         {isCreatorOfGroup(group.id) ? (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-red-500 border-red-200"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteGroup(group.id);
-                            }}
-                            disabled={deleteGroupMutation.isPending}
-                          >
-                            {deleteGroupMutation.isPending && (
-                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            )}
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            Delete
-                          </Button>
+                          <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                            Creator
+                          </span>
                         ) : isAlreadyMember(group.id) ? (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-primary"
-                            disabled={true}
-                          >
-                            Joined
-                          </Button>
+                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                            Member
+                          </span>
                         ) : (
                           <Button 
                             size="sm" 
@@ -566,10 +548,21 @@ export function StudyGroupSection() {
                     )}
                   </div>
                   {isCreatorOfGroup(selectedGroupData.id) && (
-                    <Button variant="ghost" size="sm" onClick={() => handleFeatureInDevelopment('group management')}>
-                      <Settings className="h-4 w-4 mr-1" />
-                      Manage
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                        onClick={() => handleDeleteGroup(selectedGroupData.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Settings className="h-4 w-4 mr-1" />
+                        Manage
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">{selectedGroupData.description}</p>
@@ -580,7 +573,7 @@ export function StudyGroupSection() {
                   <Button 
                     variant="outline" 
                     className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment('group chat')}
+                    onClick={() => handleFeatureInDevelopment("Group Chat")}
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Group Chat
@@ -588,19 +581,73 @@ export function StudyGroupSection() {
                   <Button 
                     variant="outline" 
                     className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment('virtual session')}
-                  >
-                    <Video className="h-4 w-4 mr-2" />
-                    Start Session
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment('file sharing')}
+                    onClick={() => handleFeatureInDevelopment("File Sharing")}
                   >
                     <FolderUp className="h-4 w-4 mr-2" />
                     Share Files
                   </Button>
+                </div>
+                
+                <div className="mt-6">
+                  <h5 className="text-md font-medium text-neutral-900 mb-3">💬 Group Chat</h5>
+                  <div className="bg-neutral-50 rounded-md p-4 h-48 overflow-y-auto mb-4">
+                    <div className="space-y-4">
+                      <div className="flex items-start">
+                        <UserAvatar name="Ankit Sharma" size="sm" />
+                        <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium">Ankit Sharma</span>
+                            <span className="ml-2 text-xs text-neutral-500">9:15 AM</span>
+                          </div>
+                          <p className="text-sm mt-1">Hey everyone, I'm having trouble understanding the callback concept in JavaScript. Can someone explain?</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <UserAvatar name="Neha Patel" size="sm" />
+                        <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium">Neha Patel</span>
+                            <span className="ml-2 text-xs text-neutral-500">9:20 AM</span>
+                          </div>
+                          <p className="text-sm mt-1">Callbacks are functions passed as arguments to other functions. They're executed after the parent function completes.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <UserAvatar name="Rahul Kumar" size="sm" />
+                        <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium">Rahul Kumar</span>
+                            <span className="ml-2 text-xs text-neutral-500">9:25 AM</span>
+                          </div>
+                          <p className="text-sm mt-1">I can share some examples from our last session if that helps. Check the file I just uploaded.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start">
+                        <UserAvatar name="Ankit Sharma" size="sm" />
+                        <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                          <div className="flex items-center">
+                            <span className="text-xs font-medium">Ankit Sharma</span>
+                            <span className="ml-2 text-xs text-neutral-500">9:30 AM</span>
+                          </div>
+                          <p className="text-sm mt-1">That would be great, thanks! Can we also discuss this in our next session?</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex">
+                    <input 
+                      type="text" 
+                      placeholder="Type your message..." 
+                      className="flex-1 py-2 px-3 border border-neutral-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+                    />
+                    <Button 
+                      className="rounded-l-none"
+                      onClick={() => handleFeatureInDevelopment("Chat Messaging")}
+                    >
+                      Send
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="mt-6">
@@ -609,22 +656,29 @@ export function StudyGroupSection() {
                     <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
                       <div className="flex items-center">
                         <FileText className="h-5 w-5 text-blue-500" />
-                        <span className="ml-2 text-sm font-medium">Study Notes.pdf</span>
+                        <span className="ml-2 text-sm font-medium">Data Structures Notes.pdf</span>
                       </div>
                       <span className="text-xs text-neutral-500">Shared 2 days ago</span>
                     </div>
                     <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
                       <div className="flex items-center">
                         <FileText className="h-5 w-5 text-blue-500" />
-                        <span className="ml-2 text-sm font-medium">Learning Materials.zip</span>
+                        <span className="ml-2 text-sm font-medium">Algorithms Cheat Sheet.docx</span>
                       </div>
                       <span className="text-xs text-neutral-500">Shared 1 week ago</span>
+                    </div>
+                    <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
+                      <div className="flex items-center">
+                        <FileText className="h-5 w-5 text-blue-500" />
+                        <span className="ml-2 text-sm font-medium">JavaScript Callbacks Examples.js</span>
+                      </div>
+                      <span className="text-xs text-neutral-500">Shared just now</span>
                     </div>
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       className="mt-2 text-primary"
-                      onClick={() => handleFeatureInDevelopment('file upload')}
+                      onClick={() => handleFeatureInDevelopment("File Upload")}
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Upload New File
@@ -635,7 +689,7 @@ export function StudyGroupSection() {
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Members ({selectedGroupData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
+                    {Array.from({ length: Math.min(selectedGroupData.memberCount || 0, 5) }).map((_, i) => (
                       <UserAvatar 
                         key={i} 
                         name={`Member ${i+1}`} 
@@ -662,10 +716,91 @@ export function StudyGroupSection() {
                 <h3 className="text-xl font-medium text-neutral-900">🛠️ Form Teams</h3>
                 <p className="text-sm text-neutral-500 mt-1">Work on hackathons and assignments together</p>
               </div>
-              <Button className="flex items-center" onClick={() => setOpenCreateDialog(true)}>
-                <Plus className="w-4 h-4 mr-1" />
-                Create Team
-              </Button>
+              <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create Team
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create a new team project</DialogTitle>
+                    <DialogDescription>
+                      Set up a team for collaborating on projects and assignments. Fill out the details below.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Team Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="E.g. Hackathon Team Alpha" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Briefly describe your project and team goals"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="isPrivate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>Private Team</FormLabel>
+                              <FormDescription>
+                                Private teams require admin approval to join
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <DialogFooter>
+                        <Button 
+                          type="submit" 
+                          disabled={createGroupMutation.isPending}
+                          className="w-full"
+                        >
+                          {createGroupMutation.isPending && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          Create Team
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
             </div>
             
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -686,28 +821,17 @@ export function StudyGroupSection() {
                     }`}
                     onClick={() => handleTeamClick(team.id)}
                   >
-                    <div className="h-24 bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white">
+                    <div className="h-24 bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center text-white">
                       <Hammer className="h-10 w-10" />
                     </div>
                     <div className="p-4">
-                      <div className="flex items-center">
-                        <h4 className="font-medium text-neutral-900">{team.name}</h4>
-                        {!team.isPrivate ? (
-                          <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">Public</span>
-                        ) : (
-                          <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">Private</span>
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{team.description}</p>
+                      <h4 className="font-medium text-neutral-900">{team.name}</h4>
+                      <p className="mt-1 text-sm text-neutral-500 line-clamp-3">{team.description}</p>
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-neutral-500">
-                          {team.memberCount || 0} members
+                        <span className="text-xs text-neutral-500">{team.memberCount || 0} members</span>
+                        <span className="text-xs font-medium text-primary">
+                          {team.createdAt && `Created: ${new Date(team.createdAt).toLocaleDateString()}`}
                         </span>
-                        {team.deadline && (
-                          <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                            Due: {new Date(team.deadline).toLocaleDateString()}
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -720,107 +844,109 @@ export function StudyGroupSection() {
             <div className="border border-neutral-200 rounded-lg">
               <div className="p-4 border-b border-neutral-200">
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <h4 className="font-medium text-neutral-900">{selectedTeamData.name}</h4>
-                    {!selectedTeamData.isPrivate ? (
-                      <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">Public</span>
-                    ) : (
-                      <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">Private</span>
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
-                    {isCreatorOfGroup(selectedTeamData.id) && (
+                  <h4 className="font-medium text-neutral-900">{selectedTeamData.name}</h4>
+                  {isCreatorOfGroup(selectedTeamData.id) && (
+                    <div className="flex space-x-2">
                       <Button 
                         variant="outline" 
-                        size="sm" 
-                        className="text-red-500"
+                        size="sm"
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50"
                         onClick={() => handleDeleteGroup(selectedTeamData.id)}
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
-                        Delete Team
+                        Delete
                       </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleFeatureInDevelopment('team management')}
-                    >
-                      <Settings className="h-4 w-4 mr-1" />
-                      Manage
-                    </Button>
-                  </div>
+                      <Button variant="ghost" size="sm">
+                        <Settings className="h-4 w-4 mr-1" />
+                        Manage
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">{selectedTeamData.description}</p>
-                {selectedTeamData.deadline && (
-                  <div className="mt-2 p-2 bg-amber-50 rounded flex items-center">
-                    <Calendar className="h-4 w-4 text-amber-600 mr-2" />
-                    <span className="text-sm text-amber-800">
-                      Deadline: {new Date(selectedTeamData.deadline).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
+                <div className="mt-2 flex items-center">
+                  <Calendar className="h-4 w-4 text-neutral-500" />
+                  <span className="ml-1 text-xs text-neutral-700">Deadline: {selectedTeamData.deadline}</span>
+                </div>
               </div>
               
               <div className="p-4">
-                <div className="flex space-x-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h5 className="text-md font-medium text-neutral-900">💬 Team Chat</h5>
                   <Button 
-                    variant="outline" 
-                    className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment('team chat')}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center text-emerald-600"
+                    onClick={() => handleFeatureInDevelopment("Video Call")}
                   >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Team Chat
+                    <Phone className="h-4 w-4 mr-1" />
+                    Start Call
                   </Button>
+                </div>
+                <div className="bg-neutral-50 rounded-md p-4 h-48 overflow-y-auto mb-4">
+                  <div className="space-y-4">
+                    <div className="flex items-start">
+                      <UserAvatar name="Raj Kumar" size="sm" />
+                      <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                        <div className="flex items-center">
+                          <span className="text-xs font-medium">Raj Kumar</span>
+                          <span className="ml-2 text-xs text-neutral-500">10:30 AM</span>
+                        </div>
+                        <p className="text-sm mt-1">I've completed the initial backend API endpoints. Take a look at the code I've shared.</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <UserAvatar name="Priya Singh" size="sm" />
+                      <div className="ml-2 bg-white p-2 rounded-md shadow-sm">
+                        <div className="flex items-center">
+                          <span className="text-xs font-medium">Priya Singh</span>
+                          <span className="ml-2 text-xs text-neutral-500">10:45 AM</span>
+                        </div>
+                        <p className="text-sm mt-1">Great work! I'll start integrating the frontend components with these endpoints.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex">
+                  <input 
+                    type="text" 
+                    placeholder="Type your message..." 
+                    className="flex-1 py-2 px-3 border border-neutral-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+                  />
                   <Button 
-                    variant="outline" 
-                    className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment('code collaboration')}
+                    className="rounded-l-none"
+                    onClick={() => handleFeatureInDevelopment("Chat Messaging")}
                   >
-                    <Code className="h-4 w-4 mr-2" />
-                    Collaborate
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment('team call')}
-                  >
-                    <Phone className="h-4 w-4 mr-2" />
-                    Team Call
+                    Send
                   </Button>
                 </div>
                 
                 <div className="mt-6">
-                  <h5 className="text-md font-medium text-neutral-900 mb-2">📂 Project Files</h5>
+                  <h5 className="text-md font-medium text-neutral-900 mb-3">Shared Code & Resources</h5>
                   <div className="space-y-2">
                     <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
                       <div className="flex items-center">
-                        <FileText className="h-5 w-5 text-blue-500" />
-                        <span className="ml-2 text-sm font-medium">Project Spec.pdf</span>
+                        <Code className="h-5 w-5 text-emerald-600" />
+                        <span className="ml-2 text-sm font-medium">API Endpoints Implementation</span>
                       </div>
-                      <span className="text-xs text-neutral-500">Updated 3 days ago</span>
+                      <span className="text-xs text-neutral-500">Updated 3 hours ago</span>
                     </div>
                     <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
                       <div className="flex items-center">
-                        <FileText className="h-5 w-5 text-green-500" />
-                        <span className="ml-2 text-sm font-medium">Prototype Designs.sketch</span>
+                        <FileText className="h-5 w-5 text-emerald-600" />
+                        <span className="ml-2 text-sm font-medium">Project Architecture.pdf</span>
                       </div>
-                      <span className="text-xs text-neutral-500">Updated yesterday</span>
-                    </div>
-                    <div className="p-3 bg-neutral-50 rounded-md flex items-center justify-between">
-                      <div className="flex items-center">
-                        <FileText className="h-5 w-5 text-purple-500" />
-                        <span className="ml-2 text-sm font-medium">Database Schema.sql</span>
-                      </div>
-                      <span className="text-xs text-neutral-500">Updated 5 hours ago</span>
+                      <span className="text-xs text-neutral-500">Shared 2 days ago</span>
                     </div>
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       className="mt-2 text-primary"
-                      onClick={() => handleFeatureInDevelopment('file upload')}
+                      onClick={() => handleFeatureInDevelopment("Resource Sharing")}
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Upload Project File
+                      Share New Resource
                     </Button>
                   </div>
                 </div>
@@ -828,32 +954,13 @@ export function StudyGroupSection() {
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Team Members ({selectedTeamData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: Math.min(selectedTeamData.memberCount || 0, 5) }).map((_, i) => (
+                    {[...Array(Math.min(selectedTeamData.memberCount || 0, 5))].map((_, i) => (
                       <UserAvatar 
                         key={i} 
-                        name={`Team Member ${i+1}`} 
+                        name={`Teammate ${i+1}`} 
                         size="sm" 
                       />
                     ))}
-                    {(selectedTeamData.memberCount || 0) > 5 && (
-                      <div className="h-8 w-8 rounded-full bg-neutral-200 flex items-center justify-center text-xs text-neutral-600 font-medium">
-                        +{(selectedTeamData.memberCount || 0) - 5}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="mt-6">
-                  <h5 className="text-md font-medium text-neutral-900 mb-2">Project Progress</h5>
-                  <div className="h-4 bg-neutral-200 rounded overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-primary to-blue-600"
-                      style={{ width: '65%' }}
-                    ></div>
-                  </div>
-                  <div className="mt-2 flex justify-between text-xs text-neutral-500">
-                    <span>65% Complete</span>
-                    <span>Updated 2 hours ago</span>
                   </div>
                 </div>
               </div>

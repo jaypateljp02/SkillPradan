@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, getToken } from "@/lib/queryClient";
+import { queryClient, getFirebaseIdToken } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
@@ -96,8 +96,8 @@ export function CommunitySection() {
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createGroupSchema>) => {
-      // Get auth token using the helper function from queryClient
-      const token = getToken();
+      // Get Firebase ID token using the helper function from queryClient
+      const token = await getFirebaseIdToken();
       
       if (!token) {
         throw new Error('You must be logged in to create a community');
@@ -139,8 +139,8 @@ export function CommunitySection() {
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
-      // Get auth token using the helper function from queryClient
-      const token = getToken();
+      // Get Firebase ID token using the helper function from queryClient
+      const token = await getFirebaseIdToken();
       
       if (!token) {
         throw new Error('You must be logged in to join a community');
