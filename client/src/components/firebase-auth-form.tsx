@@ -65,8 +65,32 @@ export function FirebaseAuthForm() {
     
     try {
       await firebaseLogin(values);
-    } catch (error) {
+      // After successful login, we'll wait for useAuth to update with the user data
+      // This is now handled by the auth-page.tsx component's useEffect
+    } catch (error: any) {
       console.error("Login error:", error);
+      
+      // Provide more specific error messages based on Firebase error codes
+      let errorMessage = "Please check your email and password";
+      
+      if (error.code === 'auth/invalid-credential') {
+        errorMessage = "Invalid email or password. Please try again.";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = "No account found with this email. Please register first.";
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = "Incorrect password. Please try again.";
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = "Too many failed login attempts. Please try again later.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Network error. Please check your internet connection.";
+      }
+      
+      // Use the toast API directly (could also add a toast instance here)
+      // This provides more immediate feedback about login failures
+      loginForm.setError('root', { 
+        type: 'manual',
+        message: errorMessage
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -79,8 +103,48 @@ export function FirebaseAuthForm() {
     
     try {
       await firebaseRegister(values);
-    } catch (error) {
+      // After successful registration, the useAuth hook will update and redirect
+    } catch (error: any) {
       console.error("Registration error:", error);
+      
+      // Provide specific error messages based on Firebase error codes
+      let errorMessage = "Registration failed. Please try again.";
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "This email is already registered. Please log in or use a different email.";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Invalid email format. Please check your email address.";
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = "Password is too weak. Please use at least 6 characters.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else if (error.message && error.message.includes("username already exists")) {
+        errorMessage = "This username is already taken. Please choose another.";
+      }
+      
+      // Set form error based on the specific issue
+      if (error.code === 'auth/email-already-in-use' || error.code === 'auth/invalid-email') {
+        registerForm.setError('email', { 
+          type: 'manual',
+          message: errorMessage
+        });
+      } else if (error.code === 'auth/weak-password') {
+        registerForm.setError('password', { 
+          type: 'manual',
+          message: errorMessage
+        });
+      } else if (error.message && error.message.includes("username already exists")) {
+        registerForm.setError('username', { 
+          type: 'manual',
+          message: "Username already taken"
+        });
+      } else {
+        // General error
+        registerForm.setError('root', { 
+          type: 'manual',
+          message: errorMessage
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -133,6 +197,13 @@ export function FirebaseAuthForm() {
                     </FormItem>
                   )}
                 />
+                
+                {/* Display form-level errors */}
+                {loginForm.formState.errors.root && (
+                  <div className="text-sm font-medium text-destructive text-center">
+                    {loginForm.formState.errors.root.message}
+                  </div>
+                )}
                 
                 <Button 
                   type="submit" 
@@ -230,6 +301,13 @@ export function FirebaseAuthForm() {
                     </FormItem>
                   )}
                 />
+                
+                {/* Display form-level errors */}
+                {registerForm.formState.errors.root && (
+                  <div className="text-sm font-medium text-destructive text-center">
+                    {registerForm.formState.errors.root.message}
+                  </div>
+                )}
                 
                 <Button 
                   type="submit" 

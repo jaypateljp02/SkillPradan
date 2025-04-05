@@ -42,26 +42,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [firebaseLoading, setFirebaseLoading] = useState(true);
   
-  // Listen for Firebase auth state changes
+  // Listen for Firebase auth state changes and handle token refresh
   useEffect(() => {
     if (!auth) {
+      console.error("Firebase auth not initialized");
       setFirebaseLoading(false);
       return () => {};
     }
     
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log("Firebase auth state changed", user ? `User: ${user.email}` : "No user");
       setFirebaseUser(user);
-      setFirebaseLoading(false);
       
       if (user) {
-        console.log("Firebase user signed in:", user.email);
+        try {
+          // Get a fresh ID token with each auth state change
+          const token = await user.getIdToken(true);
+          console.log("Firebase token refreshed successfully");
+          
+          // The token is automatically used by apiRequest through our queryClient setup
+          // No need to store it manually
+          
+          // This will trigger a refetch of the user data with the new token
+          if (!user.isAnonymous) {
+            queryClient.invalidateQueries({queryKey: ["/api/user"]});
+          }
+        } catch (error) {
+          console.error("Failed to refresh Firebase token:", error);
+        }
       } else {
-        console.log("Firebase user signed out");
+        // Clear cached data when user signs out
+        queryClient.setQueryData(["/api/user"], null);
       }
+      
+      setFirebaseLoading(false);
+    }, (error) => {
+      // This is the error callback for onAuthStateChanged
+      console.error("Firebase auth state change error:", error);
+      setFirebaseLoading(false);
+      
+      toast({
+        title: "Authentication Error",
+        description: "There was a problem with your authentication. Please try logging in again.",
+        variant: "destructive",
+      });
     });
     
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const {
     data: user,
@@ -105,12 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: `Welcome to Skill प्रदान, ${userData.user.name}!`,
         });
         
-        // Redirect to home page with a longer delay to ensure data is loaded
-        console.log("Registration successful, redirecting to home page shortly");
-        // Increase timeout to allow WebSocket connections to establish
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 2000);
+        // No automatic redirect - user can stay on the logged-in screen
+        console.log("Registration successful, user can navigate the app now");
       }
     } catch (error: any) {
       console.error("Firebase registration error:", error);
@@ -159,12 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: `Logged in as ${userData.user.name}`,
         });
         
-        // Redirect to home page with a longer delay to ensure data is loaded
-        console.log("Login successful, redirecting to home page shortly");
-        // Increase timeout to allow WebSocket connections to establish
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 2000);
+        // No automatic redirect - user can stay on the logged-in screen
+        console.log("Login successful, user can navigate the app now");
       }
     } catch (error: any) {
       console.error("Firebase login error:", error);

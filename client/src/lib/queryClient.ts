@@ -54,10 +54,11 @@ export async function apiRequest(
       statusText: res.statusText
     });
     
-    // Check if we need to redirect to login
+    // Handle unauthorized status without automatic redirect
     if (res.status === 401 && url !== "/api/login" && window.location.pathname !== '/auth') {
       console.log("Received 401, user not authenticated");
-      window.location.href = "/auth";
+      // We won't automatically redirect since we want users to stay on the page until they choose to log out
+      // This aligns with our requirements to keep users on the main screen until they explicitly log out
       throw new Error("User not authenticated");
     }
     
@@ -96,15 +97,15 @@ export const getQueryFn: <T>(options: {
         statusText: res.statusText
       });
 
-      // Redirect to login page if unauthorized and path is not already auth-related
+      // Handle unauthorized status without automatic redirect
       if (res.status === 401 && !String(queryKey[0]).includes('/api/login') && !String(queryKey[0]).includes('/api/register')) {
         if (unauthorizedBehavior === "returnNull") {
           console.log("Returning null due to 401 status");
           
-          // Only redirect if we're fetching the user data and we're not already on the auth page
-          if (String(queryKey[0]) === '/api/user' && window.location.pathname !== '/auth') {
-            console.log("Redirecting to auth page due to unauthenticated user");
-            window.location.href = "/auth";
+          // No automatic redirects - user stays on the current page
+          // Only log the event for API user endpoint
+          if (String(queryKey[0]) === '/api/user') {
+            console.log("User authentication required but no redirect - keeping user on current page");
           }
           return null;
         }
