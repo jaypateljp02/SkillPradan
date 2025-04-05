@@ -201,34 +201,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const firebaseLogout = async () => {
     try {
-      // Sign out from Firebase
-      await signOut(auth!);
+      // Prepare for logout
+      const wasAuthenticated = auth?.currentUser != null;
+      console.log("Starting logout process, user authenticated:", wasAuthenticated);
       
-      // Sign out from our backend
-      await apiRequest("POST", "/api/firebase-logout");
+      // First try logout from our backend (this may fail if backend session was lost)
+      // Use try-catch inside to continue with Firebase logout even if backend logout fails
+      try {
+        await apiRequest("POST", "/api/firebase-logout");
+        console.log("Backend logout successful");
+      } catch (backendError) {
+        console.warn("Backend logout failed, continuing with Firebase logout:", backendError);
+        // We'll continue with the Firebase logout even if backend logout fails
+      }
       
-      // Clear the user data cache
+      // Sign out from Firebase (if user was authenticated)
+      if (auth) {
+        await signOut(auth);
+        console.log("Firebase sign out successful");
+      }
+      
+      // Clear local user data no matter what happens above
       queryClient.setQueryData(["/api/user"], null);
-      queryClient.clear();
+      queryClient.resetQueries();
       
       toast({
         title: "Logged out",
         description: "Come back soon!",
       });
       
-      // Redirect to auth page
+      // Redirect to auth page after a brief moment 
+      // (gives time for the toast to be seen)
       setTimeout(() => {
         window.location.href = "/auth";
-      }, 300);
+      }, 500);
+      
+      return true;
     } catch (error: any) {
       console.error("Firebase logout error:", error);
       
       toast({
         title: "Logout failed",
-        description: error.message || "Please try again",
+        description: "There was an issue with logout. Click the logout button again to retry.",
         variant: "destructive",
       });
       
+      // We'll allow the higher-level function to decide what to do with the error
       throw error;
     }
   };
@@ -257,9 +275,20 @@ export function useAuth() {
   }
   
   // Firebase logout function
-  const logout = () => {
-    // Always use Firebase logout
-    context.firebaseLogout();
+  const logout = async () => {
+    try {
+      console.log("Logging out user...");
+      // Always use Firebase logout
+      await context.firebaseLogout();
+      console.log("User logged out successfully");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // If the regular logout fails, try a manual cleanup
+      if (window.confirm("Logout encountered an error. Would you like to force logout?")) {
+        queryClient.clear();
+        window.location.href = "/auth";
+      }
+    }
   };
   
   // Determine if the user is an admin

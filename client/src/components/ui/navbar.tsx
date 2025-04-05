@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import logoImage from "../../assets/logo.png";
 
 export function Navbar() {
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    logoutMutation.mutate();
+    if (logout) {
+      logout();
+    }
   };
 
   return (
@@ -45,8 +47,13 @@ export function Navbar() {
                       avatarUrl={user?.avatar}
                     />
                     <span className="text-sm font-medium">{user?.name}</span>
-                    <button onClick={handleLogout}>
-                      <LogOut className="h-4 w-4 text-neutral-500 hover:text-neutral-700" />
+                    <button 
+                      onClick={handleLogout}
+                      className="p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center"
+                      aria-label="Log out"
+                      title="Log out"
+                    >
+                      <LogOut className="h-5 w-5 text-neutral-600 hover:text-neutral-900" />
                     </button>
                   </div>
                 </div>
