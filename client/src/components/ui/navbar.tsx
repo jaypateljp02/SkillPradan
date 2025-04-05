@@ -4,36 +4,56 @@ import { useAuth } from '@/hooks/use-auth';
 import { LogOut, Home, User, Repeat, MessageCircle, Video, Users, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import logoImage from "../../assets/logo.png";
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 export function Navbar() {
   const { user, logout } = useAuth();
 
-  // Handle logout with fallback mechanism
-  const handleLogout = async () => {
+  // Simple direct logout function that always works
+  const handleLogout = () => {
+    // Display processing indicator
+    const logoutBtn = document.getElementById('logout-button');
+    if (logoutBtn) {
+      logoutBtn.innerHTML = `<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>`;
+    }
+    
+    console.log("Starting direct logout...");
+    
+    // Force clear any user data in memory
+    if (auth && auth.currentUser) {
+      signOut(auth).catch((e: Error) => console.error("Firebase signOut error:", e));
+    }
+    
+    // Force clear all localStorage and sessionStorage
     try {
-      // Try using regular logout function
-      if (logout) {
-        await logout();
-      } else {
-        throw new Error("Logout function not available");
-      }
-    } catch (error) {
-      console.log("Normal logout failed, using fallback method");
-      
-      // Force clear any cached data
       window.localStorage.clear();
       window.sessionStorage.clear();
-      
-      // Clear all cookies
+      console.log("Cleared local and session storage");
+    } catch (e: unknown) {
+      console.error("Error clearing storage:", e);
+    }
+    
+    // Clear all cookies
+    try {
       document.cookie.split(";").forEach(cookie => {
         document.cookie = cookie
           .replace(/^ +/, "")
           .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
-      
-      // Manually redirect
-      window.location.href = "/auth";
+      console.log("Cleared cookies");
+    } catch (e: unknown) {
+      console.error("Error clearing cookies:", e);
     }
+    
+    // Redirect to auth page with forced reload
+    setTimeout(() => {
+      console.log("Redirecting to auth page...");
+      window.location.href = "/auth";
+    }, 500);
   };
 
   return (
@@ -70,6 +90,7 @@ export function Navbar() {
                     />
                     <span className="text-sm font-medium">{user?.name}</span>
                     <button 
+                      id="logout-button"
                       onClick={handleLogout}
                       className="p-2 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex items-center justify-center"
                       aria-label="Log out"

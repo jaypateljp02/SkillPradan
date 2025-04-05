@@ -273,20 +273,69 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   
-  // Firebase logout function
+  // Enhanced Firebase logout function that is more reliable
   const logout = async () => {
     try {
       console.log("Logging out user...");
+      
+      // Clear query cache before attempting logout to ensure clean state
+      queryClient.clear();
+      queryClient.removeQueries();
+      
       // Always use Firebase logout
       await context.firebaseLogout();
       console.log("User logged out successfully");
     } catch (error) {
       console.error("Error during logout:", error);
-      // If the regular logout fails, try a manual cleanup
-      if (window.confirm("Logout encountered an error. Would you like to force logout?")) {
-        queryClient.clear();
-        window.location.href = "/auth";
+      
+      // Force logout without asking - just do it reliably
+      console.log("Executing forced logout procedure...");
+      
+      // 1. Clear all Firebase auth data
+      if (auth && auth.currentUser) {
+        try {
+          await signOut(auth);
+          console.log("Firebase signOut successful");
+        } catch (e: unknown) {
+          console.error("Firebase signOut error:", e);
+        }
       }
+      
+      // 2. Clear all query client data
+      try {
+        queryClient.clear();
+        queryClient.removeQueries();
+        console.log("Query client cleared");
+      } catch (e: unknown) {
+        console.error("Error clearing query client:", e);
+      }
+      
+      // 3. Clear localStorage and sessionStorage
+      try {
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+        console.log("Local and session storage cleared");
+      } catch (e: unknown) {
+        console.error("Error clearing storage:", e);
+      }
+      
+      // 4. Clear all cookies
+      try {
+        document.cookie.split(";").forEach(cookie => {
+          document.cookie = cookie
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        console.log("Cookies cleared");
+      } catch (e: unknown) {
+        console.error("Error clearing cookies:", e);
+      }
+      
+      // 5. Force redirect to login page
+      setTimeout(() => {
+        console.log("Redirecting to auth page after forced logout");
+        window.location.href = "/auth";
+      }, 500);
     }
   };
   

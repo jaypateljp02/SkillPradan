@@ -153,40 +153,64 @@ export function setupFirebaseAuth(app: Express) {
       // If user doesn't exist in our system yet, but has a valid Firebase account,
       // we'll auto-create an account for them
       if (!userId && email) {
-        console.log("Auto-creating user account for Firebase user:", email);
+        console.log("Checking for existing user with email:", email);
         
-        // Generate a username from email
-        const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        // Check if a user with this email already exists in our system
+        // We need to loop through all users to find by email since we don't have an index
+        let existingUser = null;
         
-        // Generate default name from email
-        const name = email.split('@')[0]
-          .replace(/[._-]/g, ' ')
-          .replace(/\b\w/g, (l: string) => l.toUpperCase());
+        // Convert map entries to array to avoid iterator issues
+        const userEntries = Array.from(firebaseUsers.entries());
         
-        // Create the user with default values
-        const tempPassword = Math.random().toString(36).substring(2);
-        const newUser = await storage.createUser({
-          username,
-          password: tempPassword, // We won't use this for auth
-          name,
-          email,
-          university: "Auto-registered user",
-          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`
-        });
+        for (const [existingUid, existingId] of userEntries) {
+          const user = await storage.getUser(existingId);
+          if (user && user.email === email) {
+            existingUser = user;
+            // Update our mapping to include this Firebase UID
+            firebaseUsers.set(firebaseUid, user.id);
+            userId = user.id;
+            console.log("Found existing user with same email. Linking Firebase UID to user ID:", user.id);
+            break;
+          }
+        }
         
-        // Store the mapping between Firebase UID and our user ID
-        firebaseUsers.set(firebaseUid, newUser.id);
-        userId = newUser.id;
-        
-        // Create welcome activity
-        await storage.createActivity({
-          userId: newUser.id,
-          type: "account",
-          description: "Created account with Firebase (auto-registration)",
-          pointsEarned: 50
-        });
-        
-        console.log("Auto-registered new user with ID:", newUser.id);
+        // Only create a new user if no existing user was found with this email
+        if (!existingUser) {
+          console.log("Auto-creating user account for Firebase user:", email);
+          
+          // Generate a username from email
+          const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+          
+          // Generate default name from email
+          const name = email.split('@')[0]
+            .replace(/[._-]/g, ' ')
+            .replace(/\b\w/g, (l: string) => l.toUpperCase());
+          
+          // Create the user with default values
+          const tempPassword = Math.random().toString(36).substring(2);
+          const newUser = await storage.createUser({
+            username,
+            password: tempPassword, // We won't use this for auth
+            name,
+            email,
+            university: "Auto-registered user",
+            avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`
+          });
+          
+          // Store the mapping between Firebase UID and our user ID
+          firebaseUsers.set(firebaseUid, newUser.id);
+          userId = newUser.id;
+          
+          // Create welcome activity
+          await storage.createActivity({
+            userId: newUser.id,
+            type: "account",
+            description: "Created account with Firebase (auto-registration)",
+            pointsEarned: 50
+          });
+          
+          console.log("Auto-registered new user with ID:", newUser.id);
+        }
       }
       
       // Now check if we have a user ID
