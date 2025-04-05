@@ -63,16 +63,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(401).json({ message: "Authentication required" });
   };
 
+  // User data route with combined authentication
+  app.get("/api/user", isAuthenticatedEither, (req, res) => {
+    if (!req.user) {
+      return res.status(401).send("Not authenticated");
+    }
+    
+    const { password, ...userData } = req.user;
+    console.log("User data requested for:", userData.username);
+    res.json(userData);
+  });
+  
   // API Routes
   // Skills routes
-  app.get("/api/skills", isAuthenticated, async (req, res) => {
+  app.get("/api/skills", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const skills = await storage.getSkillsByUser(userId);
     
     res.json(skills);
   });
   
-  app.post("/api/skills", isAuthenticated, async (req, res) => {
+  app.post("/api/skills", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const { name, isTeaching, proficiencyLevel, isVerified } = req.body;
     
@@ -88,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(skill);
   });
   
-  app.put("/api/skills/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/skills/:id", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const skillId = parseInt(req.params.id);
     
@@ -101,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // User profile
-  app.get("/api/profile", isAuthenticated, async (req, res) => {
+  app.get("/api/profile", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const user = await storage.getUser(userId);
     
@@ -114,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/profile", isAuthenticated, async (req, res) => {
+  app.put("/api/profile", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const { name, email, university, avatar } = req.body;
     
@@ -134,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Activity feed
-  app.get("/api/activities", isAuthenticated, async (req, res) => {
+  app.get("/api/activities", isAuthenticatedEither, async (req, res) => {
     try {
       const userId = req.user!.id;
       const activities = await storage.getActivitiesByUser(userId);
@@ -147,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Skill matching
-  app.post("/api/skill-matches", isAuthenticated, async (req, res) => {
+  app.post("/api/skill-matches", isAuthenticatedEither, async (req, res) => {
     try {
       const userId = req.user!.id;
       const { teachingSkillId, learningSkillId } = req.body;
@@ -188,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Exchanges
-  app.get("/api/exchanges", isAuthenticated, async (req, res) => {
+  app.get("/api/exchanges", isAuthenticatedEither, async (req, res) => {
     try {
       const userId = req.user!.id;
       const exchanges = await storage.getExchangesByUser(userId);
@@ -234,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   });
   
-  app.post("/api/exchanges", isAuthenticated, async (req, res) => {
+  app.post("/api/exchanges", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const { teacherId, studentId, teacherSkillId, studentSkillId } = req.body;
     
@@ -262,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(exchange);
   });
   
-  app.put("/api/exchanges/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/exchanges/:id", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const exchangeId = parseInt(req.params.id);
     
@@ -298,7 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Sessions
-  app.get("/api/sessions", isAuthenticated, async (req, res) => {
+  app.get("/api/sessions", isAuthenticatedEither, async (req, res) => {
     try {
       const userId = req.user!.id;
       const exchanges = await storage.getExchangesByUser(userId);
@@ -347,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/sessions", isAuthenticated, async (req, res) => {
+  app.post("/api/sessions", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const { exchangeId, scheduledTime, duration } = req.body;
@@ -370,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(session);
   });
   
-  app.put("/api/sessions/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/sessions/:id", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const sessionId = parseInt(req.params.id);
@@ -421,13 +432,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Badges
-  app.get("/api/badges", isAuthenticated, async (req, res) => {
+  app.get("/api/badges", isAuthenticatedEither, async (req, res) => {
     
     const badges = await storage.getAllBadges();
     res.json(badges);
   });
   
-  app.get("/api/user-badges", isAuthenticated, async (req, res) => {
+  app.get("/api/user-badges", isAuthenticatedEither, async (req, res) => {
     try {
       const userId = req.user!.id;
       const userBadges = await storage.getUserBadges(userId);

@@ -193,14 +193,7 @@ export function setupAuth(app: Express) {
     res.status(200).json({ message: "Logged out successfully" });
   });
 
-  app.get("/api/user", isAuthenticated, (req, res) => {
-    const user = (req as AuthenticatedRequest).user;
-    console.log("User data requested for:", user.username);
-    
-    const { password, ...userData } = user;
-    console.log("Returning user data for:", userData.username);
-    res.json(userData);
-  });
+  // /api/user endpoint is now consolidated in routes.ts with the combined auth middleware
   
   // Debug endpoint to check token data
   app.get("/api/debug/token", isAuthenticated, (req, res) => {

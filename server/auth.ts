@@ -181,20 +181,7 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get("/api/user", (req, res) => {
-    console.log("Session ID:", req.sessionID);
-    console.log("Is authenticated:", req.isAuthenticated());
-    console.log("User in session:", req.user ? req.user.username : "None");
-    
-    if (!req.isAuthenticated()) {
-      console.log("User not authenticated");
-      return res.status(401).send("Not authenticated");
-    }
-    
-    const { password, ...userData } = req.user as SelectUser;
-    console.log("Returning user data for:", userData.username);
-    res.json(userData);
-  });
+  // /api/user endpoint is now consolidated in routes.ts with the combined auth middleware
   
   // Debug endpoint to check session data
   app.get("/api/debug/session", (req, res) => {
