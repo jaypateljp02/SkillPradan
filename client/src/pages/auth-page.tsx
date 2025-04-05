@@ -1,10 +1,17 @@
 import { useAuth } from "@/hooks/use-auth";
 import { FirebaseAuthForm } from "@/components/firebase-auth-form";
+import { FirebaseStatusBanner } from "@/components/firebase-status-banner";
 import { Redirect } from "wouter";
 import logoImage from "../assets/logo.png";
+import { useEffect } from "react";
 
 export default function AuthPage() {
   const { user } = useAuth();
+  
+  // Add logging to help with debugging
+  useEffect(() => {
+    console.log("On auth page - skipping auth initialization");
+  }, []);
   
   // If user is logged in, redirect to home page
   if (user) {
@@ -24,13 +31,8 @@ export default function AuthPage() {
           <p className="mt-2 text-neutral-600">Connect.Collaborate.Create</p>
         </div>
         
-        {/* Firebase configuration notice */}
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-600">
-          <p>
-            <strong>Note:</strong> Firebase authentication is currently being configured. 
-            You can use the development login option below for testing in the meantime.
-          </p>
-        </div>
+        {/* Firebase status banner - only shows when Firebase is not configured */}
+        <FirebaseStatusBanner />
         
         <div className="mt-4">
           <FirebaseAuthForm />
