@@ -151,31 +151,44 @@ export function setupFirebaseAuth(app: Express) {
     
     try {
       // If user doesn't exist in our system yet, but has a valid Firebase account,
-      // we'll auto-create an account for them
+      // we'll look for an existing account before auto-creating 
       if (!userId && email) {
         console.log("Checking for existing user with email:", email);
         
-        // Check if a user with this email already exists in our system
-        // We need to loop through all users to find by email since we don't have an index
-        let existingUser = null;
+        // First, try to look up by username derived from email
+        // (many users may have registered with username = email prefix)
+        const usernameFromEmail = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        const userByUsername = await storage.getUserByUsername(usernameFromEmail);
         
-        // Convert map entries to array to avoid iterator issues
-        const userEntries = Array.from(firebaseUsers.entries());
-        
-        for (const [existingUid, existingId] of userEntries) {
-          const user = await storage.getUser(existingId);
-          if (user && user.email === email) {
-            existingUser = user;
+        if (userByUsername && userByUsername.email === email) {
+          // Found user by username and email matches!
+          console.log("Found existing user with matching username and email!");
+          firebaseUsers.set(firebaseUid, userByUsername.id);
+          userId = userByUsername.id;
+        } else {
+          // If not found by username, do a more thorough search
+          // We need to check all user IDs up to a reasonable limit
+          let existingUser = null;
+          
+          // Check first 100 user IDs - this is a simple approach
+          for (let i = 1; i <= 100; i++) {
+            const user = await storage.getUser(i);
+            if (user && user.email === email) {
+              existingUser = user;
+              break;
+            }
+          }
+          
+          if (existingUser) {
+            console.log("Found existing user with email:", email);
             // Update our mapping to include this Firebase UID
-            firebaseUsers.set(firebaseUid, user.id);
-            userId = user.id;
-            console.log("Found existing user with same email. Linking Firebase UID to user ID:", user.id);
-            break;
+            firebaseUsers.set(firebaseUid, existingUser.id);
+            userId = existingUser.id;
           }
         }
         
-        // Only create a new user if no existing user was found with this email
-        if (!existingUser) {
+        // Only create a new user if no existing user was found with this email and userId not set
+        if (!userId) {
           console.log("Auto-creating user account for Firebase user:", email);
           
           // Generate a username from email
