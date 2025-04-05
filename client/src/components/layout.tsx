@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
+import { ConnectionStatus } from "./connection-status";
 
 interface LayoutProps {
   children: ReactNode;
@@ -27,6 +28,9 @@ export function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </div>
+      
+      {/* Connection status - will only render when needed */}
+      <ConnectionStatus />
     </div>
   );
 }

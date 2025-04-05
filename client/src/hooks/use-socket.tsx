@@ -65,6 +65,18 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     // Don't try to connect if already connected
     if (socket !== null) return;
     
+    // Skip WebSocket connection on the auth page
+    if (window.location.pathname === '/auth') {
+      console.log("Skipping WebSocket connection on auth page");
+      return () => {};
+    }
+    
+    // Only attempt WebSocket connection if user is authenticated
+    if (!user) {
+      console.log("No authentication method found");
+      return () => {};
+    }
+    
     const setupWebSocket = () => {
       try {
         // Create WebSocket connection
@@ -89,18 +101,23 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           setConnected(false);
           setSocket(null);
           
-          // Only show toast if we've already had a connection
-          if (connectionAttempted) {
-            toast({
-              title: "Connection lost",
-              description: "Trying to reconnect...",
-              variant: "destructive"
-            });
+          // Only show toast if we've already had a connection and not on auth page
+          if (connectionAttempted && window.location.pathname !== '/auth') {
+            // Don't show connection lost toast on login page
+            if (user) {
+              toast({
+                title: "Connection lost",
+                description: "Trying to reconnect...",
+                variant: "destructive"
+              });
+            }
             
-            // Try to reconnect after a short delay
-            setTimeout(() => {
-              setupWebSocket(); // Try to reconnect
-            }, 3000);
+            // Try to reconnect after a short delay if we're authenticated
+            if (user) {
+              setTimeout(() => {
+                setupWebSocket(); // Try to reconnect
+              }, 3000);
+            }
           }
         };
         
@@ -108,7 +125,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           console.error("WebSocket error:", error);
           // We won't set connected to false here as the onclose handler will be called right after
           
-          // If this is the first attempt, use fallback
+          // If this is the first attempt, use fallback mode
           if (!connectionAttempted) {
             console.log("Using fallback mode without WebSockets");
             // We'll continue without WebSockets - the app will still work with limited functionality
@@ -246,7 +263,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     return () => {
       if (cleanup) cleanup();
     };
-  }, [socket, toast, users]);
+  }, [socket, toast, users, user]);
 
   // Join session
   const joinSession = useCallback((sessionId: number) => {
