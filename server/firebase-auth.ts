@@ -174,8 +174,27 @@ export function setupFirebaseAuth(app: Express) {
 
   // Logout from Firebase
   app.post("/api/firebase-logout", (req, res) => {
-    // We'll keep the Firebase UID mapping for now
-    // The client will handle signing out from Firebase
+    // Extract Firebase UID from authorization header if present
+    let firebaseUid = null;
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        // We're not verifying the token here since we're logging out
+        // Just extract the UID for logging purposes
+        const idToken = authHeader.split('Bearer ')[1];
+        if (idToken) {
+          console.log("Firebase logout requested with token");
+        }
+      } else {
+        console.log("Firebase logout requested without token");
+      }
+    } catch (error) {
+      console.warn("Error parsing auth header during logout:", error);
+    }
+    
+    // Always return success for logout attempts
+    // (even if there's no session, that's still a successful logout)
+    console.log("Firebase logout successful");
     res.status(200).json({ message: "Logged out successfully" });
   });
 

@@ -31,7 +31,7 @@ type AuthContextType = {
   // Firebase authentication
   firebaseRegister: (data: FirebaseRegisterData) => Promise<void>;
   firebaseLogin: (data: FirebaseLoginData) => Promise<void>;
-  firebaseLogout: () => Promise<void>;
+  firebaseLogout: () => Promise<any>; // Changed to any to avoid return type issues
   // Helper method
   logout?: () => void;
 };
@@ -235,8 +235,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         window.location.href = "/auth";
       }, 500);
-      
-      return true;
     } catch (error: any) {
       console.error("Firebase logout error:", error);
       

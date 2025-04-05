@@ -8,9 +8,31 @@ import logoImage from "../../assets/logo.png";
 export function Navbar() {
   const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    if (logout) {
-      logout();
+  // Handle logout with fallback mechanism
+  const handleLogout = async () => {
+    try {
+      // Try using regular logout function
+      if (logout) {
+        await logout();
+      } else {
+        throw new Error("Logout function not available");
+      }
+    } catch (error) {
+      console.log("Normal logout failed, using fallback method");
+      
+      // Force clear any cached data
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+      
+      // Clear all cookies
+      document.cookie.split(";").forEach(cookie => {
+        document.cookie = cookie
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      // Manually redirect
+      window.location.href = "/auth";
     }
   };
 
@@ -49,11 +71,11 @@ export function Navbar() {
                     <span className="text-sm font-medium">{user?.name}</span>
                     <button 
                       onClick={handleLogout}
-                      className="p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center"
+                      className="p-2 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex items-center justify-center"
                       aria-label="Log out"
                       title="Log out"
                     >
-                      <LogOut className="h-5 w-5 text-neutral-600 hover:text-neutral-900" />
+                      <LogOut className="h-5 w-5 text-red-600 hover:text-red-700" />
                     </button>
                   </div>
                 </div>
