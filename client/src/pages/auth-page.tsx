@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { FirebaseAuthForm } from "@/components/firebase-auth-form";
 import { FirebaseStatusBanner } from "@/components/firebase-status-banner";
+import { FirebaseEnvDebug } from "@/components/firebase-env-debug";
 import { Redirect } from "wouter";
 import logoImage from "../assets/logo.png";
 import { useEffect } from "react";
@@ -33,6 +34,9 @@ export default function AuthPage() {
         
         {/* Firebase status banner - only shows when Firebase is not configured */}
         <FirebaseStatusBanner />
+        
+        {/* Firebase environment variable debugging */}
+        <FirebaseEnvDebug />
         
         <div className="mt-4">
           <FirebaseAuthForm />

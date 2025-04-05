@@ -1,4 +1,4 @@
-import * as admin from 'firebase-admin';
+import admin from 'firebase-admin';
 import { storage } from './storage';
 
 // This is a circular import issue, so we'll define a local map to prevent it
@@ -6,13 +6,11 @@ import { storage } from './storage';
 const localFirebaseUsers = new Map<string, number>();
 
 // Initialize Firebase Admin SDK
-let firebaseApp: admin.app.App | null = null;
+let firebaseApp: any = null;
 
 try {
   // Check if we have all the required environment variables
-  if (
-    !process.env.FIREBASE_PROJECT_ID
-  ) {
+  if (!process.env.FIREBASE_PROJECT_ID) {
     console.warn(
       'Firebase Admin SDK initialization failed: Missing environment variables. ' +
       'Some Firebase authentication features may not work properly.'
@@ -20,22 +18,11 @@ try {
     throw new Error('Missing Firebase Admin SDK environment variables');
   }
 
-  // Initialize the admin SDK using service account or default credentials
-  // We'll first try to initialize using the FIREBASE_* environment variables
-  try {
-    firebaseApp = admin.initializeApp({
-      // Use application default credentials
-      credential: admin.credential.applicationDefault(),
-      projectId: process.env.FIREBASE_PROJECT_ID
-    });
-  } catch (initError) {
-    // Fall back to initializing with just the project ID
-    // This is a simpler approach that will work for development
-    console.warn('Falling back to simplified Firebase Admin initialization');
-    firebaseApp = admin.initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID
-    });
-  }
+  // Initialize the admin SDK with project ID
+  firebaseApp = admin.initializeApp({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    // No need for credential in development environment on Replit
+  });
 
   console.log('Firebase Admin SDK initialized successfully');
 } catch (error) {

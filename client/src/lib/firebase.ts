@@ -1,36 +1,38 @@
 import { initializeApp, FirebaseApp } from "firebase/app";
-import { getAuth, Auth } from "firebase/auth";
-
-// Firebase configuration from environment variables
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+import { 
+  getAuth, 
+  Auth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  User as FirebaseUser
+} from "firebase/auth";
+import { firebaseConfig } from "./firebase-config";
 
 // Initialize Firebase with error handling
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 
 try {
-  // Validate that we have the minimum required configuration
-  if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+  // Validate that the config has the minimum required properties
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === "undefined") {
     throw new Error("Firebase API key is missing");
   }
-  if (!import.meta.env.VITE_FIREBASE_AUTH_DOMAIN) {
+  if (!firebaseConfig.authDomain || firebaseConfig.authDomain === "undefined") {
     throw new Error("Firebase auth domain is missing");
   }
-  if (!import.meta.env.VITE_FIREBASE_PROJECT_ID) {
+  if (!firebaseConfig.projectId || firebaseConfig.projectId === "undefined") {
     throw new Error("Firebase project ID is missing");
   }
 
   // Initialize Firebase
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  console.log("Firebase initialized successfully");
+  console.log("Firebase initialized successfully with config:", 
+    { projectId: firebaseConfig.projectId, authDomain: firebaseConfig.authDomain });
 } catch (error) {
   console.error("Error initializing Firebase:", error);
   // Display a more prominent error in development to ensure Firebase is properly configured
@@ -40,10 +42,58 @@ try {
       "background: #ff0000; color: white; font-size: 16px; font-weight: bold; padding: 4px;"
     );
     console.error(
-      "%c Firebase environment variables must be properly configured for authentication to work.",
-      "font-size: 14px; font-weight: bold;"
+      "%c Firebase configuration: ",
+      "font-size: 14px; font-weight: bold;",
+      {
+        apiKey: firebaseConfig.apiKey ? "Defined" : "Missing",
+        authDomain: firebaseConfig.authDomain ? "Defined" : "Missing",
+        projectId: firebaseConfig.projectId ? "Defined" : "Missing"
+      }
     );
   }
+}
+
+// Get Firebase ID token for authentication
+export async function getFirebaseIdToken(): Promise<string | null> {
+  try {
+    if (!auth || !auth.currentUser) {
+      console.warn("No authenticated user found");
+      return null;
+    }
+    
+    const token = await auth.currentUser.getIdToken(true);
+    return token;
+  } catch (error) {
+    console.error("Error getting Firebase ID token:", error);
+    return null;
+  }
+}
+
+// Authentication helper functions
+export async function signInWithEmail(email: string, password: string) {
+  if (!auth) throw new Error("Firebase auth not initialized");
+  return signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function signUpWithEmail(email: string, password: string) {
+  if (!auth) throw new Error("Firebase auth not initialized");
+  return createUserWithEmailAndPassword(auth, email, password);
+}
+
+export async function signInWithGoogle() {
+  if (!auth) throw new Error("Firebase auth not initialized");
+  const provider = new GoogleAuthProvider();
+  return signInWithPopup(auth, provider);
+}
+
+export async function signOut() {
+  if (!auth) throw new Error("Firebase auth not initialized");
+  return firebaseSignOut(auth);
+}
+
+export function onAuthChange(callback: (user: FirebaseUser | null) => void) {
+  if (!auth) throw new Error("Firebase auth not initialized");
+  return onAuthStateChanged(auth, callback);
 }
 
 // Export Firebase instances
