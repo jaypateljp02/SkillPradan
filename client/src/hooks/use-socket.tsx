@@ -66,38 +66,34 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set a flag to track connection attempts
     let connectionAttempted = false;
+    let ws: WebSocket | null = null;
     
     // Don't try to connect if already connected
-    if (socket !== null) return undefined;
+    if (socket !== null) return;
     
     // Skip WebSocket connection on the auth page
     if (window.location.pathname === '/auth') {
       console.log("Skipping WebSocket connection on auth page");
-      return undefined;
+      return;
     }
     
     // Only attempt WebSocket connection if user is authenticated
     if (!user) {
       console.log("No authentication method found");
-      return undefined;
+      return;
     }
     
-    // Wait a moment before trying to connect to allow authentication to complete
-    const connectionTimeout = setTimeout(() => {
-      // Create WebSocket connection with a fallback that handles proxy issues
-      let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      
-      // Use protocol-relative URL to avoid issues with proxies
-      let hostName = window.location.host;
-      if (window.location.hostname === "localhost") {
-        hostName = `${window.location.hostname}:${window.location.port}`;
-      }
-      
-      const wsUrl = `${protocol}//${hostName}/ws`;
+    // Initialize connection function
+    const setupWebSocket = () => {
+      // Create WebSocket connection with direct Replit URL
+      // This avoids issues with proxies and undefined ports
+      const baseUrl = window.location.href.split('/').slice(0, 3).join('/');
+      const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws';
+      console.log("Base URL for WebSocket:", baseUrl);
       
       try {
         console.log("Connecting to WebSocket server at:", wsUrl);
-        const ws = new WebSocket(wsUrl);
+        ws = new WebSocket(wsUrl);
         
         // Set up WebSocket event handlers
         ws.onopen = () => {
@@ -130,8 +126,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
               setTimeout(() => {
                 // Try to reconnect later
                 if (window.location.pathname !== '/auth') {
-                  const newWs = new WebSocket(wsUrl);
-                  setSocket(newWs);
+                  setupWebSocket();
                 }
               }, 3000);
             }
@@ -263,16 +258,25 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.error("Error setting up WebSocket:", error);
       }
-    }, 1000); // Wait a second before connecting
+    };
+    
+    // Wait a moment before trying to connect to allow authentication to complete
+    const connectionTimeout = setTimeout(() => {
+      setupWebSocket();
+    }, 1000);
     
     // Clean up on unmount
     return () => {
       clearTimeout(connectionTimeout);
-      if (isWebSocketOpen(socket)) {
-        socket.close();
+      
+      // Close socket if it exists
+      if (ws) {
+        console.log("Cleaning up WebSocket connection");
+        // @ts-ignore - TypeScript doesn't like this for some reason, but it works
+        ws.close();
       }
     };
-  }, [socket, toast, users, user]);
+  }, [toast, users, user]);
 
   // Join session
   const joinSession = useCallback((sessionId: number) => {
