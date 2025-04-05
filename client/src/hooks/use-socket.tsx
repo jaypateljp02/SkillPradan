@@ -29,6 +29,11 @@ interface SessionUser {
   avatar?: string;
 }
 
+// Type guard for WebSocket state
+const isWebSocketOpen = (ws: WebSocket | null): ws is WebSocket => {
+  return ws !== null && ws.readyState === WebSocket.OPEN;
+};
+
 export const SocketContext = createContext<SocketContextType | null>(null);
 
 // Mock placeholder messages
@@ -63,26 +68,34 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     let connectionAttempted = false;
     
     // Don't try to connect if already connected
-    if (socket !== null) return;
+    if (socket !== null) return undefined;
     
     // Skip WebSocket connection on the auth page
     if (window.location.pathname === '/auth') {
       console.log("Skipping WebSocket connection on auth page");
-      return () => {};
+      return undefined;
     }
     
     // Only attempt WebSocket connection if user is authenticated
     if (!user) {
       console.log("No authentication method found");
-      return () => {};
+      return undefined;
     }
     
-    const setupWebSocket = () => {
+    // Wait a moment before trying to connect to allow authentication to complete
+    const connectionTimeout = setTimeout(() => {
+      // Create WebSocket connection with a fallback that handles proxy issues
+      let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      
+      // Use protocol-relative URL to avoid issues with proxies
+      let hostName = window.location.host;
+      if (window.location.hostname === "localhost") {
+        hostName = `${window.location.hostname}:${window.location.port}`;
+      }
+      
+      const wsUrl = `${protocol}//${hostName}/ws`;
+      
       try {
-        // Create WebSocket connection
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const wsUrl = `${protocol}//${window.location.host}/ws`;
-        
         console.log("Connecting to WebSocket server at:", wsUrl);
         const ws = new WebSocket(wsUrl);
         
@@ -115,7 +128,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
             // Try to reconnect after a short delay if we're authenticated
             if (user) {
               setTimeout(() => {
-                setupWebSocket(); // Try to reconnect
+                // Try to reconnect later
+                if (window.location.pathname !== '/auth') {
+                  const newWs = new WebSocket(wsUrl);
+                  setSocket(newWs);
+                }
               }, 3000);
             }
           }
@@ -243,31 +260,23 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         
         setSocket(ws);
         connectionAttempted = true;
-        
-        // Return cleanup function
-        return () => {
-          if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-            ws.close();
-          }
-        };
       } catch (error) {
         console.error("Error setting up WebSocket:", error);
-        return undefined;
       }
-    };
-    
-    // Setup WebSocket with error handling
-    const cleanup = setupWebSocket();
+    }, 1000); // Wait a second before connecting
     
     // Clean up on unmount
     return () => {
-      if (cleanup) cleanup();
+      clearTimeout(connectionTimeout);
+      if (isWebSocketOpen(socket)) {
+        socket.close();
+      }
     };
   }, [socket, toast, users, user]);
 
   // Join session
   const joinSession = useCallback((sessionId: number) => {
-    if (!user || !socket || socket.readyState !== WebSocket.OPEN) {
+    if (!user || !isWebSocketOpen(socket)) {
       console.log("Cannot join session: user not authenticated or socket not connected");
       return;
     }
@@ -315,7 +324,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   // Leave session
   const leaveSession = useCallback((sessionId: number) => {
-    if (!user || !socket || socket.readyState !== WebSocket.OPEN) {
+    if (!user || !isWebSocketOpen(socket)) {
       return;
     }
     
@@ -343,7 +352,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   // Whiteboard update
   const sendWhiteboardUpdate = useCallback((sessionId: number, whiteboardData: any) => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
+    if (!isWebSocketOpen(socket)) {
       console.log("Cannot send whiteboard update: socket not connected");
       setWhiteboardData(whiteboardData);
       return;
@@ -364,7 +373,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   // Video signal
   const sendVideoSignal = useCallback((sessionId: number, target: string, signal: any) => {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
+    if (!isWebSocketOpen(socket)) {
       console.log("Cannot send video signal: socket not connected");
       return;
     }
@@ -387,7 +396,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
+    if (!isWebSocketOpen(socket)) {
       console.log("Cannot send message: socket not connected, using fallback");
       // Fallback to local message
       setMessages(prev => [
