@@ -141,21 +141,61 @@ export function setupFirebaseAuth(app: Express) {
 
   // Login with Firebase
   app.post("/api/firebase-login", async (req, res) => {
-    const { firebaseUid } = req.body;
+    const { firebaseUid, email } = req.body;
     
     if (!firebaseUid) {
       return res.status(400).json({ message: "Firebase UID is required" });
     }
     
-    const userId = firebaseUsers.get(firebaseUid);
-    
-    if (!userId) {
-      return res.status(404).json({ 
-        message: "User not found. This Firebase account may not be registered with our system yet."
-      });
-    }
+    let userId = firebaseUsers.get(firebaseUid);
     
     try {
+      // If user doesn't exist in our system yet, but has a valid Firebase account,
+      // we'll auto-create an account for them
+      if (!userId && email) {
+        console.log("Auto-creating user account for Firebase user:", email);
+        
+        // Generate a username from email
+        const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        // Generate default name from email
+        const name = email.split('@')[0]
+          .replace(/[._-]/g, ' ')
+          .replace(/\b\w/g, (l: string) => l.toUpperCase());
+        
+        // Create the user with default values
+        const tempPassword = Math.random().toString(36).substring(2);
+        const newUser = await storage.createUser({
+          username,
+          password: tempPassword, // We won't use this for auth
+          name,
+          email,
+          university: "Auto-registered user",
+          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`
+        });
+        
+        // Store the mapping between Firebase UID and our user ID
+        firebaseUsers.set(firebaseUid, newUser.id);
+        userId = newUser.id;
+        
+        // Create welcome activity
+        await storage.createActivity({
+          userId: newUser.id,
+          type: "account",
+          description: "Created account with Firebase (auto-registration)",
+          pointsEarned: 50
+        });
+        
+        console.log("Auto-registered new user with ID:", newUser.id);
+      }
+      
+      // Now check if we have a user ID
+      if (!userId) {
+        return res.status(404).json({ 
+          message: "User not found. Please register your account first or try again with a valid email."
+        });
+      }
+      
       const user = await storage.getUser(userId);
       
       if (!user) {

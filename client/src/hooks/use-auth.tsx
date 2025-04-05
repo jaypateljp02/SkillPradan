@@ -170,7 +170,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // If successful, fetch user data from our backend
       if (userCredential.user) {
         const res = await apiRequest("POST", "/api/firebase-login", {
-          firebaseUid: userCredential.user.uid
+          firebaseUid: userCredential.user.uid,
+          email: userCredential.user.email
         });
         
         const userData = await res.json();
