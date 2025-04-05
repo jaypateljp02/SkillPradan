@@ -87,9 +87,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     const setupWebSocket = () => {
       // Create WebSocket connection with direct Replit URL
       // This avoids issues with proxies and undefined ports
-      const baseUrl = window.location.href.split('/').slice(0, 3).join('/');
-      const wsUrl = baseUrl.replace(/^http/, 'ws') + '/ws';
-      console.log("Base URL for WebSocket:", baseUrl);
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/ws`;
+      console.log("Base URL for WebSocket:", `${window.location.protocol}//${host}`);
       
       try {
         console.log("Connecting to WebSocket server at:", wsUrl);
@@ -135,6 +136,15 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         
         ws.onerror = (error) => {
           console.error("WebSocket error:", error);
+          // Capture additional information for debugging
+          const connectionDetails = {
+            url: wsUrl,
+            readyState: ws ? ws.readyState : 'no websocket',
+            location: window.location.href,
+            user: user ? { id: user.id, name: user.name } : 'not authenticated'
+          };
+          console.log("WebSocket error context:", connectionDetails);
+          
           // We won't set connected to false here as the onclose handler will be called right after
           
           // If this is the first attempt, use fallback mode
@@ -260,20 +270,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       }
     };
     
-    // Wait a moment before trying to connect to allow authentication to complete
+    // Wait a longer moment before trying to connect to allow authentication to complete
     const connectionTimeout = setTimeout(() => {
       setupWebSocket();
-    }, 1000);
+    }, 2500);  // Increased delay to ensure authentication is fully established
     
     // Clean up on unmount
     return () => {
       clearTimeout(connectionTimeout);
       
-      // Close socket if it exists
+      // Close socket if it exists and is in a state that can be closed
       if (ws) {
         console.log("Cleaning up WebSocket connection");
-        // @ts-ignore - TypeScript doesn't like this for some reason, but it works
-        ws.close();
+        // Only close if the WebSocket is in a state where it can be closed
+        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+          ws.close();
+        }
       }
     };
   }, [toast, users, user]);

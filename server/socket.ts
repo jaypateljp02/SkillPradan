@@ -22,8 +22,16 @@ export function setupWebSockets(httpServer: Server) {
   wss.on('connection', async (ws, req) => {
     console.log('WebSocket client attempting to connect');
     
-    // Skip authentication for now to allow connection
-    // We'll check auth when users try to join sessions or perform actions
+    // Log connection information for debugging
+    const connectionInfo = {
+      url: req.url,
+      headers: req.headers,
+      method: req.method
+    };
+    console.log('WebSocket connection details:', JSON.stringify(connectionInfo, null, 2));
+    
+    // We're keeping the connection open even without authentication
+    // Authentication will be checked when users try to join sessions or perform actions
     console.log('WebSocket client connected');
     
     // Generate a unique client ID

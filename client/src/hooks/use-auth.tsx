@@ -105,10 +105,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: `Welcome to Skill प्रदान, ${userData.user.name}!`,
         });
         
-        // Redirect to home page
+        // Redirect to home page with a longer delay to ensure data is loaded
+        console.log("Registration successful, redirecting to home page shortly");
+        // Increase timeout to allow WebSocket connections to establish
         setTimeout(() => {
           window.location.href = "/";
-        }, 500);
+        }, 2000);
       }
     } catch (error: any) {
       console.error("Firebase registration error:", error);
@@ -157,10 +159,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           description: `Logged in as ${userData.user.name}`,
         });
         
-        // Redirect to home page
+        // Redirect to home page with a longer delay to ensure data is loaded
+        console.log("Login successful, redirecting to home page shortly");
+        // Increase timeout to allow WebSocket connections to establish
         setTimeout(() => {
           window.location.href = "/";
-        }, 500);
+        }, 2000);
       }
     } catch (error: any) {
       console.error("Firebase login error:", error);
