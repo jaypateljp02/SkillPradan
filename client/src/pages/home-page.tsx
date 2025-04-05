@@ -38,7 +38,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("profile-tab");
   
   // Use Challenge type from import at the top
@@ -116,6 +116,13 @@ export default function HomePage() {
                   size="sm" 
                 />
                 <span className="ml-2 text-sm font-medium">{user?.name || 'User'}</span>
+                <button 
+                  onClick={() => logoutMutation.mutate()}
+                  className="ml-3 text-neutral-500 hover:text-neutral-800 transition-colors"
+                  aria-label="Logout"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>
