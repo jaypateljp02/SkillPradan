@@ -2,7 +2,6 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { WebSocketServer } from "ws";
-import { setupAuth, isAuthenticated, userTokens } from "./token-auth";
 import { setupFirebaseAuth, isFirebaseAuthenticated, firebaseUsers } from "./firebase-auth";
 import { setupWebSockets } from "./socket";
 import { 
@@ -24,8 +23,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Add a debug route to check token
-  app.get('/api/debug/token', (req, res) => {
+  // Add a debug route to check Firebase authentication
+  app.get('/api/debug/firebase', (req, res) => {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     
@@ -39,28 +38,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } : null
     });
   });
-  // Set up authentication routes
-  setupAuth(app);
+  
+  // Set up Firebase authentication routes
   setupFirebaseAuth(app);
   
-  // Create a combined authentication middleware that accepts either token or Firebase auth
+  // Authentication middleware that uses only Firebase authentication
   const isAuthenticatedEither = async (req: Request, res: Response, next: NextFunction) => {
-    // Check for token-based auth first
-    const token = req.headers.authorization?.split(' ')[1];
-    if (token) {
-      // Continue with token auth
-      return isAuthenticated(req, res, next);
-    }
-    
-    // Then check for Firebase auth
-    const firebaseUid = req.headers['x-firebase-uid'] as string;
-    if (firebaseUid) {
-      // Continue with Firebase auth
-      return isFirebaseAuthenticated(req, res, next);
-    }
-    
-    // No auth provided
-    return res.status(401).json({ message: "Authentication required" });
+    // The token is verified in the isFirebaseAuthenticated middleware
+    return isFirebaseAuthenticated(req, res, next);
   };
 
   // User data route with combined authentication
@@ -465,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Challenges
-  app.get("/api/challenges", isAuthenticated, async (req, res) => {
+  app.get("/api/challenges", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const challenges = await storage.getAllChallenges();
@@ -488,7 +473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedChallenges);
   });
   
-  app.post("/api/user-challenges", isAuthenticated, async (req, res) => {
+  app.post("/api/user-challenges", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const { challengeId } = req.body;
@@ -515,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(201).json(userChallenge);
   });
   
-  app.put("/api/user-challenges/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/user-challenges/:id", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const userChallengeId = parseInt(req.params.id);
@@ -534,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Leaderboard
-  app.get("/api/leaderboard", isAuthenticated, async (req, res) => {
+  app.get("/api/leaderboard", isAuthenticatedEither, async (req, res) => {
     try {
       const leaderboard = await storage.getLeaderboard();
       res.json(leaderboard || []); // Ensure we always send an array
@@ -545,14 +530,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Reviews
-  app.get("/api/users/:userId/reviews", isAuthenticated, async (req, res) => {
+  app.get("/api/users/:userId/reviews", isAuthenticatedEither, async (req, res) => {
     
     const userId = parseInt(req.params.userId);
     const reviews = await storage.getReviewsByUser(userId);
     res.json(reviews);
   });
   
-  app.get("/api/users/:userId/rating", isAuthenticated, async (req, res) => {
+  app.get("/api/users/:userId/rating", isAuthenticatedEither, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       if (isNaN(userId)) {
@@ -572,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/reviews", isAuthenticated, async (req, res) => {
+  app.post("/api/reviews", isAuthenticatedEither, async (req, res) => {
     try {
       const reviewerId = req.user!.id;
       
@@ -616,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Groups
   // Group routes are handled below in the "// Group routes" section
 
-  app.post("/api/groups/:groupId/join", isAuthenticated, async (req, res) => {
+  app.post("/api/groups/:groupId/join", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
     
@@ -632,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group routes
   // =========================================
-  app.get("/api/groups", isAuthenticated, async (req, res) => {
+  app.get("/api/groups", isAuthenticatedEither, async (req, res) => {
     try {
       const isTeamProject = req.query.isTeamProject === 'true';
       const groups = await storage.getAllGroups();
@@ -658,7 +643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/groups/user", isAuthenticated, async (req, res) => {
+  app.get("/api/groups/user", isAuthenticatedEither, async (req, res) => {
     try {
       const userId = req.user!.id;
       const isTeamProject = req.query.isTeamProject === 'true';
@@ -690,7 +675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/groups/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/groups/:id", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.id);
@@ -771,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  app.post("/api/groups", isAuthenticated, async (req, res) => {
+  app.post("/api/groups", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     
     try {
@@ -801,7 +786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.put("/api/groups/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/groups/:id", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.id);
@@ -822,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Route for deleting a group
-  app.delete("/api/groups/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/groups/:id", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const groupId = parseInt(req.params.id);
     
@@ -852,7 +837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Route for joining a group
-  app.post("/api/groups/:id/join", isAuthenticated, async (req, res) => {
+  app.post("/api/groups/:id/join", isAuthenticatedEither, async (req, res) => {
     const userId = req.user!.id;
     const groupId = parseInt(req.params.id);
     
@@ -914,7 +899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group Member routes
   // =========================================
-  app.get("/api/groups/:groupId/members", isAuthenticated, async (req, res) => {
+  app.get("/api/groups/:groupId/members", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -949,7 +934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedMembers);
   });
   
-  app.post("/api/groups/:groupId/members", isAuthenticated, async (req, res) => {
+  app.post("/api/groups/:groupId/members", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1012,7 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.delete("/api/groups/:groupId/members/:userId", isAuthenticated, async (req, res) => {
+  app.delete("/api/groups/:groupId/members/:userId", isAuthenticatedEither, async (req, res) => {
     
     const currentUserId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1054,7 +1039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group Files routes
   // =========================================
-  app.get("/api/groups/:groupId/files", isAuthenticated, async (req, res) => {
+  app.get("/api/groups/:groupId/files", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1089,7 +1074,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedFiles);
   });
   
-  app.post("/api/groups/:groupId/files", isAuthenticated, async (req, res) => {
+  app.post("/api/groups/:groupId/files", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1136,7 +1121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group Events routes
   // =========================================
-  app.get("/api/groups/:groupId/events", isAuthenticated, async (req, res) => {
+  app.get("/api/groups/:groupId/events", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1171,7 +1156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedEvents);
   });
   
-  app.post("/api/groups/:groupId/events", isAuthenticated, async (req, res) => {
+  app.post("/api/groups/:groupId/events", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1232,7 +1217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =========================================
   // Group Messages routes
   // =========================================
-  app.get("/api/groups/:groupId/messages", isAuthenticated, async (req, res) => {
+  app.get("/api/groups/:groupId/messages", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1265,7 +1250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(enrichedMessages);
   });
   
-  app.post("/api/groups/:groupId/messages", isAuthenticated, async (req, res) => {
+  app.post("/api/groups/:groupId/messages", isAuthenticatedEither, async (req, res) => {
     
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
@@ -1309,22 +1294,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Combined authentication endpoint that accepts both Firebase and token authentication
+  // Firebase-only authentication endpoint
   app.get("/api/user", async (req, res) => {
-    // First try token-based auth
-    const token = req.headers.authorization?.split(' ')[1];
-    if (token) {
-      const userId = userTokens.get(token);
-      if (userId) {
-        const user = await storage.getUser(userId);
-        if (user) {
-          const { password, ...userData } = user;
-          return res.json(userData);
-        }
-      }
-    }
-    
-    // Then try Firebase auth
+    // Get Firebase UID from the header
     const firebaseUid = req.headers['x-firebase-uid'] as string;
     if (firebaseUid) {
       const userId = firebaseUsers.get(firebaseUid);
@@ -1338,7 +1310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     // Not authenticated
-    return res.status(401).json({ message: "Authentication required" });
+    return res.status(401).json({ message: "Firebase authentication required" });
   });
   
   // Register admin routes

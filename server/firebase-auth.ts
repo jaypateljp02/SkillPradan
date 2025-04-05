@@ -2,6 +2,7 @@
 import { Express, NextFunction, Request, Response } from "express";
 import { User as SelectUser } from "@shared/schema";
 import { storage } from "./storage";
+import { verifyFirebaseToken } from "./firebase-admin";
 
 // Store Firebase UIDs to user IDs mapping
 export const firebaseUsers = new Map<string, number>();
@@ -25,35 +26,55 @@ interface AuthenticatedRequest extends Request {
 
 // Firebase authentication middleware
 export const isFirebaseAuthenticated = async (req: Request, res: Response, next: NextFunction) => {
-  // The Firebase UID should be sent in a custom header
-  const firebaseUid = req.headers['x-firebase-uid'] as string;
+  // Get the authorization header
+  const authHeader = req.headers.authorization;
   
-  if (!firebaseUid) {
-    console.log("No Firebase UID provided");
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log("No Firebase token provided");
     return res.status(401).json({ message: "Authentication required" });
   }
   
-  const userId = firebaseUsers.get(firebaseUid);
-  if (!userId) {
-    console.log("Invalid Firebase UID or user not found");
-    return res.status(401).json({ message: "Invalid authentication or user not found" });
+  // Extract the token
+  const idToken = authHeader.split('Bearer ')[1];
+  
+  try {
+    // Verify the Firebase token
+    const firebaseUid = await verifyFirebaseToken(idToken);
+    
+    if (!firebaseUid) {
+      console.log("Invalid Firebase token");
+      return res.status(401).json({ message: "Invalid authentication token" });
+    }
+    
+    // Get the user ID from our mapping
+    const userId = firebaseUsers.get(firebaseUid);
+    if (!userId) {
+      console.log("Firebase UID not found in our system:", firebaseUid);
+      return res.status(401).json({ 
+        message: "User not registered. Please register your Firebase account first."
+      });
+    }
+    
+    // Get the user data
+    const user = await storage.getUser(userId);
+    if (!user) {
+      console.log("User not found for Firebase UID:", firebaseUid);
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    // Add user to request
+    (req as AuthenticatedRequest).user = user;
+    
+    // Add isAuthenticated method to maintain compatibility
+    req.isAuthenticated = function(this: AuthenticatedRequest): this is AuthenticatedRequest {
+      return true;
+    };
+    
+    next();
+  } catch (error) {
+    console.error("Firebase authentication error:", error);
+    return res.status(401).json({ message: "Authentication failed" });
   }
-  
-  const user = await storage.getUser(userId);
-  if (!user) {
-    console.log("User not found for Firebase UID");
-    return res.status(401).json({ message: "User not found" });
-  }
-  
-  // Add user to request
-  (req as AuthenticatedRequest).user = user;
-  
-  // Add isAuthenticated method to maintain compatibility
-  req.isAuthenticated = function(this: AuthenticatedRequest): this is AuthenticatedRequest {
-    return true;
-  };
-  
-  next();
 };
 
 export function setupFirebaseAuth(app: Express) {

@@ -1,13 +1,13 @@
 import { Router } from "express";
-import { isAuthenticated } from "../token-auth";
+import { isFirebaseAuthenticated } from "../firebase-auth";
 import { isAdmin } from "../middleware/admin";
 import { storage } from "../storage";
 
 // Create a router for admin routes
 const adminRouter = Router();
 
-// Require authentication and admin privileges for all routes
-adminRouter.use(isAuthenticated, isAdmin);
+// Require Firebase authentication and admin privileges for all routes
+adminRouter.use(isFirebaseAuthenticated, isAdmin);
 
 // Get all users (for admin dashboard)
 adminRouter.get("/users", async (req, res) => {

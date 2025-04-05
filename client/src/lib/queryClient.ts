@@ -1,22 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-
-// Token storage
-const AUTH_TOKEN_KEY = "auth_token";
-
-// Get token from localStorage
-export function getToken(): string | null {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
-}
-
-// Set token in localStorage
-export function setToken(token: string): void {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
-}
-
-// Remove token from localStorage
-export function removeToken(): void {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-}
+import { auth } from "./firebase";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -27,26 +10,17 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Add firebase to window type
-declare global {
-  interface Window {
-    firebase?: {
-      auth?: () => {
-        currentUser?: {
-          uid: string;
-        } | null;
-      };
-    };
+// Get Firebase ID token if available
+export async function getFirebaseIdToken(): Promise<string | null> {
+  if (!auth || !auth.currentUser) {
+    return null;
   }
-}
-
-// Get Firebase UID from current user if available
-export function getFirebaseUID(): string | null {
+  
   try {
-    const auth = window.firebase?.auth?.();
-    return auth?.currentUser?.uid || null;
+    const token = await auth.currentUser.getIdToken(true);
+    return token;
   } catch (error) {
-    console.error("Error getting Firebase UID:", error);
+    console.error("Error getting Firebase ID token:", error);
     return null;
   }
 }
@@ -59,16 +33,13 @@ export async function apiRequest(
   console.log(`Making ${method} request to ${url}`, data);
   
   try {
-    // Get auth token from storage
-    const token = getToken();
-    // Get Firebase UID
-    const firebaseUid = getFirebaseUID();
+    // Get Firebase ID token
+    const firebaseToken = await getFirebaseIdToken();
     
-    // Prepare headers with auth token if available
+    // Prepare headers with Firebase token if available
     const headers: Record<string, string> = {
       ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-      ...(firebaseUid ? { "X-Firebase-UID": firebaseUid } : {})
+      ...(firebaseToken ? { "Authorization": `Bearer ${firebaseToken}` } : {})
     };
     
     const res = await fetch(url, {
@@ -86,7 +57,6 @@ export async function apiRequest(
     // Check if we need to redirect to login
     if (res.status === 401 && url !== "/api/login" && window.location.pathname !== '/auth') {
       console.log("Received 401, user not authenticated");
-      removeToken(); // Clear invalid token
       window.location.href = "/auth";
       throw new Error("User not authenticated");
     }
@@ -108,15 +78,12 @@ export const getQueryFn: <T>(options: {
     console.log(`Making query request to ${queryKey[0]}`);
     
     try {
-      // Get auth token from storage
-      const token = getToken();
-      // Get Firebase UID
-      const firebaseUid = getFirebaseUID();
+      // Get Firebase ID token
+      const firebaseToken = await getFirebaseIdToken();
       
-      // Prepare headers with auth token if available
+      // Prepare headers with Firebase token if available
       const headers: Record<string, string> = {
-        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-        ...(firebaseUid ? { "X-Firebase-UID": firebaseUid } : {})
+        ...(firebaseToken ? { "Authorization": `Bearer ${firebaseToken}` } : {})
       };
       
       const res = await fetch(queryKey[0] as string, {
@@ -133,12 +100,6 @@ export const getQueryFn: <T>(options: {
       if (res.status === 401 && !String(queryKey[0]).includes('/api/login') && !String(queryKey[0]).includes('/api/register')) {
         if (unauthorizedBehavior === "returnNull") {
           console.log("Returning null due to 401 status");
-          
-          // Clear token if it's invalid
-          if (token) {
-            console.log("Removing invalid token");
-            removeToken();
-          }
           
           // Only redirect if we're fetching the user data and we're not already on the auth page
           if (String(queryKey[0]) === '/api/user' && window.location.pathname !== '/auth') {
@@ -172,8 +133,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-// Initialize auth state from local storage when app loads
-// This allows users to stay logged in across page refreshes
+// Initialize auth state when app loads
 export function initializeAuthFromStorage(): void {
   // Don't try to initialize auth on the auth page to avoid infinite redirects
   if (window.location.pathname === '/auth') {
@@ -181,52 +141,14 @@ export function initializeAuthFromStorage(): void {
     return;
   }
 
-  // Check for Firebase auth first (handled by Firebase SDK automatically)
-  const firebaseUid = getFirebaseUID();
-  if (firebaseUid) {
+  // Check for Firebase auth
+  if (auth && auth.currentUser) {
     console.log("Firebase user is authenticated, fetching user data");
-    // Fetch user data using Firebase UID header
-    fetch("/api/user", {
-      headers: {
-        "X-Firebase-UID": firebaseUid
-      }
-    }).then(async res => {
-      if (res.ok) {
-        console.log("Firebase auth is valid, user is authenticated");
-        const userData = await res.json();
-        queryClient.setQueryData(["/api/user"], userData);
-      } else {
-        console.log("Firebase auth data not found in backend");
-      }
-    }).catch((error) => {
-      console.log("Error checking Firebase auth:", error);
-    });
+    
+    // The auth state will be managed by Firebase's onAuthStateChanged
+    // which is set up in the auth context provider
     return;
-  }
-
-  // Fall back to token auth
-  const token = getToken();
-  if (token) {
-    console.log("Found existing auth token in local storage");
-    // Check token validity immediately to clean up any invalid tokens
-    fetch("/api/user", {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
-    }).then(async res => {
-      if (res.ok) {
-        console.log("Token is valid, user is authenticated");
-        const userData = await res.json();
-        queryClient.setQueryData(["/api/user"], userData);
-      } else {
-        console.log("Token is invalid, clearing local storage");
-        removeToken();
-      }
-    }).catch(() => {
-      console.log("Error checking token, clearing local storage");
-      removeToken();
-    });
   } else {
-    console.log("No authentication method found");
+    console.log("No Firebase authentication found");
   }
 }

@@ -1,19 +1,35 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
-import { isFirebaseConfigured } from "@/lib/firebase";
+import { CheckCircle, AlertTriangle } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { useEffect, useState } from "react";
 
 export function FirebaseStatusBanner() {
-  // If Firebase is configured, don't show anything
-  if (isFirebaseConfigured) {
+  const [connectionStatus, setConnectionStatus] = useState<"connected" | "error" | "checking">("checking");
+  
+  useEffect(() => {
+    // Check if Firebase auth is initialized
+    if (auth) {
+      setConnectionStatus("connected");
+    } else {
+      setConnectionStatus("error");
+    }
+  }, []);
+
+  if (connectionStatus === "checking") {
     return null;
   }
   
+  if (connectionStatus === "connected") {
+    return null; // Don't show anything when successfully connected
+  }
+  
+  // Show error banner when Firebase is not properly configured
   return (
-    <Alert className="mb-6 bg-amber-50 border-amber-200">
-      <Info className="h-4 w-4 text-amber-600" />
-      <AlertTitle className="text-amber-800">Firebase not configured</AlertTitle>
-      <AlertDescription className="text-amber-700">
-        Firebase authentication is not configured yet. Use the development login option.
+    <Alert variant="destructive" className="mb-4">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertTitle>Authentication Error</AlertTitle>
+      <AlertDescription>
+        Firebase connection error. Please check that Firebase is properly configured with the necessary environment variables.
       </AlertDescription>
     </Alert>
   );

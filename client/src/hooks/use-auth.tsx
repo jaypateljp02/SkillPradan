@@ -1,11 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import {
-  useQuery,
-  useMutation,
-  UseMutationResult,
-} from "@tanstack/react-query";
-import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient, setToken, removeToken } from "../lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
+import { User as SelectUser } from "@shared/schema";
+import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
   createUserWithEmailAndPassword,
@@ -14,7 +10,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser
 } from "firebase/auth";
-import { auth, isFirebaseConfigured } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 
 type FirebaseLoginData = {
   email: string;
@@ -32,10 +28,6 @@ type AuthContextType = {
   firebaseUser: FirebaseUser | null;
   isLoading: boolean;
   error: Error | null;
-  // Legacy token-based authentication
-  loginMutation: UseMutationResult<{user: SelectUser, token: string}, Error, LoginData>;
-  logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<{user: SelectUser, token: string}, Error, InsertUser>;
   // Firebase authentication
   firebaseRegister: (data: FirebaseRegisterData) => Promise<void>;
   firebaseLogin: (data: FirebaseLoginData) => Promise<void>;
@@ -43,8 +35,6 @@ type AuthContextType = {
   // Helper method
   logout?: () => void;
 };
-
-type LoginData = Pick<InsertUser, "username" | "password">;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -54,21 +44,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Listen for Firebase auth state changes
   useEffect(() => {
-    // Skip Firebase auth if not configured
-    if (!isFirebaseConfigured || !auth) {
+    if (!auth) {
       setFirebaseLoading(false);
       return () => {};
     }
     
-    // We've checked auth is not null above, so we can safely use the non-null assertion here
-    const unsubscribe = onAuthStateChanged(auth!, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       setFirebaseLoading(false);
       
       if (user) {
         console.log("Firebase user signed in:", user.email);
-        // If user is signed in with Firebase, you might want to sync with your backend
-        // This could involve creating a custom token or fetching user data
       } else {
         console.log("Firebase user signed out");
       }
@@ -88,181 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Combine loading states from Firebase and API
   const isLoading = firebaseLoading || apiLoading;
-
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginData) => {
-      try {
-        console.log("Attempting login with credentials:", credentials.username);
-        const res = await apiRequest("POST", "/api/login", credentials);
-        const data = await res.json();
-        console.log("Login successful, received data:", data);
-        
-        // Store the token
-        if (data.token) {
-          console.log("Storing authentication token");
-          setToken(data.token);
-        } else {
-          console.error("No token received from login");
-        }
-        
-        // Verify token is working by making a request to user endpoint
-        const verifyToken = async () => {
-          try {
-            const checkRes = await fetch("/api/debug/token", {
-              headers: {
-                "Authorization": `Bearer ${data.token}`
-              },
-              cache: "no-cache"
-            });
-            
-            if (checkRes.ok) {
-              const tokenData = await checkRes.json();
-              console.log("Token verification data:", tokenData);
-              
-              if (!tokenData.authenticated) {
-                console.error("Token not valid after login!");
-              }
-            } else {
-              console.error("Token verification failed:", checkRes.status);
-            }
-          } catch (e) {
-            console.error("Failed to verify token after login:", e);
-          }
-        };
-        
-        await verifyToken();
-        return data;
-      } catch (error) {
-        console.error("Login mutation function error:", error);
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(["/api/user"], data.user);
-      toast({
-        title: "Welcome back!",
-        description: `Logged in as ${data.user.name}`,
-      });
-      
-      // Force query cache invalidation to ensure fresh data
-      queryClient.invalidateQueries();
-      
-      // Add a slight delay to ensure state is updated before redirect
-      setTimeout(() => {
-        // Redirect to the home page after successful login
-        window.location.href = "/";
-      }, 500);
-    },
-    onError: (error: Error) => {
-      console.error("Login error:", error);
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your username and password",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const registerMutation = useMutation({
-    mutationFn: async (credentials: InsertUser) => {
-      try {
-        console.log("Attempting registration for:", credentials.username);
-        const res = await apiRequest("POST", "/api/register", credentials);
-        const data = await res.json();
-        console.log("Registration successful, received data:", data);
-        
-        // Store the token
-        if (data.token) {
-          console.log("Storing authentication token");
-          setToken(data.token);
-        } else {
-          console.error("No token received from registration");
-        }
-        
-        return data;
-      } catch (error) {
-        console.error("Registration mutation function error:", error);
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(["/api/user"], data.user);
-      toast({
-        title: "Account created",
-        description: `Welcome to Skill प्रदान, ${data.user.name}!`,
-      });
-      
-      // Force query cache invalidation to ensure fresh data
-      queryClient.invalidateQueries();
-      
-      // Add a slight delay to ensure state is updated before redirect
-      setTimeout(() => {
-        // Redirect to the home page after successful registration
-        window.location.href = "/";
-      }, 500);
-    },
-    onError: (error: Error) => {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration failed",
-        description: error.message || "Please try again with different credentials",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      try {
-        console.log("Attempting to log out");
-        await apiRequest("POST", "/api/logout");
-        
-        // Remove the token
-        removeToken();
-        
-        // Clear client-side cache completely
-        queryClient.clear();
-      } catch (error) {
-        console.error("Logout mutation function error:", error);
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      // Update local cache state
-      queryClient.setQueryData(["/api/user"], null);
-      
-      toast({
-        title: "Logged out",
-        description: "Come back soon!",
-      });
-      
-      // Redirect to login page after logout
-      setTimeout(() => {
-        window.location.href = "/auth";
-      }, 300);
-    },
-    onError: (error: Error) => {
-      console.error("Logout error:", error);
-      toast({
-        title: "Logout failed",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
-    },
-  });
   
   // Firebase authentication functions
   const firebaseRegister = async (data: FirebaseRegisterData) => {
     try {
-      if (!isFirebaseConfigured || !auth) {
-        toast({
-          title: "Firebase not configured",
-          description: "Firebase authentication is not configured yet. Use the development login option.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth!, 
@@ -301,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // If Firebase throws an error, sign out the user
       if (auth) {
         try {
-          await signOut(auth!);
+          await signOut(auth);
         } catch (logoutError) {
           console.error("Error signing out after failed registration:", logoutError);
         }
@@ -319,15 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const firebaseLogin = async (data: FirebaseLoginData) => {
     try {
-      if (!isFirebaseConfigured || !auth) {
-        toast({
-          title: "Firebase not configured",
-          description: "Firebase authentication is not configured yet. Use the development login option.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
       // Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(
         auth!,
@@ -371,10 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const firebaseLogout = async () => {
     try {
-      // Sign out from Firebase if configured
-      if (isFirebaseConfigured && auth) {
-        await signOut(auth!);
-      }
+      // Sign out from Firebase
+      await signOut(auth!);
       
       // Sign out from our backend
       await apiRequest("POST", "/api/firebase-logout");
@@ -412,9 +216,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         firebaseUser,
         isLoading,
         error,
-        loginMutation,
-        logoutMutation,
-        registerMutation,
         firebaseRegister,
         firebaseLogin,
         firebaseLogout
@@ -431,15 +232,10 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   
-  // Consolidated logout function that handles both Firebase and token-based auth
+  // Firebase logout function
   const logout = () => {
-    if (context.firebaseUser) {
-      // If user is logged in with Firebase, use Firebase logout
-      context.firebaseLogout();
-    } else {
-      // Otherwise use token-based logout
-      context.logoutMutation.mutate();
-    }
+    // Always use Firebase logout
+    context.firebaseLogout();
   };
   
   // Determine if the user is an admin

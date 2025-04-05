@@ -193,16 +193,5 @@ export function setupAuth(app: Express) {
     res.status(200).json({ message: "Logged out successfully" });
   });
 
-  // /api/user endpoint is now consolidated in routes.ts with the combined auth middleware
-  
-  // Debug endpoint to check token data
-  app.get("/api/debug/token", isAuthenticated, (req, res) => {
-    const user = (req as AuthenticatedRequest).user;
-    
-    const { password, ...userData } = user;
-    return res.json({
-      authenticated: true,
-      user: userData
-    });
-  });
+  // /api/user endpoint is now consolidated in routes.ts with Firebase authentication
 }
