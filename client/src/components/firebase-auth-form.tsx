@@ -33,9 +33,10 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export function FirebaseAuthForm() {
-  const { firebaseLogin, firebaseRegister } = useAuth();
+  const { firebaseLogin, firebaseRegister, loginMutation } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [showDevLogin, setShowDevLogin] = useState(false);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -82,6 +83,22 @@ export function FirebaseAuthForm() {
     } catch (error) {
       console.error("Registration error:", error);
     } finally {
+      setIsSubmitting(false);
+    }
+  }
+  
+  // Development mode login (while Firebase credentials are being set up)
+  function loginWithDev(role: string) {
+    setIsSubmitting(true);
+    
+    try {
+      if (role === 'admin') {
+        loginMutation.mutate({ username: 'admin', password: 'adminpass' });
+      } else {
+        loginMutation.mutate({ username: 'user1', password: 'userpass' });
+      }
+    } catch (error) {
+      console.error("Dev login error:", error);
       setIsSubmitting(false);
     }
   }
@@ -143,6 +160,44 @@ export function FirebaseAuthForm() {
                 </Button>
               </form>
             </Form>
+            
+            {/* Development login option while Firebase is being set up */}
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="text-center mb-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowDevLogin(!showDevLogin)}
+                >
+                  {showDevLogin ? "Hide Development Login" : "Show Development Login"}
+                </Button>
+              </div>
+              
+              {showDevLogin && (
+                <div className="flex flex-col space-y-2">
+                  <p className="text-xs text-center text-muted-foreground mb-2">
+                    For testing while Firebase configuration is pending
+                  </p>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={() => loginWithDev('user')}
+                    disabled={isSubmitting}
+                  >
+                    Login as Test User
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="secondary" 
+                    onClick={() => loginWithDev('admin')}
+                    disabled={isSubmitting}
+                  >
+                    Login as Admin
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
         

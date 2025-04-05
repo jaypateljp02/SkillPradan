@@ -24,6 +24,14 @@ export default function AuthPage() {
           <p className="mt-2 text-neutral-600">Connect.Collaborate.Create</p>
         </div>
         
+        {/* Firebase configuration notice */}
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-600">
+          <p>
+            <strong>Note:</strong> Firebase authentication is currently being configured. 
+            You can use the development login option below for testing in the meantime.
+          </p>
+        </div>
+        
         <div className="mt-4">
           <FirebaseAuthForm />
         </div>

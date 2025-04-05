@@ -14,7 +14,7 @@ import {
   onAuthStateChanged,
   User as FirebaseUser
 } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { auth, isFirebaseConfigured } from "../lib/firebase";
 
 type FirebaseLoginData = {
   email: string;
@@ -54,7 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   // Listen for Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // Skip Firebase auth if not configured
+    if (!isFirebaseConfigured || !auth) {
+      setFirebaseLoading(false);
+      return () => {};
+    }
+    
+    // We've checked auth is not null above, so we can safely use the non-null assertion here
+    const unsubscribe = onAuthStateChanged(auth!, (user) => {
       setFirebaseUser(user);
       setFirebaseLoading(false);
       
@@ -247,9 +254,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Firebase authentication functions
   const firebaseRegister = async (data: FirebaseRegisterData) => {
     try {
+      if (!isFirebaseConfigured || !auth) {
+        toast({
+          title: "Firebase not configured",
+          description: "Firebase authentication is not configured yet. Use the development login option.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
-        auth, 
+        auth!, 
         data.email, 
         data.password
       );
@@ -283,10 +299,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Firebase registration error:", error);
       
       // If Firebase throws an error, sign out the user
-      try {
-        await signOut(auth);
-      } catch (logoutError) {
-        console.error("Error signing out after failed registration:", logoutError);
+      if (auth) {
+        try {
+          await signOut(auth!);
+        } catch (logoutError) {
+          console.error("Error signing out after failed registration:", logoutError);
+        }
       }
       
       toast({
@@ -301,9 +319,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const firebaseLogin = async (data: FirebaseLoginData) => {
     try {
+      if (!isFirebaseConfigured || !auth) {
+        toast({
+          title: "Firebase not configured",
+          description: "Firebase authentication is not configured yet. Use the development login option.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Sign in with Firebase
       const userCredential = await signInWithEmailAndPassword(
-        auth,
+        auth!,
         data.email,
         data.password
       );
@@ -344,8 +371,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const firebaseLogout = async () => {
     try {
-      // Sign out from Firebase
-      await signOut(auth);
+      // Sign out from Firebase if configured
+      if (isFirebaseConfigured && auth) {
+        await signOut(auth!);
+      }
       
       // Sign out from our backend
       await apiRequest("POST", "/api/firebase-logout");
