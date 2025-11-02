@@ -1,5 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { auth } from "./firebase";
+import { getAuthToken } from "../hooks/use-auth";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -10,19 +10,9 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Get Firebase ID token if available
-export async function getFirebaseIdToken(): Promise<string | null> {
-  if (!auth || !auth.currentUser) {
-    return null;
-  }
-  
-  try {
-    const token = await auth.currentUser.getIdToken(true);
-    return token;
-  } catch (error) {
-    console.error("Error getting Firebase ID token:", error);
-    return null;
-  }
+// Get auth token if available
+export function getAuthTokenForRequest(): string | null {
+  return getAuthToken();
 }
 
 export async function apiRequest(
@@ -33,13 +23,13 @@ export async function apiRequest(
   console.log(`Making ${method} request to ${url}`, data);
   
   try {
-    // Get Firebase ID token
-    const firebaseToken = await getFirebaseIdToken();
+    // Get auth token
+    const token = getAuthTokenForRequest();
     
-    // Prepare headers with Firebase token if available
+    // Prepare headers with token if available
     const headers: Record<string, string> = {
       ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(firebaseToken ? { "Authorization": `Bearer ${firebaseToken}` } : {})
+      ...(token ? { "Authorization": `Bearer ${token}` } : {})
     };
     
     const res = await fetch(url, {
@@ -79,12 +69,12 @@ export const getQueryFn: <T>(options: {
     console.log(`Making query request to ${queryKey[0]}`);
     
     try {
-      // Get Firebase ID token
-      const firebaseToken = await getFirebaseIdToken();
+      // Get auth token
+      const token = getAuthTokenForRequest();
       
-      // Prepare headers with Firebase token if available
+      // Prepare headers with token if available
       const headers: Record<string, string> = {
-        ...(firebaseToken ? { "Authorization": `Bearer ${firebaseToken}` } : {})
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
       };
       
       const res = await fetch(queryKey[0] as string, {
@@ -142,14 +132,13 @@ export function initializeAuthFromStorage(): void {
     return;
   }
 
-  // Check for Firebase auth
-  if (auth && auth.currentUser) {
-    console.log("Firebase user is authenticated, fetching user data");
-    
-    // The auth state will be managed by Firebase's onAuthStateChanged
-    // which is set up in the auth context provider
+  // Check for token auth
+  const token = getAuthTokenForRequest();
+  if (token) {
+    console.log("Token found, user may be authenticated");
+    // The auth state will be managed by the AuthProvider
     return;
   } else {
-    console.log("No Firebase authentication found");
+    console.log("No authentication token found");
   }
 }

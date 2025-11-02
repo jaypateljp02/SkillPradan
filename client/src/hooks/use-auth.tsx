@@ -1,265 +1,237 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { User as SelectUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword, 
-  signOut,
-  onAuthStateChanged,
-  User as FirebaseUser
-} from "firebase/auth";
-import { auth } from "../lib/firebase";
 
-type FirebaseLoginData = {
-  email: string;
+type LoginData = {
+  username: string;
   password: string;
 };
 
-type FirebaseRegisterData = FirebaseLoginData & {
+type RegisterData = {
   username: string;
+  password: string;
   name: string;
-  university: string;
+  email: string;
+  university?: string;
+  avatar?: string;
 };
 
 type AuthContextType = {
   user: SelectUser | null;
-  firebaseUser: FirebaseUser | null;
   isLoading: boolean;
   error: Error | null;
-  // Firebase authentication
-  firebaseRegister: (data: FirebaseRegisterData) => Promise<void>;
-  firebaseLogin: (data: FirebaseLoginData) => Promise<void>;
-  firebaseLogout: () => Promise<any>; // Changed to any to avoid return type issues
-  // Helper method
-  logout?: () => void;
+  // Token-based authentication
+  loginMutation: ReturnType<typeof useMutation>;
+  registerMutation: ReturnType<typeof useMutation>;
+  logout: () => Promise<void>;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
 };
 
+const TOKEN_KEY = "auth_token";
+
+// Helper to get token from localStorage
+export function getAuthToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+// Helper to set token in localStorage
+export function setAuthToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+// Helper to remove token from localStorage
+export function removeAuthToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
 export const AuthContext = createContext<AuthContextType | null>(null);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [firebaseLoading, setFirebaseLoading] = useState(true);
-  
-  // Listen for Firebase auth state changes and handle token refresh
+  const [token, setToken] = useState<string | null>(getAuthToken());
+
+  // Check for token on mount
   useEffect(() => {
-    if (!auth) {
-      console.error("Firebase auth not initialized");
-      setFirebaseLoading(false);
-      return () => {};
+    const storedToken = getAuthToken();
+    if (storedToken) {
+      setToken(storedToken);
     }
-    
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Firebase auth state changed", user ? `User: ${user.email}` : "No user");
-      setFirebaseUser(user);
-      
-      if (user) {
-        try {
-          // Get a fresh ID token with each auth state change
-          const token = await user.getIdToken(true);
-          console.log("Firebase token refreshed successfully");
-          
-          // The token is automatically used by apiRequest through our queryClient setup
-          // No need to store it manually
-          
-          // This will trigger a refetch of the user data with the new token
-          if (!user.isAnonymous) {
-            queryClient.invalidateQueries({queryKey: ["/api/user"]});
-          }
-        } catch (error) {
-          console.error("Failed to refresh Firebase token:", error);
-        }
-      } else {
-        // Clear cached data when user signs out
-        queryClient.setQueryData(["/api/user"], null);
-      }
-      
-      setFirebaseLoading(false);
-    }, (error) => {
-      // This is the error callback for onAuthStateChanged
-      console.error("Firebase auth state change error:", error);
-      setFirebaseLoading(false);
-      
-      toast({
-        title: "Authentication Error",
-        description: "There was a problem with your authentication. Please try logging in again.",
-        variant: "destructive",
-      });
-    });
-    
-    return () => unsubscribe();
-  }, [toast]);
+  }, []);
 
   const {
     data: user,
-    error, 
+    error,
     isLoading: apiLoading,
+    refetch: refetchUser,
   } = useQuery<SelectUser | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    enabled: !!token, // Only fetch if we have a token
   });
-  
-  // Combine loading states from Firebase and API
-  const isLoading = firebaseLoading || apiLoading;
-  
-  // Firebase authentication functions
-  const firebaseRegister = async (data: FirebaseRegisterData) => {
-    try {
-      // Create user in Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(
-        auth!, 
-        data.email, 
-        data.password
-      );
-      
-      // If successful, create a user in our backend system
-      if (userCredential.user) {
-        const res = await apiRequest("POST", "/api/firebase-register", {
-          firebaseUid: userCredential.user.uid,
-          email: data.email,
-          username: data.username,
-          name: data.name,
-          university: data.university
-        });
-        
-        const userData = await res.json();
-        
-        // Update the user data in our cache
-        queryClient.setQueryData(["/api/user"], userData.user);
-        
-        toast({
-          title: "Account created",
-          description: `Welcome to Skill प्रदान, ${userData.user.name}!`,
-        });
-        
-        // No automatic redirect - user can stay on the logged-in screen
-        console.log("Registration successful, user can navigate the app now");
+
+  // Login mutation
+  const loginMutation = useMutation({
+    mutationFn: async (data: LoginData) => {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Login failed" }));
+        throw new Error(errorData.message || "Login failed");
       }
-    } catch (error: any) {
-      console.error("Firebase registration error:", error);
+
+      const result = await res.json();
       
-      // If Firebase throws an error, sign out the user
-      if (auth) {
-        try {
-          await signOut(auth);
-        } catch (logoutError) {
-          console.error("Error signing out after failed registration:", logoutError);
-        }
+      // Store token
+      if (result.token) {
+        setAuthToken(result.token);
+        setToken(result.token);
       }
+
+      // Update user data in cache
+      if (result.user) {
+        queryClient.setQueryData(["/api/user"], result.user);
+      }
+
+      return result;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Welcome back!",
+        description: `Logged in as ${data.user.name}`,
+      });
+      // Refetch user data to ensure we have the latest
+      refetchUser();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Login failed",
+        description: error.message || "Please check your username and password",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Register mutation
+  const registerMutation = useMutation({
+    mutationFn: async (data: RegisterData) => {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: "Registration failed" }));
+        throw new Error(errorData.message || "Registration failed");
+      }
+
+      const result = await res.json();
       
+      // Store token
+      if (result.token) {
+        setAuthToken(result.token);
+        setToken(result.token);
+      }
+
+      // Update user data in cache
+      if (result.user) {
+        queryClient.setQueryData(["/api/user"], result.user);
+      }
+
+      return result;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Account created",
+        description: `Welcome to Skill प्रदान, ${data.user.name}!`,
+      });
+      // Refetch user data to ensure we have the latest
+      refetchUser();
+    },
+    onError: (error: Error) => {
       toast({
         title: "Registration failed",
         description: error.message || "Please try again with different credentials",
         variant: "destructive",
       });
-      
-      throw error;
-    }
-  };
-  
-  const firebaseLogin = async (data: FirebaseLoginData) => {
+    },
+  });
+
+  // Logout function
+  const logout = async () => {
     try {
-      // Sign in with Firebase
-      const userCredential = await signInWithEmailAndPassword(
-        auth!,
-        data.email,
-        data.password
-      );
+      const currentToken = getAuthToken();
       
-      // If successful, fetch user data from our backend
-      if (userCredential.user) {
-        const res = await apiRequest("POST", "/api/firebase-login", {
-          firebaseUid: userCredential.user.uid,
-          email: userCredential.user.email
-        });
-        
-        const userData = await res.json();
-        
-        // Update the user data in our cache
-        queryClient.setQueryData(["/api/user"], userData.user);
-        
-        toast({
-          title: "Welcome back!",
-          description: `Logged in as ${userData.user.name}`,
-        });
-        
-        // No automatic redirect - user can stay on the logged-in screen
-        console.log("Login successful, user can navigate the app now");
+      // Call logout endpoint if we have a token
+      if (currentToken) {
+        try {
+          await apiRequest("POST", "/api/logout");
+        } catch (error) {
+          console.warn("Backend logout failed, continuing with local logout:", error);
+        }
       }
-    } catch (error: any) {
-      console.error("Firebase login error:", error);
-      
-      toast({
-        title: "Login failed",
-        description: error.message || "Please check your email and password",
-        variant: "destructive",
-      });
-      
-      throw error;
-    }
-  };
-  
-  const firebaseLogout = async () => {
-    try {
-      // Prepare for logout
-      const wasAuthenticated = auth?.currentUser != null;
-      console.log("Starting logout process, user authenticated:", wasAuthenticated);
-      
-      // First try logout from our backend (this may fail if backend session was lost)
-      // Use try-catch inside to continue with Firebase logout even if backend logout fails
-      try {
-        await apiRequest("POST", "/api/firebase-logout");
-        console.log("Backend logout successful");
-      } catch (backendError) {
-        console.warn("Backend logout failed, continuing with Firebase logout:", backendError);
-        // We'll continue with the Firebase logout even if backend logout fails
-      }
-      
-      // Sign out from Firebase (if user was authenticated)
-      if (auth) {
-        await signOut(auth);
-        console.log("Firebase sign out successful");
-      }
-      
-      // Clear local user data no matter what happens above
+
+      // Clear token
+      removeAuthToken();
+      setToken(null);
+
+      // Clear user data from cache
       queryClient.setQueryData(["/api/user"], null);
-      queryClient.resetQueries();
+      queryClient.clear();
+
+      toast({
+        title: "Logged out",
+        description: "Come back soon!",
+      });
+
+      // Redirect to auth page after a brief moment
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 500);
+    } catch (error) {
+      console.error("Logout error:", error);
+      
+      // Force logout even if API call fails
+      removeAuthToken();
+      setToken(null);
+      queryClient.setQueryData(["/api/user"], null);
+      queryClient.clear();
       
       toast({
         title: "Logged out",
         description: "Come back soon!",
       });
       
-      // Redirect to auth page after a brief moment 
-      // (gives time for the toast to be seen)
       setTimeout(() => {
         window.location.href = "/auth";
       }, 500);
-    } catch (error: any) {
-      console.error("Firebase logout error:", error);
-      
-      toast({
-        title: "Logout failed",
-        description: "There was an issue with logout. Click the logout button again to retry.",
-        variant: "destructive",
-      });
-      
-      // We'll allow the higher-level function to decide what to do with the error
-      throw error;
     }
   };
+
+  const isLoading = apiLoading;
 
   return (
     <AuthContext.Provider
       value={{
         user: user ?? null,
-        firebaseUser,
         isLoading,
         error,
-        firebaseRegister,
-        firebaseLogin,
-        firebaseLogout
+        loginMutation,
+        registerMutation,
+        logout,
+        isAuthenticated: !!user,
+        isAdmin: user?.isAdmin || false,
       }}
     >
       {children}
@@ -272,81 +244,6 @@ export function useAuth() {
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  
-  // Enhanced Firebase logout function that is more reliable
-  const logout = async () => {
-    try {
-      console.log("Logging out user...");
-      
-      // Clear query cache before attempting logout to ensure clean state
-      queryClient.clear();
-      queryClient.removeQueries();
-      
-      // Always use Firebase logout
-      await context.firebaseLogout();
-      console.log("User logged out successfully");
-    } catch (error) {
-      console.error("Error during logout:", error);
-      
-      // Force logout without asking - just do it reliably
-      console.log("Executing forced logout procedure...");
-      
-      // 1. Clear all Firebase auth data
-      if (auth && auth.currentUser) {
-        try {
-          await signOut(auth);
-          console.log("Firebase signOut successful");
-        } catch (e: unknown) {
-          console.error("Firebase signOut error:", e);
-        }
-      }
-      
-      // 2. Clear all query client data
-      try {
-        queryClient.clear();
-        queryClient.removeQueries();
-        console.log("Query client cleared");
-      } catch (e: unknown) {
-        console.error("Error clearing query client:", e);
-      }
-      
-      // 3. Clear localStorage and sessionStorage
-      try {
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-        console.log("Local and session storage cleared");
-      } catch (e: unknown) {
-        console.error("Error clearing storage:", e);
-      }
-      
-      // 4. Clear all cookies
-      try {
-        document.cookie.split(";").forEach(cookie => {
-          document.cookie = cookie
-            .replace(/^ +/, "")
-            .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
-        console.log("Cookies cleared");
-      } catch (e: unknown) {
-        console.error("Error clearing cookies:", e);
-      }
-      
-      // 5. Force redirect to login page
-      setTimeout(() => {
-        console.log("Redirecting to auth page after forced logout");
-        window.location.href = "/auth";
-      }, 500);
-    }
-  };
-  
-  // Determine if the user is an admin
-  const isAdmin = context.user?.isAdmin || false;
-  
-  return {
-    ...context,
-    logout,
-    isAdmin,
-    // Helper to check if user is authenticated
-    isAuthenticated: !!(context.user || context.firebaseUser)
-  };
+
+  return context;
 }

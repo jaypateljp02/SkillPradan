@@ -1,22 +1,16 @@
 import { useAuth } from "@/hooks/use-auth";
-import { FirebaseAuthForm } from "@/components/firebase-auth-form";
+import { AuthForm } from "@/components/auth-form";
 import { Redirect } from "wouter";
 import logoImage from "../assets/logo.png";
 import { useEffect, useState } from "react";
 
 export default function AuthPage() {
-  const { user, firebaseUser } = useAuth();
+  const { user } = useAuth();
   const [redirecting, setRedirecting] = useState(false);
-  
-  // Add logging to help with debugging
-  useEffect(() => {
-    console.log("On auth page - skipping auth initialization");
-  }, []);
   
   // Detect successful login and redirect after a short delay
   useEffect(() => {
-    // This ensures we have both Firebase auth and our backend user data
-    if (user && firebaseUser) {
+    if (user) {
       // Show the user is logged in, but give them time to see the success message
       console.log("User is authenticated, preparing for redirect");
       
@@ -27,7 +21,7 @@ export default function AuthPage() {
       
       return () => clearTimeout(timer);
     }
-  }, [user, firebaseUser]);
+  }, [user]);
   
   // If user is logged in and we're ready to redirect, go to home page
   if (redirecting) {
@@ -53,11 +47,11 @@ export default function AuthPage() {
         </div>
         
         <div className="mt-4">
-          <FirebaseAuthForm />
+          <AuthForm />
         </div>
         
         <div className="mt-4 text-center text-sm text-gray-500">
-          <p>Secure authentication powered by Firebase</p>
+          <p>Demo Account: testuser / password123</p>
         </div>
       </div>
     </div>

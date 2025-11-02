@@ -2,7 +2,6 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { WebSocketServer } from "ws";
-import { setupFirebaseAuth, isFirebaseAuthenticated, firebaseUsers } from "./firebase-auth";
 import { setupWebSockets } from "./socket";
 import { 
   insertGroupSchema, 
@@ -12,6 +11,7 @@ import {
   insertGroupMessageSchema 
 } from "@shared/schema";
 import adminRouter from "./routes/admin";
+import { setupAuth, isAuthenticated } from "./token-auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Add a debug route to check server status
@@ -23,8 +23,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Add a debug route to check Firebase authentication
-  app.get('/api/debug/firebase', (req, res) => {
+  // Add a debug route to check authentication
+  app.get('/api/debug/auth', (req, res) => {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     
@@ -39,14 +39,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Set up Firebase authentication routes
-  setupFirebaseAuth(app);
+  // Set up token-based authentication routes
+  setupAuth(app);
   
-  // Authentication middleware that uses only Firebase authentication
-  const isAuthenticatedEither = async (req: Request, res: Response, next: NextFunction) => {
-    // The token is verified in the isFirebaseAuthenticated middleware
-    return isFirebaseAuthenticated(req, res, next);
-  };
+  // Authentication middleware that uses token-based authentication
+  const isAuthenticatedEither = isAuthenticated;
 
   // User data route with combined authentication
   app.get("/api/user", isAuthenticatedEither, (req, res) => {
@@ -1294,25 +1291,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Firebase-only authentication endpoint
-  app.get("/api/user", async (req, res) => {
-    // Get Firebase UID from the header
-    const firebaseUid = req.headers['x-firebase-uid'] as string;
-    if (firebaseUid) {
-      const userId = firebaseUsers.get(firebaseUid);
-      if (userId) {
-        const user = await storage.getUser(userId);
-        if (user) {
-          const { password, ...userData } = user;
-          return res.json(userData);
-        }
-      }
-    }
-    
-    // Not authenticated
-    return res.status(401).json({ message: "Firebase authentication required" });
-  });
-  
   // Register admin routes
   app.use("/api/admin", adminRouter);
 

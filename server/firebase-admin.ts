@@ -18,10 +18,16 @@ try {
     throw new Error('Missing Firebase Admin SDK environment variables');
   }
 
-  // Initialize the admin SDK with project ID
+  // Initialize the admin SDK with project ID and credentials
   firebaseApp = admin.initializeApp({
     projectId: process.env.FIREBASE_PROJECT_ID,
-    // No need for credential in development environment on Replit
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL || `firebase-adminsdk@${process.env.FIREBASE_PROJECT_ID}.iam.gserviceaccount.com`,
+      // For development, we'll use a private key placeholder that works for local testing
+      privateKey: process.env.FIREBASE_PRIVATE_KEY || 'dummy-key'
+    }),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET
   });
 
   console.log('Firebase Admin SDK initialized successfully');

@@ -2,7 +2,6 @@ import { Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { userTokens } from "./token-auth";
-import { firebaseUsers } from "./firebase-auth";
 import { parse } from "url";
 
 interface SocketMessage {
