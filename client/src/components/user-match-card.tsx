@@ -1,7 +1,8 @@
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Button } from "@/components/ui/button";
 import { SkillTag } from "@/components/ui/skill-tag";
-import { Star, User, MessageCircle } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Star, MessageCircle, User } from "lucide-react";
 import { Link } from "wouter";
 
 interface UserMatchCardProps {
@@ -9,6 +10,7 @@ interface UserMatchCardProps {
     userId: number;
     name: string;
     avatar?: string;
+    username?: string;
     university?: string;
     rating: number;
     teachingSkill: {
@@ -27,8 +29,8 @@ interface UserMatchCardProps {
 
 export function UserMatchCard({ match, onRequestExchange, isRequestingExchange }: UserMatchCardProps) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-start">
+    <Card className="p-4 hover-elevate">
+      <div className="flex items-start gap-4">
         <div className="flex-shrink-0">
           <UserAvatar 
             src={match.avatar}
@@ -36,29 +38,31 @@ export function UserMatchCard({ match, onRequestExchange, isRequestingExchange }
             size="md"
           />
         </div>
-        <div className="ml-4 flex-1">
-          <div className="flex items-center justify-between">
-            <h4 className="text-md font-medium text-neutral-900">{match.name}</h4>
-            <div className="flex items-center">
-              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-              <span className="ml-1 text-xs text-neutral-500">{match.rating.toFixed(1)}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 flex-wrap">
+            <div className="min-w-0">
+              <h4 className="text-base font-semibold text-foreground truncate">{match.name}</h4>
+              <p className="text-sm text-muted-foreground">{match.university || 'No university'}</p>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+              <span className="text-sm font-medium text-foreground">{match.rating.toFixed(1)}</span>
             </div>
           </div>
-          <p className="mt-1 text-sm text-neutral-500">{match.university || 'No university'}</p>
           
-          <div className="mt-3 grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-neutral-500">Will teach you:</p>
-              <div className="mt-1 flex">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground mb-1">Will teach you:</p>
+              <div className="flex flex-wrap gap-1">
                 <SkillTag
                   name={match.teachingSkill.name}
                   color="secondary"
                 />
               </div>
             </div>
-            <div>
-              <p className="text-xs text-neutral-500">Wants to learn:</p>
-              <div className="mt-1 flex">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground mb-1">Wants to learn:</p>
+              <div className="flex flex-wrap gap-1">
                 <SkillTag
                   name={match.learningSkill.name}
                   color="primary"
@@ -67,33 +71,44 @@ export function UserMatchCard({ match, onRequestExchange, isRequestingExchange }
             </div>
           </div>
           
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-neutral-500">{match.matchPercentage}% Match</span>
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center">
+              <div className="flex-1 bg-muted rounded-full h-2">
+                <div 
+                  className="bg-primary rounded-full h-2 transition-all" 
+                  style={{ width: `${match.matchPercentage}%` }}
+                />
+              </div>
+              <span className="ml-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
+                {match.matchPercentage}% Match
+              </span>
             </div>
-            <div className="flex gap-2">
+            
+            <div className="flex gap-2 flex-wrap">
               <Button 
                 size="sm" 
                 onClick={onRequestExchange}
                 disabled={isRequestingExchange}
-                className="flex-1"
+                className="flex-1 min-w-[120px]"
                 data-testid={`button-request-exchange-${match.userId}`}
               >
-                Request Exchange
+                {isRequestingExchange ? "Requesting..." : "Request Exchange"}
               </Button>
               <Link to={`/messages?user=${match.userId}`}>
                 <Button 
                   size="sm" 
                   variant="outline"
                   data-testid={`button-message-${match.userId}`}
+                  className="gap-2"
                 >
                   <MessageCircle className="w-4 h-4" />
+                  <span className="hidden sm:inline">Message</span>
                 </Button>
               </Link>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

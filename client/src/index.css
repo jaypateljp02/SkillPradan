@@ -4,8 +4,109 @@
 
 @layer base {
   :root {
-    --primary-indigo: 239 84% 67%;
-    --indigo-button: 239 84% 67%;
+    /* Indigo color scheme - Light mode */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Primary - Indigo */
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary - Soft gray */
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+    
+    /* Muted - Light gray */
+    --muted: 214 32% 91%;
+    --muted-foreground: 215 16% 47%;
+    
+    /* Accent - Purple-indigo */
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 239 84% 67%;
+    
+    --radius: 0.5rem;
+    
+    /* Chart colors - indigo variations */
+    --chart-1: 239 84% 67%;
+    --chart-2: 262 83% 58%;
+    --chart-3: 221 83% 53%;
+    --chart-4: 252 56% 57%;
+    --chart-5: 270 50% 40%;
+    
+    /* Sidebar colors */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 32% 91%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 239 84% 67%;
+  }
+
+  .dark {
+    /* Indigo color scheme - Dark mode */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    
+    --card: 222 47% 15%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 222 47% 15%;
+    --popover-foreground: 210 40% 98%;
+    
+    /* Primary - Brighter indigo for dark mode */
+    --primary: 239 84% 67%;
+    --primary-foreground: 222 47% 11%;
+    
+    /* Secondary - Dark gray */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    
+    /* Muted - Mid gray */
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    /* Accent - Brighter purple for dark mode */
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 40% 98%;
+    
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 239 84% 67%;
+    
+    /* Chart colors - indigo variations for dark mode */
+    --chart-1: 239 84% 67%;
+    --chart-2: 262 83% 58%;
+    --chart-3: 221 83% 53%;
+    --chart-4: 252 56% 57%;
+    --chart-5: 270 50% 50%;
+    
+    /* Sidebar colors for dark mode */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 239 84% 67%;
   }
 
   * {
@@ -17,9 +118,41 @@
     @apply antialiased bg-background text-foreground;
   }
 
-  /* Brand tokens already wired via Tailwind colors; remove custom purple helpers */
+  /* Ensure primary buttons always have good contrast */
   .bg-primary {
     @apply text-primary-foreground;
+  }
+}
+
+@layer utilities {
+  /* Hover elevation utility */
+  .hover-elevate {
+    @apply transition-all duration-200;
+    @apply hover:brightness-110;
+  }
+  
+  /* Active elevation utility - more dramatic */
+  .active-elevate-2 {
+    @apply transition-all duration-100;
+    @apply active:brightness-125;
+  }
+  
+  /* Toggle elevation utilities */
+  .toggle-elevate {
+    @apply transition-all duration-200;
+  }
+  
+  .toggle-elevated {
+    @apply brightness-110;
+  }
+  
+  /* Remove default elevations */
+  .no-default-hover-elevate {
+    @apply hover:brightness-100 !important;
+  }
+  
+  .no-default-active-elevate {
+    @apply active:brightness-100 !important;
   }
 }
 

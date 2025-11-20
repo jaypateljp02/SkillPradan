@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface SkillTagProps {
   name: string;
@@ -16,36 +17,37 @@ export function SkillTag({
   className 
 }: SkillTagProps) {
   const colorClasses = {
-    primary: "bg-primary bg-opacity-10 text-primary",
-    secondary: "bg-emerald-500 bg-opacity-10 text-emerald-600",
-    accent: "bg-amber-500 bg-opacity-10 text-amber-600",
-    neutral: "bg-neutral-200 text-neutral-700"
+    primary: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary",
+    secondary: "bg-secondary text-secondary-foreground",
+    accent: "bg-accent/10 text-accent dark:bg-accent/20 dark:text-accent",
+    neutral: "bg-muted text-muted-foreground"
   };
   
   const badgeColorClasses = {
-    primary: "bg-primary text-white",
-    secondary: "bg-emerald-500 text-white",
-    accent: "bg-amber-500 text-white",
-    neutral: "bg-neutral-400 text-white"
+    primary: "bg-primary text-primary-foreground",
+    secondary: "bg-secondary text-secondary-foreground",
+    accent: "bg-accent text-accent-foreground",
+    neutral: "bg-muted-foreground text-background"
   };
   
-  const buttonClass = onClick ? "cursor-pointer hover:-translate-y-1" : "";
+  const buttonClass = onClick ? "cursor-pointer hover-elevate active-elevate-2" : "";
   
-  return (
+  const skillTag = (
     <div 
       className={cn(
-        "skill-tag inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-transform duration-200 max-w-full",
+        "skill-tag inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 min-w-0 flex-shrink-0",
         colorClasses[color],
         buttonClass,
         className
       )}
       onClick={onClick}
+      data-testid={`skill-tag-${name.toLowerCase().replace(/\s+/g, '-')}`}
     >
-      <span className="truncate">{name}</span>
+      <span className="truncate max-w-[200px]" title={name}>{name}</span>
       {verified && (
         <span 
           className={cn(
-            "ml-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center",
+            "flex-shrink-0 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center",
             badgeColorClasses[color]
           )} 
           title="Verified Expert"
@@ -62,4 +64,22 @@ export function SkillTag({
       )}
     </div>
   );
+  
+  // For long skill names, wrap in tooltip
+  if (name.length > 20) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {skillTag}
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{name}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+  
+  return skillTag;
 }
