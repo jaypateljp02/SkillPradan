@@ -1,120 +1,87 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChallengeCard } from "@/components/ui/challenge-card";
 import { Challenge } from "@/types/challenge";
+import { Loader2 } from "lucide-react";
 
 interface ApiChallenge {
   id: number;
   title: string;
   description: string;
-  requirement: string;
   pointsReward: number;
   type: string;
-  deadline?: string;
-  totalRequired: number;
-}
-
-interface UserChallenge {
-  id: number;
-  userId: number;
-  challengeId: number;
-  progress: number;
-  completed: boolean;
-  completedAt?: string;
-  challenge: ApiChallenge;
+  targetCount: number;
+  durationDays: number;
+  userProgress?: {
+    currentCount: number;
+    startedAt: string;
+    completedAt: string | null;
+  } | null;
 }
 
 export function ChallengesSection() {
-  // Fetch user challenges
+  // Fetch challenges with user progress already included
   const { data: apiChallenges = [], isLoading } = useQuery<ApiChallenge[]>({
     queryKey: ["/api/challenges"],
   });
   
   // Convert API challenges to our Challenge type
-  const challenges = apiChallenges.map(c => ({
+  const challenges: Challenge[] = apiChallenges.map(c => ({
     id: c.id,
     title: c.title,
     description: c.description,
-    targetCount: c.totalRequired || 3,
+    targetCount: c.targetCount || 3,
     type: c.type || "exchange",
     pointsRewarded: c.pointsReward,
-    durationDays: 7,
-    userProgress: null
+    durationDays: c.durationDays || 7,
+    userProgress: c.userProgress || null
   }));
-  
-  // Fetch user's progress on challenges
-  const { data: userChallenges = [] } = useQuery<UserChallenge[]>({
-    queryKey: ["/api/user-challenges"],
-  });
   
   if (isLoading) {
     return (
-      <div className="mt-8 animate-pulse">
-        <div className="h-8 bg-neutral-100 rounded mb-4 w-48"></div>
+      <div className="mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+          <h4 className="text-md font-medium text-foreground">Loading Challenges...</h4>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {Array(2).fill(0).map((_, i) => (
-            <div key={i} className="h-32 bg-neutral-100 rounded"></div>
+            <div key={i} className="h-32 bg-muted rounded-md animate-pulse"></div>
           ))}
         </div>
       </div>
     );
   }
   
-  // If no user challenges data yet, use a placeholder for weekly challenge
-  const weeklyChallenge = challenges.find(c => c.title.includes("Weekly"));
+  // Show active or available challenges
+  const activeChallenges = challenges.filter(c => c.userProgress && !c.userProgress.completedAt);
+  const availableChallenges = challenges.filter(c => !c.userProgress || c.userProgress.completedAt);
   
   return (
     <div className="mt-8">
-      <h4 className="text-md font-medium text-neutral-900">Your Challenges</h4>
+      <h4 className="text-md font-medium text-foreground">Your Challenges</h4>
       
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {weeklyChallenge && (
-          <ChallengeCard
-            challenge={{
-              ...weeklyChallenge,
-              userProgress: {
-                currentCount: 2,
-                startedAt: new Date().toISOString(),
-                completedAt: null
-              }
-            }}
-          />
-        )}
+        {/* Show active challenges first */}
+        {activeChallenges.map(challenge => (
+          <ChallengeCard key={challenge.id} challenge={challenge} />
+        ))}
         
-        {/* Add placeholders if no challenges */}
+        {/* Then show available challenges */}
+        {availableChallenges.slice(0, 2 - activeChallenges.length).map(challenge => (
+          <ChallengeCard key={challenge.id} challenge={challenge} />
+        ))}
+        
+        {/* Show placeholders if no challenges at all */}
         {challenges.length === 0 && (
           <>
-            <ChallengeCard
-              challenge={{
-                id: 1,
-                title: "Weekly Challenge",
-                description: "Complete 3 skill exchanges this week",
-                targetCount: 3,
-                type: "exchange",
-                pointsRewarded: 200,
-                durationDays: 7,
-                userProgress: {
-                  currentCount: 2,
-                  startedAt: new Date().toISOString(),
-                  completedAt: null
-                }
-              }}
-            />
-            <ChallengeCard
-              challenge={{
-                id: 2,
-                title: "Mentor Challenge",
-                description: "Help 5 students with their skills",
-                targetCount: 5,
-                type: "mentor",
-                pointsRewarded: 300,
-                durationDays: 14,
-                userProgress: {
-                  currentCount: 1,
-                  startedAt: new Date().toISOString(),
-                  completedAt: null
-                }
-              }}
-            />
+            <div className="p-6 bg-muted rounded-md text-center">
+              <p className="text-sm text-muted-foreground">
+                No challenges available yet.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Check back soon for new challenges!
+              </p>
+            </div>
           </>
         )}
       </div>
