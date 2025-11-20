@@ -18,6 +18,10 @@ externalPort = 80
 localPort = 24678
 externalPort = 3000
 
+[[ports]]
+localPort = 44139
+externalPort = 3001
+
 [workflows]
 runButton = "Project"
 
@@ -41,3 +45,6 @@ agentRequireRestartOnSave = false
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[agent]
+expertMode = true

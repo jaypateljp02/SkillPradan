@@ -16,12 +16,12 @@ export default function PointsWidget() {
       </div>
 
       <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow">
-        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-2">
-          <span className="text-purple-600">🤝</span>
+        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
+          <span className="text-indigo-600">🤝</span>
         </div>
         <h3 className="text-lg font-medium mb-1">Complete Exchange</h3>
         <p className="text-gray-500 text-sm mb-3">Earn points for each completed skill exchange</p>
-        <button className="bg-[hsl(var(--purple-button))] text-white px-4 py-2 rounded-md hover:bg-[hsl(var(--purple-button)/0.9)]">
+        <button className="bg-[hsl(var(--indigo-button))] text-white px-4 py-2 rounded-md hover:bg-[hsl(var(--indigo-button)/0.9)]">
           +100 points
         </button>
       </div>

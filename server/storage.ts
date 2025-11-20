@@ -10,7 +10,8 @@ import {
   UserChallenge, InsertUserChallenge,
   Review, InsertReview,
   Group, GroupMember, GroupEvent, GroupFile, GroupMessage,
-  Post, InsertPost
+  Post, InsertPost,
+  DirectMessage, InsertDirectMessage
 } from "@shared/schema";
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
@@ -102,6 +103,12 @@ export interface IStorage {
   getGroupMessages(groupId: number): Promise<GroupMessage[]>;
   createGroupMessage(messageData: { groupId: number, userId: number, content: string }): Promise<GroupMessage>;
   
+  // Direct message operations
+  getDirectMessages(userId1: number, userId2: number): Promise<any[]>;
+  getConversations(userId: number): Promise<any[]>;
+  createDirectMessage(messageData: { senderId: number, receiverId: number, content: string }): Promise<any>;
+  markMessageAsRead(messageId: number): Promise<any>;
+  
   // Leaderboard
   getLeaderboard(): Promise<{id: number, name: string, university: string, exchanges: number, points: number, avatar: string}[]>;
   
@@ -139,6 +146,7 @@ export class MemStorage implements IStorage {
   private groupFiles: Map<number, GroupFile>;
   private groupMessages: Map<number, GroupMessage>;
   private posts: Map<number, Post>;
+  private directMessages: Map<number, DirectMessage>;
   
   private userIdCounter: number;
   private skillIdCounter: number;
@@ -156,6 +164,7 @@ export class MemStorage implements IStorage {
   private groupFileIdCounter: number;
   private groupMessageIdCounter: number;
   private postIdCounter: number;
+  private directMessageIdCounter: number;
   
   sessionStore: SessionStore;
 
@@ -176,6 +185,7 @@ export class MemStorage implements IStorage {
     this.groupFiles = new Map();
     this.groupMessages = new Map();
     this.posts = new Map();
+    this.directMessages = new Map();
     
     this.userIdCounter = 1;
     this.skillIdCounter = 1;
@@ -193,6 +203,7 @@ export class MemStorage implements IStorage {
     this.groupFileIdCounter = 1;
     this.groupMessageIdCounter = 1;
     this.postIdCounter = 1;
+    this.directMessageIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000
@@ -1090,6 +1101,118 @@ export class MemStorage implements IStorage {
     
     this.groupMessages.set(id, newMessage);
     return newMessage;
+  }
+
+  // Direct message operations
+  async getDirectMessages(userId1: number, userId2: number): Promise<any[]> {
+    const messages = Array.from(this.directMessages.values())
+      .filter(message => 
+        (message.senderId === userId1 && message.receiverId === userId2) ||
+        (message.senderId === userId2 && message.receiverId === userId1)
+      )
+      .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+    
+    // Enrich with sender data
+    const enrichedMessages = await Promise.all(
+      messages.map(async (msg) => {
+        const sender = await this.getUser(msg.senderId);
+        const receiver = await this.getUser(msg.receiverId);
+        return {
+          ...msg,
+          sender: sender ? { id: sender.id, name: sender.name, avatar: sender.avatar, username: sender.username } : null,
+          receiver: receiver ? { id: receiver.id, name: receiver.name, avatar: receiver.avatar, username: receiver.username } : null
+        };
+      })
+    );
+    
+    return enrichedMessages;
+  }
+
+  async getConversations(userId: number): Promise<any[]> {
+    // Get all messages where user is sender or receiver
+    const userMessages = Array.from(this.directMessages.values())
+      .filter(message => 
+        message.senderId === userId || message.receiverId === userId
+      );
+    
+    // Group by conversation partner
+    const conversationsMap = new Map<number, any>();
+    
+    for (const message of userMessages) {
+      const partnerId = message.senderId === userId ? message.receiverId : message.senderId;
+      
+      const existing = conversationsMap.get(partnerId);
+      if (!existing || new Date(message.sentAt) > new Date(existing.lastMessage.sentAt)) {
+        conversationsMap.set(partnerId, {
+          partnerId,
+          lastMessage: message
+        });
+      }
+    }
+    
+    // Enrich with partner data and unread count
+    const conversations = await Promise.all(
+      Array.from(conversationsMap.values()).map(async (conv) => {
+        const partner = await this.getUser(conv.partnerId);
+        const unreadCount = Array.from(this.directMessages.values())
+          .filter(msg => 
+            msg.senderId === conv.partnerId && 
+            msg.receiverId === userId && 
+            !msg.isRead
+          ).length;
+        
+        return {
+          partner: partner ? { 
+            id: partner.id, 
+            name: partner.name, 
+            avatar: partner.avatar, 
+            username: partner.username 
+          } : null,
+          lastMessage: {
+            content: conv.lastMessage.content,
+            sentAt: conv.lastMessage.sentAt
+          },
+          unreadCount
+        };
+      })
+    );
+    
+    // Sort by most recent message
+    return conversations.sort((a, b) => 
+      new Date(b.lastMessage.sentAt).getTime() - new Date(a.lastMessage.sentAt).getTime()
+    );
+  }
+
+  async createDirectMessage(messageData: { senderId: number, receiverId: number, content: string }): Promise<any> {
+    const id = this.directMessageIdCounter++;
+    const now = new Date();
+    
+    const newMessage: DirectMessage = {
+      id,
+      senderId: messageData.senderId,
+      receiverId: messageData.receiverId,
+      content: messageData.content,
+      isRead: false,
+      sentAt: now
+    };
+    
+    this.directMessages.set(id, newMessage);
+    
+    // Enrich with sender data
+    const sender = await this.getUser(messageData.senderId);
+    return {
+      ...newMessage,
+      sender: sender ? { id: sender.id, name: sender.name, avatar: sender.avatar, username: sender.username } : null
+    };
+  }
+
+  async markMessageAsRead(messageId: number): Promise<any> {
+    const message = this.directMessages.get(messageId);
+    if (!message) return null;
+    
+    const updatedMessage = { ...message, isRead: true };
+    this.directMessages.set(messageId, updatedMessage);
+    return updatedMessage;
   }
 
   // Posts operations

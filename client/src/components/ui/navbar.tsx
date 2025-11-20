@@ -1,14 +1,26 @@
 import { Link } from 'wouter';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, Home, User, Repeat, MessageCircle, Video, Users, Trophy } from 'lucide-react';
+import { LogOut, Home, User, Repeat, MessageCircle, Video, Users, Trophy, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import logoImage from "../../assets/logo.png";
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
+import { useQuery } from '@tanstack/react-query';
 
 export function Navbar() {
   const { user, logout } = useAuth();
+
+  // Fetch conversations for unread count
+  const { data: conversations = [] } = useQuery<any[]>({
+    queryKey: ["/api/messages/conversations"],
+    enabled: !!user,
+    refetchInterval: 10000, // Poll every 10 seconds
+  });
+
+  // Calculate total unread messages
+  const unreadCount = conversations.reduce((total: number, conv: any) => total + (conv.unreadCount || 0), 0);
 
   // Simple direct logout function that always works
   const handleLogout = () => {
@@ -76,6 +88,12 @@ export function Navbar() {
                   Feed
                 </Button>
               </Link>
+              <Link to="/messages">
+                <Button variant="outline" className="border-white/40 text-primary-foreground hover:bg-white/10" data-testid="button-messages">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Messages
+                </Button>
+              </Link>
             </nav>
           </div>
 
@@ -83,7 +101,25 @@ export function Navbar() {
             {user && (
               <>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
+                    <Link to="/messages">
+                      <button 
+                        className="relative p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                        data-testid="button-notifications"
+                        aria-label="Notifications"
+                        title="Messages"
+                      >
+                        <Bell className="h-5 w-5" />
+                        {unreadCount > 0 && (
+                          <Badge 
+                            variant="destructive" 
+                            className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center text-xs"
+                          >
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </Badge>
+                        )}
+                      </button>
+                    </Link>
                     <span className="bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
                       📜 {user?.points || 0} Points
                     </span>

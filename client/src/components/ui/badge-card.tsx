@@ -40,7 +40,7 @@ export function BadgeCard({
     primary: "bg-primary/20",
     secondary: "bg-emerald-500/20",
     accent: "bg-amber-500/20",
-    purple: "bg-purple-500/20",
+    purple: "bg-indigo-500/20",
     pink: "bg-pink-500/20"
   };
   
@@ -48,7 +48,7 @@ export function BadgeCard({
     primary: "text-primary",
     secondary: "text-emerald-600",
     accent: "text-amber-600",
-    purple: "text-purple-600",
+    purple: "text-indigo-600",
     pink: "text-pink-600"
   };
 

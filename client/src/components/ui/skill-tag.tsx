@@ -34,14 +34,14 @@ export function SkillTag({
   return (
     <div 
       className={cn(
-        "skill-tag inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-transform duration-200",
+        "skill-tag inline-flex items-center px-3 py-1 rounded-full text-sm font-medium transition-transform duration-200 max-w-full",
         colorClasses[color],
         buttonClass,
         className
       )}
       onClick={onClick}
     >
-      <span>{name}</span>
+      <span className="truncate">{name}</span>
       {verified && (
         <span 
           className={cn(

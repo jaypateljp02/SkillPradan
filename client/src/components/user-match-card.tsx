@@ -1,7 +1,8 @@
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Button } from "@/components/ui/button";
 import { SkillTag } from "@/components/ui/skill-tag";
-import { Star } from "lucide-react";
+import { Star, User, MessageCircle } from "lucide-react";
+import { Link } from "wouter";
 
 interface UserMatchCardProps {
   match: {
@@ -66,16 +67,30 @@ export function UserMatchCard({ match, onRequestExchange, isRequestingExchange }
             </div>
           </div>
           
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-neutral-500">{match.matchPercentage}% Match</span>
-            <Button 
-              size="sm" 
-              onClick={onRequestExchange}
-              disabled={isRequestingExchange}
-              className="bg-purple text-white hover:bg-opacity-90"
-            >
-              Request Exchange
-            </Button>
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-neutral-500">{match.matchPercentage}% Match</span>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                onClick={onRequestExchange}
+                disabled={isRequestingExchange}
+                className="flex-1"
+                data-testid={`button-request-exchange-${match.userId}`}
+              >
+                Request Exchange
+              </Button>
+              <Link to={`/messages?user=${match.userId}`}>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  data-testid={`button-message-${match.userId}`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

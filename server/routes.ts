@@ -1307,6 +1307,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =========================================
+  // Direct Messages routes
+  // =========================================
+  // Get all conversations for the current user
+  app.get("/api/messages/conversations", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const conversations = await storage.getConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ error: "Failed to fetch conversations" });
+    }
+  });
+
+  // Get messages between current user and another user
+  app.get("/api/messages/:userId", isAuthenticatedEither, async (req, res) => {
+    try {
+      const currentUserId = req.user!.id;
+      const otherUserId = parseInt(req.params.userId);
+      
+      if (isNaN(otherUserId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      const messages = await storage.getDirectMessages(currentUserId, otherUserId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  // Send a direct message
+  app.post("/api/messages/:userId", isAuthenticatedEither, async (req, res) => {
+    try {
+      const senderId = req.user!.id;
+      const receiverId = parseInt(req.params.userId);
+      
+      if (isNaN(receiverId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      // Validate using schema
+      const validatedData = insertDirectMessageSchema.parse({
+        senderId,
+        receiverId,
+        content: req.body.content
+      });
+      
+      const message = await storage.createDirectMessage(validatedData);
+      
+      res.status(201).json(message);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: fromZodError(error).message });
+      }
+      console.error("Error sending message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // Mark message as read
+  app.put("/api/messages/:messageId/read", isAuthenticatedEither, async (req, res) => {
+    try {
+      const messageId = parseInt(req.params.messageId);
+      
+      if (isNaN(messageId)) {
+        return res.status(400).json({ error: "Invalid message ID" });
+      }
+      
+      const message = await storage.markMessageAsRead(messageId);
+      
+      if (!message) {
+        return res.status(404).json({ error: "Message not found" });
+      }
+      
+      res.json(message);
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+      res.status(500).json({ error: "Failed to mark message as read" });
+    }
+  });
+
+  // =========================================
   // Posts routes (questions + success stories)
   // =========================================
   app.get("/api/posts", isAuthenticatedEither, async (req, res) => {

@@ -326,3 +326,22 @@ export const insertPostSchema = createInsertSchema(posts).pick({
 
 export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
+
+// Direct Messages for 1-to-1 conversations
+export const directMessages = pgTable("direct_messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").notNull(),
+  receiverId: integer("receiver_id").notNull(),
+  content: text("content").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  sentAt: timestamp("sent_at").notNull().defaultNow(),
+});
+
+export const insertDirectMessageSchema = createInsertSchema(directMessages).pick({
+  senderId: true,
+  receiverId: true,
+  content: true,
+});
+
+export type DirectMessage = typeof directMessages.$inferSelect;
+export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;

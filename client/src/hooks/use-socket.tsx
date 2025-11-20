@@ -102,6 +102,15 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         ws.onopen = () => {
           console.log("WebSocket connected");
           setConnected(true);
+          
+          // Send authentication message with user ID
+          if (user && ws) {
+            ws.send(JSON.stringify({
+              type: 'authenticate',
+              payload: { userId: user.id }
+            }));
+          }
+          
           toast({
             title: "Connected to server",
             description: "Real-time features are now available"
