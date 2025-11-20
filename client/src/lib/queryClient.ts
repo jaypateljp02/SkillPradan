@@ -15,12 +15,20 @@ export function getAuthTokenForRequest(): string | null {
   return getAuthToken();
 }
 
+const API_BASE: string = typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_API_BASE_URL ? (import.meta as any).env.VITE_API_BASE_URL : "";
+function withBase(url: string): string {
+  if (!API_BASE) return url;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return API_BASE.replace(/\/$/, "") + (url.startsWith("/") ? url : `/${url}`);
+}
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  console.log(`Making ${method} request to ${url}`, data);
+  const fullUrl = withBase(url);
+  console.log(`Making ${method} request to ${fullUrl}`, data);
   
   try {
     // Get auth token
@@ -32,20 +40,20 @@ export async function apiRequest(
       ...(token ? { "Authorization": `Bearer ${token}` } : {})
     };
     
-    const res = await fetch(url, {
+    const res = await fetch(fullUrl, {
       method,
       headers,
       body: data ? JSON.stringify(data) : undefined,
       cache: "no-cache"
     });
     
-    console.log(`Received response from ${url}:`, {
+    console.log(`Received response from ${fullUrl}:`, {
       status: res.status,
       statusText: res.statusText
     });
     
     // Handle unauthorized status without automatic redirect
-    if (res.status === 401 && url !== "/api/login" && window.location.pathname !== '/auth') {
+    if (res.status === 401 && fullUrl !== withBase("/api/login") && window.location.pathname !== '/auth') {
       console.log("Received 401, user not authenticated");
       // We won't automatically redirect since we want users to stay on the page until they choose to log out
       // This aligns with our requirements to keep users on the main screen until they explicitly log out
@@ -66,7 +74,9 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    console.log(`Making query request to ${queryKey[0]}`);
+    const raw = String(queryKey[0]);
+    const target = withBase(raw);
+    console.log(`Making query request to ${target}`);
     
     try {
       // Get auth token
@@ -77,24 +87,24 @@ export const getQueryFn: <T>(options: {
         ...(token ? { "Authorization": `Bearer ${token}` } : {})
       };
       
-      const res = await fetch(queryKey[0] as string, {
+      const res = await fetch(target, {
         headers,
         cache: "no-cache"
       });
       
-      console.log(`Received query response from ${queryKey[0]}:`, {
+      console.log(`Received query response from ${target}:`, {
         status: res.status,
         statusText: res.statusText
       });
 
       // Handle unauthorized status without automatic redirect
-      if (res.status === 401 && !String(queryKey[0]).includes('/api/login') && !String(queryKey[0]).includes('/api/register')) {
+      if (res.status === 401 && !raw.includes('/api/login') && !raw.includes('/api/register')) {
         if (unauthorizedBehavior === "returnNull") {
           console.log("Returning null due to 401 status");
           
           // No automatic redirects - user stays on the current page
           // Only log the event for API user endpoint
-          if (String(queryKey[0]) === '/api/user') {
+          if (raw === '/api/user') {
             console.log("User authentication required but no redirect - keeping user on current page");
           }
           return null;

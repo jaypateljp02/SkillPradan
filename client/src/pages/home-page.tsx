@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { SocketProvider } from "@/hooks/use-socket";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { ProfileHeader } from "@/components/profile-header";
@@ -36,9 +35,10 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { MobileNav } from "@/components/ui/mobile-nav";
 
 export default function HomePage() {
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("profile-tab");
   
   // Use Challenge type from import at the top
@@ -82,51 +82,7 @@ export default function HomePage() {
   ];
 
   return (
-    <SocketProvider>
       <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
-        {/* Header with logo and user info */}
-        <header className="bg-white border-b border-neutral-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
-            <div className="flex items-center">
-              <img src={logoImage} alt="Skill Pradan" className="h-8" />
-              <h1 className="ml-3 text-xl font-medium text-neutral-800">Skill प्रदान</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              {/* Admin Dashboard Button - Only visible for admin users */}
-              {user?.isAdmin && (
-                <Link to="/admin-dashboard">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="flex items-center gap-1 text-primary border-primary hover:bg-primary/10"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span>Admin Dashboard</span>
-                  </Button>
-                </Link>
-              )}
-              <div className="flex items-center bg-neutral-100 px-3 py-1 rounded-md">
-                <CreditCard className="h-4 w-4 text-neutral-500 mr-1" />
-                <span className="text-sm font-medium">{user?.points || 0} Points</span>
-              </div>
-              <div className="flex items-center">
-                <UserAvatar 
-                  name={user?.name || 'User'} 
-                  avatarUrl={user?.avatar} 
-                  size="sm" 
-                />
-                <span className="ml-2 text-sm font-medium">{user?.name || 'User'}</span>
-                <button 
-                  onClick={() => logoutMutation.mutate()}
-                  className="ml-3 text-neutral-500 hover:text-neutral-800 transition-colors"
-                  aria-label="Logout"
-                >
-                  <LogOut className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
         
         {/* Main Content */}
         <main className="flex-grow">
@@ -354,9 +310,10 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </div>
-        </main>
       </div>
-    </SocketProvider>
+      </main>
+      {/* Mobile bottom navigation */}
+      <MobileNav setActiveTab={setActiveTab} activeTab={activeTab} />
+    </div>
   );
 }

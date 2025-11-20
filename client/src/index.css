@@ -16,24 +16,31 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 
-  .btn-purple {
-    @apply bg-[hsl(var(--purple-button))] text-white hover:bg-[hsl(var(--purple-button)/0.9)] px-4 py-2 rounded-md;
+  /* Brand tokens already wired via Tailwind colors; remove custom purple helpers */
+  .bg-primary {
+    @apply text-primary-foreground;
   }
+}
 
-  .text-purple {
-    @apply text-[hsl(var(--primary-purple))];
-  }
-  
-  .bg-purple {
-    @apply bg-[hsl(var(--primary-purple))];
-  }
-  
-  .bg-purple-light {
-    @apply bg-[hsl(var(--primary-purple)/0.1)];
-  }
-  
-  /* Ensure text on purple backgrounds is visible */
-  .bg-primary, .bg-purple {
-    @apply text-white;
-  }
+/* Windows-friendly scrollbar styling (Chrome/Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary)/0.6);
+  border-radius: 8px;
+  border: 2px solid hsl(var(--muted));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary)) hsl(var(--muted));
 }

@@ -1,14 +1,18 @@
 import express, { type Request, Response, NextFunction } from "express";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Enable CORS for all routes
 app.use(cors({
-  origin: ['https://replit.com', 'https://*.replit.app', true], // Allow Replit domains and all others
-  credentials: true, // Allow cookies
+  origin: true,
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Firebase-Uid']
 }));
@@ -62,10 +66,8 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  const isProd = process.env.NODE_ENV === "production" || __dirname.endsWith("dist");
+  if (!isProd) {
     await setupVite(app, server);
   } else {
     serveStatic(app);

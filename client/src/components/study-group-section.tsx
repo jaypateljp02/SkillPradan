@@ -9,7 +9,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { getFirebaseIdToken } from "@/lib/firebase";
+import { getAuthToken } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
@@ -52,7 +52,7 @@ export function StudyGroupSection() {
     // Invalidate queries with the new activeTab value to force refetch
     queryClient.invalidateQueries({ queryKey: ['/api/groups', activeTab] });
     queryClient.invalidateQueries({ queryKey: ['/api/groups/user', activeTab] });
-  }, [activeTab, queryClient]);
+  }, [activeTab]);
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -91,7 +91,7 @@ export function StudyGroupSection() {
   } = useQuery<GroupItem[]>({
     queryKey: ['/api/groups', activeTab],
     queryFn: async () => {
-      const token = await getFirebaseIdToken();
+      const token = getAuthToken();
       if (!token) {
         return [];
       }
@@ -119,7 +119,7 @@ export function StudyGroupSection() {
   } = useQuery<GroupItem[]>({
     queryKey: ['/api/groups/user', activeTab],
     queryFn: async () => {
-      const token = await getFirebaseIdToken();
+      const token = getAuthToken();
       if (!token) {
         return [];
       }
@@ -143,8 +143,7 @@ export function StudyGroupSection() {
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createGroupSchema>) => {
-      // Get Firebase ID token using the helper function from queryClient
-      const token = await getFirebaseIdToken();
+      const token = getAuthToken();
       
       if (!token) {
         throw new Error('You must be logged in to create a study group');
@@ -189,8 +188,7 @@ export function StudyGroupSection() {
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
-      // Get Firebase ID token using the helper function from queryClient
-      const token = await getFirebaseIdToken();
+      const token = getAuthToken();
       
       if (!token) {
         throw new Error('You must be logged in to join a group');
@@ -301,7 +299,7 @@ export function StudyGroupSection() {
   // Delete group mutation
   const deleteGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
-      const token = await getFirebaseIdToken();
+      const token = getAuthToken();
       
       if (!token) {
         throw new Error('You must be logged in to delete a group');
@@ -636,7 +634,7 @@ export function StudyGroupSection() {
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Members ({selectedGroupData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
+                    {Array.from({ length: Math.min(selectedGroupData.memberCount || 0, 5) }).map((_, i) => (
                       <UserAvatar 
                         key={i} 
                         name={`Member ${i+1}`} 

@@ -90,7 +90,6 @@ export function SkillsSection() {
   function onSubmit(data: SkillFormValues) {
     addSkillMutation.mutate({
       name: data.name,
-      userId: user!.id,
       isTeaching: data.isTeaching,
       proficiencyLevel: data.proficiencyLevel || "beginner",
       isVerified: false,

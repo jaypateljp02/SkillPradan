@@ -16,6 +16,7 @@ import GroupsPage from "@/pages/groups-page";
 import StudyGroupsPage from "@/pages/study-groups-page";
 import AdminDashboard from "@/pages/admin-dashboard";
 import { Layout } from "@/components/layout";
+import FeedPage from "@/pages/feed-page";
 
 // New protected route specifically for admin access
 const AdminRoute = ({ component: Component, ...rest }: any) => {
@@ -77,6 +78,7 @@ function Router() {
       <ProtectedRoute path="/groups/:groupId/chat" component={GroupsPage} />
       <ProtectedRoute path="/groups/:groupId" component={GroupsPage} />
       <ProtectedRoute path="/groups" component={GroupsPage} />
+      <ProtectedRoute path="/feed" component={FeedPage} />
       <AdminRoute path="/admin-dashboard" component={AdminDashboard} />
       <AdminRoute path="/admin" component={() => {
         // Redirect to admin-dashboard when /admin is accessed

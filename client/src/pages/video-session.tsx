@@ -19,6 +19,14 @@ import {
 } from "lucide-react";
 import { formatDistance } from "date-fns";
 
+type EnrichedExchange = {
+  id: number;
+  teacherId: number;
+  studentId: number;
+  teacherUser?: { id: number; name: string; avatar?: string };
+  studentUser?: { id: number; name: string; avatar?: string };
+};
+
 function SessionContent() {
   const { id } = useParams();
   const sessionId = parseInt(id || "0");
@@ -28,7 +36,7 @@ function SessionContent() {
   const [activeTab, setActiveTab] = useState("video");
   
   // Get exchange details
-  const { data: exchanges = [] } = useQuery({
+  const { data: exchanges = [] } = useQuery<EnrichedExchange[]>({
     queryKey: ["/api/exchanges"],
   });
   

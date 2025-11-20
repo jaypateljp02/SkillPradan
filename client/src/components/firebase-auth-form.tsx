@@ -18,11 +18,12 @@ import { useAuth } from "../hooks/use-auth";
 
 // Validation schemas
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  username: z.string().min(1, "Username is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const registerSchema = loginSchema.extend({
+  email: z.string().email("Please enter a valid email address"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   university: z.string().min(2, "University must be at least 2 characters"),
@@ -33,7 +34,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export function FirebaseAuthForm() {
-  const { firebaseLogin, firebaseRegister } = useAuth();
+  const { loginMutation, registerMutation } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
@@ -41,7 +42,7 @@ export function FirebaseAuthForm() {
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -64,25 +65,26 @@ export function FirebaseAuthForm() {
     setIsSubmitting(true);
     
     try {
-      await firebaseLogin(values);
+      await new Promise<void>((resolve, reject) => {
+        try {
+          loginMutation.mutate({ username: values.username, password: values.password }, {
+            onSuccess: () => resolve(),
+            onError: (err) => reject(err as any)
+          });
+        } catch (e) {
+          reject(e as any);
+        }
+      });
       // After successful login, we'll wait for useAuth to update with the user data
       // This is now handled by the auth-page.tsx component's useEffect
     } catch (error: any) {
       console.error("Login error:", error);
       
       // Provide more specific error messages based on Firebase error codes
-      let errorMessage = "Please check your email and password";
+      let errorMessage = "Please check your username and password";
       
-      if (error.code === 'auth/invalid-credential') {
-        errorMessage = "Invalid email or password. Please try again.";
-      } else if (error.code === 'auth/user-not-found') {
-        errorMessage = "No account found with this email. Please register first.";
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = "Incorrect password. Please try again.";
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = "Too many failed login attempts. Please try again later.";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Network error. Please check your internet connection.";
+      if (error.message) {
+        errorMessage = error.message;
       }
       
       // Use the toast API directly (could also add a toast instance here)
@@ -102,7 +104,22 @@ export function FirebaseAuthForm() {
     setIsSubmitting(true);
     
     try {
-      await firebaseRegister(values);
+      await new Promise<void>((resolve, reject) => {
+        try {
+          registerMutation.mutate({
+            username: values.username,
+            password: values.password,
+            name: values.name,
+            email: values.email,
+            university: values.university,
+          }, {
+            onSuccess: () => resolve(),
+            onError: (err) => reject(err as any)
+          });
+        } catch (e) {
+          reject(e as any);
+        }
+      });
       // After successful registration, the useAuth hook will update and redirect
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -110,41 +127,15 @@ export function FirebaseAuthForm() {
       // Provide specific error messages based on Firebase error codes
       let errorMessage = "Registration failed. Please try again.";
       
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "This email is already registered. Please log in or use a different email.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Invalid email format. Please check your email address.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password is too weak. Please use at least 6 characters.";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Network error. Please check your internet connection.";
-      } else if (error.message && error.message.includes("username already exists")) {
-        errorMessage = "This username is already taken. Please choose another.";
+      if (error.message) {
+        errorMessage = error.message;
       }
       
       // Set form error based on the specific issue
-      if (error.code === 'auth/email-already-in-use' || error.code === 'auth/invalid-email') {
-        registerForm.setError('email', { 
-          type: 'manual',
-          message: errorMessage
-        });
-      } else if (error.code === 'auth/weak-password') {
-        registerForm.setError('password', { 
-          type: 'manual',
-          message: errorMessage
-        });
-      } else if (error.message && error.message.includes("username already exists")) {
-        registerForm.setError('username', { 
-          type: 'manual',
-          message: "Username already taken"
-        });
-      } else {
-        // General error
-        registerForm.setError('root', { 
-          type: 'manual',
-          message: errorMessage
-        });
-      }
+      registerForm.setError('root', { 
+        type: 'manual',
+        message: errorMessage
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -172,12 +163,12 @@ export function FirebaseAuthForm() {
               <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                 <FormField
                   control={loginForm.control}
-                  name="email"
+                  name="username"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="you@example.com" {...field} />
+                        <Input placeholder="johndoe" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

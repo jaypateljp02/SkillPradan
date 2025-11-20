@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { User as SelectUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -23,8 +24,8 @@ type AuthContextType = {
   isLoading: boolean;
   error: Error | null;
   // Token-based authentication
-  loginMutation: ReturnType<typeof useMutation>;
-  registerMutation: ReturnType<typeof useMutation>;
+  loginMutation: UseMutationResult<any, Error, LoginData, unknown>;
+  registerMutation: UseMutationResult<any, Error, RegisterData, unknown>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;

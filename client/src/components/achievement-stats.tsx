@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Medal, Repeat, Trophy } from "lucide-react";
+import type { UserBadge, Exchange } from "@shared/schema";
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -20,18 +21,20 @@ function StatCard({ icon, value, label }: StatCardProps) {
   );
 }
 
+type LeaderboardEntry = { id: number; name: string; university: string; exchanges: number; points: number; avatar: string };
+
 export function AchievementStats() {
   const { user } = useAuth();
   
-  const { data: userBadges = [] } = useQuery({
+  const { data: userBadges = [] } = useQuery<UserBadge[]>({
     queryKey: ["/api/user-badges"],
   });
   
-  const { data: exchanges = [] } = useQuery({
+  const { data: exchanges = [] } = useQuery<Exchange[]>({
     queryKey: ["/api/exchanges"],
   });
   
-  const { data: leaderboard = [] } = useQuery({
+  const { data: leaderboard = [] } = useQuery<LeaderboardEntry[]>({
     queryKey: ["/api/leaderboard"],
   });
   

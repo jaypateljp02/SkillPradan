@@ -57,13 +57,6 @@ export function AuthForm() {
       university: "",
       avatar: "",
     },
-    onError: (error) => {
-      if (error?.message?.includes("username is already taken")) {
-        registerForm.setError("username", { 
-          message: "This username is already taken" 
-        });
-      }
-    },
   });
 
   function onLoginSubmit(data: LoginFormValues) {

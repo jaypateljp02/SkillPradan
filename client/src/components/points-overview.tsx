@@ -39,7 +39,7 @@ export function PointsOverview() {
   const progressPercentage = ((points - pointsForCurrentLevel) / 500) * 100;
 
   return (
-    <div className="bg-gradient-to-r from-primary to-indigo-700 rounded-lg p-6 text-white">
+    <div className="bg-gradient-to-r from-primary to-primary/80 rounded-lg p-6 text-white">
       <div className="flex items-center">
         <div className="flex-1">
           <h3 className="text-lg font-medium">Your Points Balance</h3>

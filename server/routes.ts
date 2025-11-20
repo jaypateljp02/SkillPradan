@@ -602,6 +602,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
     
+    const group = await storage.getGroup(groupId);
+    if (!group) return res.status(404).send("Group not found");
+    if (group.isPrivate) {
+      return res.status(403).json({ message: "This is a private group. Admin approval is required to join." });
+    }
+
+    const members = await storage.getGroupMembers(groupId);
+    const existingMember = members.find(member => member.userId === userId);
+    if (existingMember) {
+      return res.status(400).json({ message: "Already a member of this group" });
+    }
+
     const member = await storage.addGroupMember({
       groupId,
       userId,
@@ -841,6 +853,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Make sure group exists
     const group = await storage.getGroup(groupId);
     if (!group) return res.status(404).send("Group not found");
+    if (group.isPrivate) {
+      return res.status(403).json({ message: "This is a private group. Admin approval is required to join." });
+    }
     
     // Check if user is the creator of the group
     if (group.createdById === userId) {
@@ -1288,6 +1303,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
+    }
+  });
+
+  // =========================================
+  // Posts routes (questions + success stories)
+  // =========================================
+  app.get("/api/posts", isAuthenticatedEither, async (req, res) => {
+    try {
+      const type = typeof req.query.type === 'string' ? req.query.type : undefined;
+      const subject = typeof req.query.subject === 'string' ? req.query.subject : undefined;
+      const offset = req.query.offset ? Number(req.query.offset) : undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : undefined;
+      const posts = await storage.getPosts({ type, subject, offset, limit });
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ message: "Failed to fetch posts" });
+    }
+  });
+
+  app.post("/api/posts", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { type, title, subject, content, imageUrl } = req.body;
+      if (!type || !title || !content) {
+        return res.status(400).json({ message: "type, title and content are required" });
+      }
+      if (type !== 'question' && type !== 'success') {
+        return res.status(400).json({ message: "type must be 'question' or 'success'" });
+      }
+      const post = await storage.createPost({ userId, type, title, subject, content, imageUrl });
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
+  app.put("/api/posts/:id/like", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const postId = Number(req.params.id);
+      if (isNaN(postId)) {
+        return res.status(400).json({ message: "Invalid post id" });
+      }
+      const updated = await storage.toggleLikePost(postId, userId);
+      if (!updated) return res.status(404).json({ message: "Post not found" });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error liking post:", error);
+      res.status(400).json({ message: (error as Error).message });
     }
   });
 

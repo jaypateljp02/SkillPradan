@@ -9,7 +9,8 @@ import {
   Challenge, InsertChallenge,
   UserChallenge, InsertUserChallenge,
   Review, InsertReview,
-  Group, GroupMember, GroupEvent, GroupFile, GroupMessage
+  Group, GroupMember, GroupEvent, GroupFile, GroupMessage,
+  Post, InsertPost
 } from "@shared/schema";
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
@@ -137,6 +138,7 @@ export class MemStorage implements IStorage {
   private groupEvents: Map<number, GroupEvent>;
   private groupFiles: Map<number, GroupFile>;
   private groupMessages: Map<number, GroupMessage>;
+  private posts: Map<number, Post>;
   
   private userIdCounter: number;
   private skillIdCounter: number;
@@ -153,6 +155,7 @@ export class MemStorage implements IStorage {
   private groupEventIdCounter: number;
   private groupFileIdCounter: number;
   private groupMessageIdCounter: number;
+  private postIdCounter: number;
   
   sessionStore: SessionStore;
 
@@ -172,6 +175,7 @@ export class MemStorage implements IStorage {
     this.groupEvents = new Map();
     this.groupFiles = new Map();
     this.groupMessages = new Map();
+    this.posts = new Map();
     
     this.userIdCounter = 1;
     this.skillIdCounter = 1;
@@ -188,6 +192,7 @@ export class MemStorage implements IStorage {
     this.groupEventIdCounter = 1;
     this.groupFileIdCounter = 1;
     this.groupMessageIdCounter = 1;
+    this.postIdCounter = 1;
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000
@@ -1085,6 +1090,60 @@ export class MemStorage implements IStorage {
     
     this.groupMessages.set(id, newMessage);
     return newMessage;
+  }
+
+  // Posts operations
+  async getPosts(filter?: { type?: string; subject?: string; offset?: number; limit?: number }): Promise<Post[]> {
+    let list = Array.from(this.posts.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (filter?.type) {
+      list = list.filter(p => p.type === filter.type);
+    }
+    if (filter?.subject) {
+      list = list.filter(p => (p.subject || '').toLowerCase() === filter.subject!.toLowerCase());
+    }
+    const start = filter?.offset || 0;
+    const end = filter?.limit ? start + filter.limit : undefined;
+    return list.slice(start, end);
+  }
+
+  async createPost(postData: InsertPost): Promise<Post> {
+    const id = this.postIdCounter++;
+    const now = new Date();
+    const newPost: Post = {
+      id,
+      userId: postData.userId,
+      type: postData.type,
+      title: postData.title,
+      subject: postData.subject || null,
+      content: postData.content,
+      imageUrl: postData.imageUrl || null,
+      likes: 0,
+      createdAt: now,
+    } as Post;
+    this.posts.set(id, newPost);
+    // Small activity bonus for posting
+    await this.createActivity({
+      userId: postData.userId,
+      type: "post",
+      description: `Created a ${postData.type} post: ${postData.title}`,
+      pointsEarned: 5,
+    });
+    return newPost;
+  }
+
+  async toggleLikePost(postId: number, userId: number): Promise<Post | undefined> {
+    const post = this.posts.get(postId);
+    if (!post) return undefined;
+    const updated = { ...post, likes: (post.likes || 0) + 1 };
+    this.posts.set(postId, updated);
+    // Optional: could track per-user likes to prevent multiple likes; simplified for demo
+    await this.createActivity({
+      userId,
+      type: "post",
+      description: `Liked post: ${post.title}`,
+      pointsEarned: 1,
+    });
+    return updated;
   }
   
   // Leaderboard

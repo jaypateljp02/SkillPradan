@@ -10,10 +10,12 @@ import {
   TableRow 
 } from "@/components/ui/table";
 
+type LeaderboardEntry = { id: number; name: string; university: string; exchanges: number; points: number; avatar: string };
+
 export function Leaderboard() {
   const { user } = useAuth();
   
-  const { data: leaderboard = [], isLoading } = useQuery({
+  const { data: leaderboard = [], isLoading } = useQuery<LeaderboardEntry[]>({
     queryKey: ["/api/leaderboard"],
   });
   

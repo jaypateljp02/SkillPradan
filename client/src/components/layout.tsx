@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { ConnectionStatus } from "./connection-status";
+import { Navbar } from "@/components/ui/navbar";
 
 interface LayoutProps {
   children: ReactNode;
@@ -21,7 +22,7 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
-      {/* Clean layout with no header bar */}
+      <Navbar />
       <div className="flex-1 flex flex-col">
         {/* Main content */}
         <main className="flex-1">

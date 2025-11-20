@@ -242,17 +242,23 @@ const AdminDashboard = () => {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-gray-500">Manage the Skill Pradan platform</p>
+        <div className="flex items-center gap-3">
+          <img src={logoImage} alt="Skill Pradan" className="h-8 w-8" />
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-gray-500">Manage the Skill Pradan platform</p>
+          </div>
         </div>
-        {user && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <Link href="/">
+            <Button variant="outline">Back to Home</Button>
+          </Link>
+          {user && (
             <Badge className={user.isAdmin ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
               {user.isAdmin ? "Admin Access" : "Access Restricted"}
             </Badge>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       {/* Admin check warning */}
@@ -609,8 +615,8 @@ const AdminDashboard = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Skill Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Level</TableHead>
+                      <TableHead>Proficiency</TableHead>
+                      <TableHead>Progress</TableHead>
                       <TableHead>Teaching/Learning</TableHead>
                       <TableHead>User</TableHead>
                     </TableRow>
@@ -634,30 +640,28 @@ const AdminDashboard = () => {
                     ) : (
                       skills.map((skill: any) => {
                         const user = users?.find((u: any) => u.id === skill.userId);
+                        const prof = String(skill.proficiencyLevel || '').toLowerCase();
+                        const progress = prof === 'expert' ? 100 : prof === 'intermediate' ? 66 : 33;
                         return (
                           <TableRow key={skill.id}>
                             <TableCell className="font-medium">{skill.name}</TableCell>
-                            <TableCell>{skill.category}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-blue-100 text-blue-800">{skill.proficiencyLevel}</Badge>
+                            </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <div className="h-2 w-16 bg-secondary rounded-full overflow-hidden">
                                   <div 
                                     className="h-full bg-primary" 
-                                    style={{ width: `${(skill.level * 20)}%` }}
+                                    style={{ width: `${progress}%` }}
                                   ></div>
                                 </div>
-                                <span>{skill.level}/5</span>
+                                <span>{skill.proficiencyLevel}</span>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Badge
-                                className={
-                                  skill.type === "teaching"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-purple-100 text-purple-800"
-                                }
-                              >
-                                {skill.type === "teaching" ? "Teaching" : "Learning"}
+                              <Badge className={skill.isTeaching ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"}>
+                                {skill.isTeaching ? "Teaching" : "Learning"}
                               </Badge>
                             </TableCell>
                             <TableCell>
@@ -809,3 +813,5 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+import { Link } from "wouter";
+import logoImage from "../assets/logo.png";

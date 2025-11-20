@@ -15,11 +15,21 @@ import { format, isToday, isAfter, isBefore, addDays } from "date-fns";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
+type EnrichedSession = {
+  id: number;
+  scheduledTime: string | Date;
+  duration: number;
+  status: string;
+  exchange: { id: number; status: string };
+  otherUser?: { id: number; name: string; avatar?: string };
+  isTeacher: boolean;
+};
+
 export function LearningSession() {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data: sessions = [], isLoading } = useQuery<EnrichedSession[]>({
     queryKey: ["/api/sessions"],
   });
   

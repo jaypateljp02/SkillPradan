@@ -87,9 +87,11 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     const setupWebSocket = () => {
       // Create WebSocket connection with direct Replit URL
       // This avoids issues with proxies and undefined ports
+      const envWs = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_WS_URL) ? (import.meta as any).env.VITE_WS_URL as string : null;
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = window.location.host;
-      const wsUrl = `${protocol}//${host}/ws`;
+      const defaultWs = `${protocol}//${host}/ws`;
+      const wsUrl = envWs || defaultWs;
       console.log("Base URL for WebSocket:", `${window.location.protocol}//${host}`);
       
       try {
@@ -110,27 +112,12 @@ export function SocketProvider({ children }: { children: ReactNode }) {
           console.log("WebSocket disconnected");
           setConnected(false);
           setSocket(null);
-          
-          // Only show toast if we've already had a connection and not on auth page
-          if (connectionAttempted && window.location.pathname !== '/auth') {
-            // Don't show connection lost toast on login page
-            if (user) {
-              toast({
-                title: "Connection lost",
-                description: "Trying to reconnect...",
-                variant: "destructive"
-              });
-            }
-            
-            // Try to reconnect after a short delay if we're authenticated
-            if (user) {
-              setTimeout(() => {
-                // Try to reconnect later
-                if (window.location.pathname !== '/auth') {
-                  setupWebSocket();
-                }
-              }, 3000);
-            }
+          if (connectionAttempted && window.location.pathname !== '/auth' && user) {
+            setTimeout(() => {
+              if (window.location.pathname !== '/auth') {
+                setupWebSocket();
+              }
+            }, 3000);
           }
         };
         

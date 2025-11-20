@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient, getFirebaseIdToken } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { getAuthToken } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
@@ -96,8 +97,7 @@ export function CommunitySection() {
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createGroupSchema>) => {
-      // Get Firebase ID token using the helper function from queryClient
-      const token = await getFirebaseIdToken();
+      const token = getAuthToken();
       
       if (!token) {
         throw new Error('You must be logged in to create a community');
@@ -139,8 +139,7 @@ export function CommunitySection() {
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
-      // Get Firebase ID token using the helper function from queryClient
-      const token = await getFirebaseIdToken();
+      const token = getAuthToken();
       
       if (!token) {
         throw new Error('You must be logged in to join a community');
@@ -445,7 +444,7 @@ export function CommunitySection() {
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Members ({selectedGroupData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
+                    {Array.from({ length: Math.min(selectedGroupData.memberCount || 0, 5) }).map((_, i) => (
                       <UserAvatar 
                         key={i} 
                         name={`Member ${i+1}`} 

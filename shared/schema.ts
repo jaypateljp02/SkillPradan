@@ -301,3 +301,28 @@ export type InsertGroupFile = z.infer<typeof insertGroupFileSchema>;
 
 export type GroupMessage = typeof groupMessages.$inferSelect;
 export type InsertGroupMessage = z.infer<typeof insertGroupMessageSchema>;
+
+// Posts (questions and success stories)
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  type: text("type").notNull(), // "question" | "success"
+  title: text("title").notNull(),
+  subject: text("subject"),
+  content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  likes: integer("likes").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPostSchema = createInsertSchema(posts).pick({
+  userId: true,
+  type: true,
+  title: true,
+  subject: true,
+  content: true,
+  imageUrl: true,
+});
+
+export type Post = typeof posts.$inferSelect;
+export type InsertPost = z.infer<typeof insertPostSchema>;

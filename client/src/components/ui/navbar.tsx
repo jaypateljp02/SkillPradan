@@ -57,20 +57,25 @@ export function Navbar() {
   };
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="bg-primary text-primary-foreground shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <div className="flex items-center">
                 <img src={logoImage} alt="Skill प्रदान Logo" className="h-8 w-8" />
-                <span className="ml-2 text-xl font-bold text-gray-800">
+                <span className="ml-2 text-xl font-bold">
                   Skill प्रदान
                 </span>
               </div>
             </div>
 
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
+              <Link to="/feed">
+                <Button variant="outline" className="border-white/40 text-primary-foreground hover:bg-white/10">
+                  Feed
+                </Button>
+              </Link>
             </nav>
           </div>
 
@@ -79,7 +84,7 @@ export function Navbar() {
               <>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center">
-                    <span className="bg-neutral-100 text-neutral-600 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
+                    <span className="bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
                       📜 {user?.points || 0} Points
                     </span>
                   </div>
@@ -92,11 +97,11 @@ export function Navbar() {
                     <button 
                       id="logout-button"
                       onClick={handleLogout}
-                      className="p-2 rounded-full bg-red-100 hover:bg-red-200 transition-colors flex items-center justify-center"
+                      className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
                       aria-label="Log out"
                       title="Log out"
                     >
-                      <LogOut className="h-5 w-5 text-red-600 hover:text-red-700" />
+                      <LogOut className="h-5 w-5" />
                     </button>
                   </div>
                 </div>
