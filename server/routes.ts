@@ -3,12 +3,15 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { WebSocketServer } from "ws";
 import { setupWebSockets } from "./socket";
+import { z } from "zod";
+import { fromZodError } from "zod-validation-error";
 import { 
   insertGroupSchema, 
   insertGroupMemberSchema, 
   insertGroupEventSchema, 
   insertGroupFileSchema, 
-  insertGroupMessageSchema 
+  insertGroupMessageSchema,
+  insertDirectMessageSchema 
 } from "@shared/schema";
 import adminRouter from "./routes/admin";
 import { setupAuth, isAuthenticated } from "./token-auth";
