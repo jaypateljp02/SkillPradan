@@ -1,9 +1,9 @@
-import { 
-  User, InsertUser, 
-  Skill, InsertSkill, 
-  Exchange, InsertExchange, 
-  Session, InsertSession, 
-  Activity, InsertActivity, 
+import {
+  User, InsertUser,
+  Skill, InsertSkill,
+  Exchange, InsertExchange,
+  Session, InsertSession,
+  Activity, InsertActivity,
   Badge, InsertBadge,
   UserBadge, InsertUserBadge,
   Challenge, InsertChallenge,
@@ -11,7 +11,8 @@ import {
   Review, InsertReview,
   Group, GroupMember, GroupEvent, GroupFile, GroupMessage,
   Post, InsertPost,
-  DirectMessage, InsertDirectMessage
+  DirectMessage, InsertDirectMessage,
+  Friend, InsertFriend
 } from "@shared/schema";
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
@@ -26,55 +27,55 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
-  
+
   // Skill operations
   getSkill(id: number): Promise<Skill | undefined>;
   getSkillsByUser(userId: number): Promise<Skill[]>;
   createSkill(skill: InsertSkill): Promise<Skill>;
   updateSkill(id: number, skillData: Partial<Skill>): Promise<Skill | undefined>;
-  
+
   // Exchange operations
   getExchange(id: number): Promise<Exchange | undefined>;
   getExchangesByUser(userId: number): Promise<Exchange[]>;
   createExchange(exchange: InsertExchange): Promise<Exchange>;
   updateExchange(id: number, exchangeData: Partial<Exchange>): Promise<Exchange | undefined>;
-  
+
   // Session operations
   getSession(id: number): Promise<Session | undefined>;
   getSessionsByExchange(exchangeId: number): Promise<Session[]>;
   createSession(session: InsertSession): Promise<Session>;
   updateSession(id: number, sessionData: Partial<Session>): Promise<Session | undefined>;
-  
+
   // Activity operations
   getActivity(id: number): Promise<Activity | undefined>;
   getActivitiesByUser(userId: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
-  
+
   // Badge operations
   getBadge(id: number): Promise<Badge | undefined>;
   getAllBadges(): Promise<Badge[]>;
   createBadge(badge: InsertBadge): Promise<Badge>;
-  
+
   // UserBadge operations
   getUserBadges(userId: number): Promise<UserBadge[]>;
   createUserBadge(userBadge: InsertUserBadge): Promise<UserBadge>;
-  
+
   // Challenge operations
   getChallenge(id: number): Promise<Challenge | undefined>;
   getAllChallenges(): Promise<Challenge[]>;
   createChallenge(challenge: InsertChallenge): Promise<Challenge>;
-  
+
   // UserChallenge operations
   getUserChallenges(userId: number): Promise<UserChallenge[]>;
   createUserChallenge(userChallenge: InsertUserChallenge): Promise<UserChallenge>;
   updateUserChallenge(id: number, data: Partial<UserChallenge>): Promise<UserChallenge | undefined>;
-  
+
   // Review operations
   getReview(id: number): Promise<Review | undefined>;
   getReviewsByUser(userId: number): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
   getUserRating(userId: number): Promise<{ rating: number, count: number }>;
-  
+
   // Group operations
   getGroup(id: number): Promise<Group | undefined>;
   getAllGroups(): Promise<Group[]>;
@@ -82,36 +83,43 @@ export interface IStorage {
   createGroup(groupData: Partial<Group>): Promise<Group>;
   updateGroup(id: number, groupData: Partial<Group>): Promise<Group | undefined>;
   deleteGroup(id: number): Promise<boolean>;
-  
+
   // Group member operations
   getGroupMember(id: number): Promise<GroupMember | undefined>;
   getGroupMembers(groupId: number): Promise<GroupMember[]>;
   addGroupMember(memberData: { groupId: number, userId: number, role: string }): Promise<GroupMember>;
   removeGroupMember(groupId: number, userId: number): Promise<boolean>;
-  
+
   // Group file operations
   getGroupFile(id: number): Promise<GroupFile | undefined>;
   getGroupFiles(groupId: number): Promise<GroupFile[]>;
   addGroupFile(fileData: { groupId: number, uploadedById: number, name: string, type: string, url: string }): Promise<GroupFile>;
-  
+
   // Group event operations
   getGroupEvent(id: number): Promise<GroupEvent | undefined>;
   getGroupEvents(groupId: number): Promise<GroupEvent[]>;
   createGroupEvent(eventData: { groupId: number, createdById: number, title: string, description?: string, startTime: Date, endTime?: Date }): Promise<GroupEvent>;
-  
+
   // Group message operations
   getGroupMessages(groupId: number): Promise<GroupMessage[]>;
   createGroupMessage(messageData: { groupId: number, userId: number, content: string }): Promise<GroupMessage>;
-  
+
   // Direct message operations
   getDirectMessages(userId1: number, userId2: number): Promise<any[]>;
   getConversations(userId: number): Promise<any[]>;
   createDirectMessage(messageData: { senderId: number, receiverId: number, content: string }): Promise<any>;
   markMessageAsRead(messageId: number): Promise<any>;
-  
+
+  // Friend operations
+  getFriends(userId: number): Promise<Friend[]>;
+  getFriendRequests(userId: number): Promise<Friend[]>;
+  sendFriendRequest(userId: number, friendId: number): Promise<Friend>;
+  respondToFriendRequest(requestId: number, status: "accepted" | "rejected"): Promise<Friend | undefined>;
+  checkFriendStatus(userId: number, friendId: number): Promise<Friend | undefined>;
+
   // Leaderboard
-  getLeaderboard(): Promise<{id: number, name: string, university: string, exchanges: number, points: number, avatar: string}[]>;
-  
+  getLeaderboard(): Promise<{ id: number, name: string, university: string, exchanges: number, points: number, avatar: string }[]>;
+
   // Find potential skill matches
   findSkillMatches(teachingSkillId: number, learningSkillId: number): Promise<{
     userId: number,
@@ -120,11 +128,11 @@ export interface IStorage {
     avatar: string,
     university: string,
     rating: number,
-    teachingSkill: {id: number, name: string},
-    learningSkill: {id: number, name: string},
+    teachingSkill: { id: number, name: string },
+    learningSkill: { id: number, name: string },
     matchPercentage: number
   }[]>;
-  
+
   // Session store for authentication
   sessionStore: SessionStore;
 }
@@ -147,7 +155,8 @@ export class MemStorage implements IStorage {
   private groupMessages: Map<number, GroupMessage>;
   private posts: Map<number, Post>;
   private directMessages: Map<number, DirectMessage>;
-  
+  private friends: Map<number, Friend>;
+
   private userIdCounter: number;
   private skillIdCounter: number;
   private exchangeIdCounter: number;
@@ -165,7 +174,8 @@ export class MemStorage implements IStorage {
   private groupMessageIdCounter: number;
   private postIdCounter: number;
   private directMessageIdCounter: number;
-  
+  private friendIdCounter: number;
+
   sessionStore: SessionStore;
 
   constructor() {
@@ -186,7 +196,8 @@ export class MemStorage implements IStorage {
     this.groupMessages = new Map();
     this.posts = new Map();
     this.directMessages = new Map();
-    
+    this.friends = new Map();
+
     this.userIdCounter = 1;
     this.skillIdCounter = 1;
     this.exchangeIdCounter = 1;
@@ -203,19 +214,21 @@ export class MemStorage implements IStorage {
     this.groupFileIdCounter = 1;
     this.groupMessageIdCounter = 1;
     this.postIdCounter = 1;
+    this.postIdCounter = 1;
     this.directMessageIdCounter = 1;
-    
+    this.friendIdCounter = 1;
+
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000
     });
-    
+
     // Initialize with some pre-defined badges and challenges
     this.initPredefinedData();
   }
-  
+
   private async initPredefinedData() {
     console.log("Initializing predefined data in storage...");
-    
+
     // Add some badges
     const badges = [
       { name: "JavaScript Guru", description: "Advanced proficiency in JavaScript", icon: "fa-js-square", pointsAwarded: 50 },
@@ -224,7 +237,7 @@ export class MemStorage implements IStorage {
       { name: "Code Collaborator", description: "Team player", icon: "fa-code-branch", pointsAwarded: 30 },
       { name: "Streak Master", description: "14 day activity streak", icon: "fa-fire", pointsAwarded: 25 }
     ];
-    
+
     badges.forEach(badge => {
       this.createBadge({
         name: badge.name,
@@ -233,13 +246,13 @@ export class MemStorage implements IStorage {
         pointsAwarded: badge.pointsAwarded
       });
     });
-    
+
     // Add some challenges
     const challenges = [
       { title: "Weekly Exchange Challenge", description: "Complete 3 skill exchanges this week", targetCount: 3, type: "exchange", pointsRewarded: 200, durationDays: 7 },
       { title: "Skill Verification Challenge", description: "Verify your skills in 2 new areas", targetCount: 2, type: "verification", pointsRewarded: 100, durationDays: 7 }
     ];
-    
+
     challenges.forEach(challenge => {
       this.createChallenge({
         title: challenge.title,
@@ -250,50 +263,50 @@ export class MemStorage implements IStorage {
         durationDays: challenge.durationDays
       });
     });
-    
+
     // Create test users
     await this.createTestUsers();
-    
+
     // Create some predefined study groups
     const groups = [
-      { 
-        name: "JavaScript Study Group", 
-        description: "Weekly meetings to discuss JavaScript concepts and best practices", 
+      {
+        name: "JavaScript Study Group",
+        description: "Weekly meetings to discuss JavaScript concepts and best practices",
         isPrivate: false,
         isTeamProject: false,
         createdById: 2 // Created by testuser
       },
-      { 
-        name: "Python Programming Team", 
-        description: "Collaborate on Python projects and learn together", 
+      {
+        name: "Python Programming Team",
+        description: "Collaborate on Python projects and learn together",
         isPrivate: false,
         isTeamProject: true,
         createdById: 3 // Created by student1
       },
-      { 
-        name: "Web Development Club", 
-        description: "Learn HTML, CSS, and JavaScript for building modern websites", 
+      {
+        name: "Web Development Club",
+        description: "Learn HTML, CSS, and JavaScript for building modern websites",
         isPrivate: false,
         isTeamProject: false,
         createdById: 1 // Created by admin
       }
     ];
-    
+
     console.log("Creating predefined study groups...");
-    
+
     for (const groupData of groups) {
       const group = await this.createGroup(groupData);
-      
+
       // Add creator as admin member
       await this.addGroupMember({
         groupId: group.id,
         userId: groupData.createdById,
         role: 'admin'
       });
-      
+
       // For demo purposes, add some other members to each group
       const otherUserIds = [1, 2, 3, 4].filter(id => id !== groupData.createdById);
-      
+
       for (const userId of otherUserIds.slice(0, 2)) {
         await this.addGroupMember({
           groupId: group.id,
@@ -302,7 +315,7 @@ export class MemStorage implements IStorage {
         });
       }
     }
-    
+
     // Create test exchanges for the demo - with 2-second delay to ensure users are created
     setTimeout(async () => {
       try {
@@ -312,16 +325,16 @@ export class MemStorage implements IStorage {
           console.log("Test exchanges already exist, skipping creation");
           return;
         }
-        
+
         // Get the test users
         const testUser = await this.getUserByUsername("testuser");
         const anotherUser = await this.getUserByUsername("student1");
-        
+
         if (!testUser || !anotherUser) {
           console.log("Missing test users, cannot create exchanges");
           return;
         }
-        
+
         // Create a completed exchange between testuser and student1
         const exchange = await this.createExchange({
           teacherId: testUser.id,
@@ -333,17 +346,17 @@ export class MemStorage implements IStorage {
           sessionsCompleted: 3,
           notes: "This exchange has been completed successfully."
         });
-        
+
         // Create completed sessions
         const twoWeeksAgo = new Date();
         twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-        
+
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        
+
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        
+
         await this.createSession({
           exchangeId: exchange.id,
           scheduledTime: twoWeeksAgo,
@@ -351,7 +364,7 @@ export class MemStorage implements IStorage {
           status: "completed",
           notes: "First session went well. Covered basics."
         });
-        
+
         await this.createSession({
           exchangeId: exchange.id,
           scheduledTime: oneWeekAgo,
@@ -359,7 +372,7 @@ export class MemStorage implements IStorage {
           status: "completed",
           notes: "Second session focused on advanced topics."
         });
-        
+
         await this.createSession({
           exchangeId: exchange.id,
           scheduledTime: yesterday,
@@ -368,29 +381,54 @@ export class MemStorage implements IStorage {
           notes: "Final session with full project review.",
           whiteboardData: { content: "Sample whiteboard data with diagrams" }
         });
-        
+
+        // Manually update the createdAt for the exchange and sessions to be in the past
+        // This fixes the "1 min ago" issue on server restart
+        const exchangeObj = this.exchanges.get(exchange.id);
+        if (exchangeObj) {
+          const oldDate = new Date();
+          oldDate.setDate(oldDate.getDate() - 15);
+          exchangeObj.createdAt = oldDate;
+          this.exchanges.set(exchange.id, exchangeObj);
+        }
+
+        // Update sessions createdAt
+        const sessions = await this.getSessionsByExchange(exchange.id);
+        sessions.forEach(session => {
+          const sessionDate = new Date(session.scheduledTime);
+          // Set created at to slightly before scheduled time
+          const createdDate = new Date(sessionDate);
+          createdDate.setHours(createdDate.getHours() - 24);
+
+          const s = this.sessions.get(session.id);
+          if (s) {
+            s.createdAt = createdDate;
+            this.sessions.set(session.id, s);
+          }
+        });
+
         console.log("Created test exchange and sessions for demo");
       } catch (error) {
         console.error("Error creating test exchanges:", error);
       }
     }, 2000);
   }
-  
+
   private async createTestUsers() {
     try {
       // Secure password for testing
       const testPassword = await hashPassword("password123");
       const adminPassword = await hashPassword("adminpass");
-      
+
       // Check if we already have test users
       const existingUser = await this.getUserByUsername("testuser");
       if (existingUser) {
         console.log("Test users already exist, skipping creation");
         return;
       }
-      
+
       console.log("Creating test users...");
-      
+
       // Create admin user
       const adminUser = await this.createUser({
         username: "admin",
@@ -401,9 +439,9 @@ export class MemStorage implements IStorage {
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=admin",
         isAdmin: true
       });
-      
+
       console.log("Created admin user:", adminUser.id);
-      
+
       // Create first test user
       const testUser = await this.createUser({
         username: "testuser",
@@ -413,9 +451,9 @@ export class MemStorage implements IStorage {
         university: "Test University",
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=testuser"
       });
-      
+
       console.log("Created test user:", testUser.id);
-      
+
       // Create another user for testing interactions
       const anotherUser = await this.createUser({
         username: "student1",
@@ -425,9 +463,9 @@ export class MemStorage implements IStorage {
         university: "Another University",
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=student1"
       });
-      
+
       console.log("Created another test user:", anotherUser.id);
-      
+
       // Add some skills for these users
       await this.createSkill({
         userId: testUser.id,
@@ -435,28 +473,28 @@ export class MemStorage implements IStorage {
         proficiencyLevel: "expert",
         isTeaching: true
       });
-      
+
       await this.createSkill({
         userId: testUser.id,
         name: "Python",
         proficiencyLevel: "beginner",
         isTeaching: false
       });
-      
+
       await this.createSkill({
         userId: anotherUser.id,
         name: "Python",
         proficiencyLevel: "expert",
         isTeaching: true
       });
-      
+
       await this.createSkill({
         userId: anotherUser.id,
         name: "JavaScript",
         proficiencyLevel: "beginner",
         isTeaching: false
       });
-      
+
       // Create a third user with matching skills - wants to teach Python and learn JavaScript
       const matchUser = await this.createUser({
         username: "matchuser",
@@ -466,23 +504,23 @@ export class MemStorage implements IStorage {
         university: "Match University",
         avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=matchuser"
       });
-      
+
       console.log("Created match test user:", matchUser.id);
-      
+
       await this.createSkill({
         userId: matchUser.id,
         name: "Python",
         proficiencyLevel: "expert",
         isTeaching: true
       });
-      
+
       await this.createSkill({
         userId: matchUser.id,
         name: "JavaScript",
         proficiencyLevel: "beginner",
         isTeaching: false
       });
-      
+
       console.log("Added skills to test users");
     } catch (error) {
       console.error("Error creating test users:", error);
@@ -503,27 +541,27 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const now = new Date();
-    const user: User = { 
-      id, 
+    const user: User = {
+      id,
       username: insertUser.username,
       password: insertUser.password,
       name: insertUser.name,
       email: insertUser.email,
       university: insertUser.university || "",
       avatar: insertUser.avatar || "",
-      points: 0, 
-      level: 1, 
+      points: 0,
+      level: 1,
       isAdmin: insertUser.isAdmin || false,
-      createdAt: now 
+      createdAt: now
     };
     this.users.set(id, user);
     return user;
   }
-  
+
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
     const user = await this.getUser(id);
     if (!user) return undefined;
-    
+
     const updatedUser = { ...user, ...userData };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -533,17 +571,17 @@ export class MemStorage implements IStorage {
   async getSkill(id: number): Promise<Skill | undefined> {
     return this.skills.get(id);
   }
-  
+
   async getSkillsByUser(userId: number): Promise<Skill[]> {
     return Array.from(this.skills.values()).filter(
       (skill) => skill.userId === userId
     );
   }
-  
+
   async createSkill(skill: InsertSkill): Promise<Skill> {
     const id = this.skillIdCounter++;
     const now = new Date();
-    const newSkill: Skill = { 
+    const newSkill: Skill = {
       id,
       name: skill.name,
       createdAt: now,
@@ -555,11 +593,11 @@ export class MemStorage implements IStorage {
     this.skills.set(id, newSkill);
     return newSkill;
   }
-  
+
   async updateSkill(id: number, skillData: Partial<Skill>): Promise<Skill | undefined> {
     const skill = await this.getSkill(id);
     if (!skill) return undefined;
-    
+
     const updatedSkill = { ...skill, ...skillData };
     this.skills.set(id, updatedSkill);
     return updatedSkill;
@@ -569,35 +607,35 @@ export class MemStorage implements IStorage {
   async getExchange(id: number): Promise<Exchange | undefined> {
     return this.exchanges.get(id);
   }
-  
+
   async getExchangesByUser(userId: number): Promise<Exchange[]> {
     return Array.from(this.exchanges.values()).filter(
       (exchange) => exchange.teacherId === userId || exchange.studentId === userId
     );
   }
-  
+
   async createExchange(exchange: InsertExchange): Promise<Exchange> {
     const id = this.exchangeIdCounter++;
     const now = new Date();
-    const newExchange: Exchange = { 
-      id, 
+    const newExchange: Exchange = {
+      id,
       teacherId: exchange.teacherId,
       studentId: exchange.studentId,
       teacherSkillId: exchange.teacherSkillId,
       studentSkillId: exchange.studentSkillId,
       status: exchange.status || "pending",
-      sessionsCompleted: 0, 
-      totalSessions: 3, 
-      createdAt: now 
+      sessionsCompleted: 0,
+      totalSessions: 3,
+      createdAt: now
     };
     this.exchanges.set(id, newExchange);
     return newExchange;
   }
-  
+
   async updateExchange(id: number, exchangeData: Partial<Exchange>): Promise<Exchange | undefined> {
     const exchange = await this.getExchange(id);
     if (!exchange) return undefined;
-    
+
     const updatedExchange = { ...exchange, ...exchangeData };
     this.exchanges.set(id, updatedExchange);
     return updatedExchange;
@@ -607,34 +645,34 @@ export class MemStorage implements IStorage {
   async getSession(id: number): Promise<Session | undefined> {
     return this.sessions.get(id);
   }
-  
+
   async getSessionsByExchange(exchangeId: number): Promise<Session[]> {
     return Array.from(this.sessions.values()).filter(
       (session) => session.exchangeId === exchangeId
     );
   }
-  
+
   async createSession(sessionData: InsertSession): Promise<Session> {
     const id = this.sessionIdCounter++;
     const now = new Date();
-    const newSession: Session = { 
-      id, 
+    const newSession: Session = {
+      id,
       exchangeId: sessionData.exchangeId,
       scheduledTime: sessionData.scheduledTime,
       duration: sessionData.duration || 60,
       status: sessionData.status || "scheduled",
-      notes: "", 
-      whiteboardData: {}, 
-      createdAt: now 
+      notes: "",
+      whiteboardData: {},
+      createdAt: now
     };
     this.sessions.set(id, newSession);
     return newSession;
   }
-  
+
   async updateSession(id: number, sessionData: Partial<Session>): Promise<Session | undefined> {
     const session = await this.getSession(id);
     if (!session) return undefined;
-    
+
     const updatedSession = { ...session, ...sessionData };
     this.sessions.set(id, updatedSession);
     return updatedSession;
@@ -644,18 +682,18 @@ export class MemStorage implements IStorage {
   async getActivity(id: number): Promise<Activity | undefined> {
     return this.activities.get(id);
   }
-  
+
   async getActivitiesByUser(userId: number): Promise<Activity[]> {
     return Array.from(this.activities.values())
       .filter((activity) => activity.userId === userId)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
-  
+
   async createActivity(activity: InsertActivity): Promise<Activity> {
     const id = this.activityIdCounter++;
     const now = new Date();
-    const newActivity: Activity = { 
-      id, 
+    const newActivity: Activity = {
+      id,
       createdAt: now,
       userId: activity.userId,
       type: activity.type,
@@ -663,20 +701,20 @@ export class MemStorage implements IStorage {
       pointsEarned: activity.pointsEarned || 0
     };
     this.activities.set(id, newActivity);
-    
+
     // Update user points
     if (activity.pointsEarned) {
       const user = await this.getUser(activity.userId);
       if (user) {
         const updatedPoints = user.points + activity.pointsEarned;
         const updatedLevel = Math.floor(updatedPoints / 500) + 1; // Simple level formula
-        await this.updateUser(user.id, { 
+        await this.updateUser(user.id, {
           points: updatedPoints,
           level: updatedLevel
         });
       }
     }
-    
+
     return newActivity;
   }
 
@@ -684,14 +722,14 @@ export class MemStorage implements IStorage {
   async getBadge(id: number): Promise<Badge | undefined> {
     return this.badges.get(id);
   }
-  
+
   async getAllBadges(): Promise<Badge[]> {
     return Array.from(this.badges.values());
   }
-  
+
   async createBadge(badge: InsertBadge): Promise<Badge> {
     const id = this.badgeIdCounter++;
-    const newBadge: Badge = { 
+    const newBadge: Badge = {
       id,
       name: badge.name,
       description: badge.description,
@@ -708,13 +746,13 @@ export class MemStorage implements IStorage {
       (userBadge) => userBadge.userId === userId
     );
   }
-  
+
   async createUserBadge(userBadge: InsertUserBadge): Promise<UserBadge> {
     const id = this.userBadgeIdCounter++;
     const now = new Date();
     const newUserBadge: UserBadge = { ...userBadge, id, earnedAt: now };
     this.userBadges.set(id, newUserBadge);
-    
+
     // Also create an activity for earning the badge
     const badge = await this.getBadge(userBadge.badgeId);
     if (badge) {
@@ -725,7 +763,7 @@ export class MemStorage implements IStorage {
         pointsEarned: badge.pointsAwarded
       });
     }
-    
+
     return newUserBadge;
   }
 
@@ -733,14 +771,14 @@ export class MemStorage implements IStorage {
   async getChallenge(id: number): Promise<Challenge | undefined> {
     return this.challenges.get(id);
   }
-  
+
   async getAllChallenges(): Promise<Challenge[]> {
     return Array.from(this.challenges.values());
   }
-  
+
   async createChallenge(challenge: InsertChallenge): Promise<Challenge> {
     const id = this.challengeIdCounter++;
-    const newChallenge: Challenge = { 
+    const newChallenge: Challenge = {
       id,
       type: challenge.type,
       title: challenge.title,
@@ -759,28 +797,28 @@ export class MemStorage implements IStorage {
       (userChallenge) => userChallenge.userId === userId
     );
   }
-  
+
   async createUserChallenge(userChallenge: InsertUserChallenge): Promise<UserChallenge> {
     const id = this.userChallengeIdCounter++;
     const now = new Date();
-    const newUserChallenge: UserChallenge = { 
-      ...userChallenge, 
-      id, 
-      currentCount: 0, 
-      startedAt: now, 
-      completedAt: null 
+    const newUserChallenge: UserChallenge = {
+      ...userChallenge,
+      id,
+      currentCount: 0,
+      startedAt: now,
+      completedAt: null
     };
     this.userChallenges.set(id, newUserChallenge);
     return newUserChallenge;
   }
-  
+
   async updateUserChallenge(id: number, data: Partial<UserChallenge>): Promise<UserChallenge | undefined> {
     const userChallenge = await this.userChallenges.get(id);
     if (!userChallenge) return undefined;
-    
+
     const updatedUserChallenge = { ...userChallenge, ...data };
     this.userChallenges.set(id, updatedUserChallenge);
-    
+
     // If the challenge is completed, add an activity and award points
     if (data.completedAt && !userChallenge.completedAt) {
       const challenge = await this.getChallenge(userChallenge.challengeId);
@@ -793,35 +831,35 @@ export class MemStorage implements IStorage {
         });
       }
     }
-    
+
     return updatedUserChallenge;
   }
-  
+
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
     return this.reviews.get(id);
   }
-  
+
   async getReviewsByUser(userId: number): Promise<Review[]> {
     return Array.from(this.reviews.values()).filter(
       (review) => review.reviewedUserId === userId
     );
   }
-  
+
   async createReview(review: InsertReview): Promise<Review> {
     const id = this.reviewIdCounter++;
     const now = new Date();
-    const newReview: Review = { 
-      id, 
+    const newReview: Review = {
+      id,
       exchangeId: review.exchangeId,
       reviewerId: review.reviewerId,
       reviewedUserId: review.reviewedUserId,
       rating: review.rating,
       comment: review.comment || null,
-      createdAt: now 
+      createdAt: now
     };
     this.reviews.set(id, newReview);
-    
+
     // Add an activity for the person being reviewed
     await this.createActivity({
       userId: review.reviewedUserId,
@@ -829,23 +867,23 @@ export class MemStorage implements IStorage {
       description: `Received a ${review.rating}-star review`,
       pointsEarned: 5 // Small points bonus for getting reviewed
     });
-    
+
     return newReview;
   }
-  
+
   async getUserRating(userId: number): Promise<{ rating: number, count: number }> {
     const reviews = await this.getReviewsByUser(userId);
-    
+
     if (reviews.length === 0) {
       return { rating: 0, count: 0 };
     }
-    
+
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = totalRating / reviews.length;
-    
-    return { 
+
+    return {
       rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal place
-      count: reviews.length 
+      count: reviews.length
     };
   }
 
@@ -853,28 +891,28 @@ export class MemStorage implements IStorage {
   async getGroup(id: number): Promise<Group | undefined> {
     return this.groups.get(id);
   }
-  
+
   async getAllGroups(): Promise<Group[]> {
     return Array.from(this.groups.values());
   }
-  
+
   async getGroupsByUser(userId: number): Promise<Group[]> {
     // Get all group members for this user
     const userMemberships = Array.from(this.groupMembers.values()).filter(
       member => member.userId === userId
     );
-    
+
     // Get the groups the user is a member of
     const groupIds = userMemberships.map(membership => membership.groupId);
     return Array.from(this.groups.values()).filter(
       group => groupIds.includes(group.id)
     );
   }
-  
+
   async createGroup(groupData: Partial<Group>): Promise<Group> {
     const id = this.groupIdCounter++;
     const now = new Date();
-    
+
     const newGroup: Group = {
       id,
       name: groupData.name || '',
@@ -884,9 +922,9 @@ export class MemStorage implements IStorage {
       createdAt: now,
       createdById: groupData.createdById || 0
     };
-    
+
     this.groups.set(id, newGroup);
-    
+
     // Add activity for the user who created the group
     await this.createActivity({
       userId: newGroup.createdById,
@@ -894,59 +932,59 @@ export class MemStorage implements IStorage {
       description: `Created a new study group: ${newGroup.name}`,
       pointsEarned: 10 // Small bonus for creating a group
     });
-    
+
     return newGroup;
   }
-  
+
   async updateGroup(id: number, groupData: Partial<Group>): Promise<Group | undefined> {
     const group = await this.getGroup(id);
     if (!group) return undefined;
-    
+
     const updatedGroup = { ...group, ...groupData };
     this.groups.set(id, updatedGroup);
     return updatedGroup;
   }
-  
+
   async deleteGroup(id: number): Promise<boolean> {
     // Check if group exists
     const group = await this.getGroup(id);
     if (!group) return false;
-    
+
     // Delete the group
     this.groups.delete(id);
-    
+
     // Remove all group members
     const groupMembers = Array.from(this.groupMembers.values())
       .filter(member => member.groupId === id);
-      
+
     for (const member of groupMembers) {
       this.groupMembers.delete(member.id);
     }
-    
+
     // Remove all group files
     const groupFiles = Array.from(this.groupFiles.values())
       .filter(file => file.groupId === id);
-      
+
     for (const file of groupFiles) {
       this.groupFiles.delete(file.id);
     }
-    
+
     // Remove all group events
     const groupEvents = Array.from(this.groupEvents.values())
       .filter(event => event.groupId === id);
-      
+
     for (const event of groupEvents) {
       this.groupEvents.delete(event.id);
     }
-    
+
     // Remove all group messages
     const groupMessages = Array.from(this.groupMessages.values())
       .filter(message => message.groupId === id);
-      
+
     for (const message of groupMessages) {
       this.groupMessages.delete(message.id);
     }
-    
+
     return true;
   }
 
@@ -954,17 +992,17 @@ export class MemStorage implements IStorage {
   async getGroupMember(id: number): Promise<GroupMember | undefined> {
     return this.groupMembers.get(id);
   }
-  
+
   async getGroupMembers(groupId: number): Promise<GroupMember[]> {
     return Array.from(this.groupMembers.values()).filter(
       member => member.groupId === groupId
     );
   }
-  
+
   async addGroupMember(memberData: { groupId: number, userId: number, role: string }): Promise<GroupMember> {
     const id = this.groupMemberIdCounter++;
     const now = new Date();
-    
+
     const newMember: GroupMember = {
       id,
       groupId: memberData.groupId,
@@ -972,9 +1010,9 @@ export class MemStorage implements IStorage {
       role: memberData.role,
       joinedAt: now
     };
-    
+
     this.groupMembers.set(id, newMember);
-    
+
     // Add activity for joining a group (only if not the creator)
     const group = await this.getGroup(memberData.groupId);
     if (group && group.createdById !== memberData.userId) {
@@ -985,16 +1023,16 @@ export class MemStorage implements IStorage {
         pointsEarned: 5 // Small bonus for joining a group
       });
     }
-    
+
     return newMember;
   }
-  
+
   async removeGroupMember(groupId: number, userId: number): Promise<boolean> {
     const members = await this.getGroupMembers(groupId);
     const member = members.find(m => m.userId === userId);
-    
+
     if (!member) return false;
-    
+
     this.groupMembers.delete(member.id);
     return true;
   }
@@ -1003,17 +1041,17 @@ export class MemStorage implements IStorage {
   async getGroupFile(id: number): Promise<GroupFile | undefined> {
     return this.groupFiles.get(id);
   }
-  
+
   async getGroupFiles(groupId: number): Promise<GroupFile[]> {
     return Array.from(this.groupFiles.values()).filter(
       file => file.groupId === groupId
     );
   }
-  
+
   async addGroupFile(fileData: { groupId: number, uploadedById: number, name: string, type: string, url: string }): Promise<GroupFile> {
     const id = this.groupFileIdCounter++;
     const now = new Date();
-    
+
     const newFile: GroupFile = {
       id,
       groupId: fileData.groupId,
@@ -1023,9 +1061,9 @@ export class MemStorage implements IStorage {
       uploadedById: fileData.uploadedById,
       uploadedAt: now
     };
-    
+
     this.groupFiles.set(id, newFile);
-    
+
     // Add activity for uploading a file
     const group = await this.getGroup(fileData.groupId);
     if (group) {
@@ -1036,7 +1074,7 @@ export class MemStorage implements IStorage {
         pointsEarned: 3 // Small bonus for contributing content
       });
     }
-    
+
     return newFile;
   }
 
@@ -1044,16 +1082,16 @@ export class MemStorage implements IStorage {
   async getGroupEvent(id: number): Promise<GroupEvent | undefined> {
     return this.groupEvents.get(id);
   }
-  
+
   async getGroupEvents(groupId: number): Promise<GroupEvent[]> {
     return Array.from(this.groupEvents.values()).filter(
       event => event.groupId === groupId
     );
   }
-  
+
   async createGroupEvent(eventData: { groupId: number, createdById: number, title: string, description?: string, startTime: Date, endTime?: Date }): Promise<GroupEvent> {
     const id = this.groupEventIdCounter++;
-    
+
     const newEvent: GroupEvent = {
       id,
       groupId: eventData.groupId,
@@ -1063,9 +1101,9 @@ export class MemStorage implements IStorage {
       endTime: eventData.endTime || null,
       createdById: eventData.createdById
     };
-    
+
     this.groupEvents.set(id, newEvent);
-    
+
     // Add activity for creating an event
     const group = await this.getGroup(eventData.groupId);
     if (group) {
@@ -1076,7 +1114,7 @@ export class MemStorage implements IStorage {
         pointsEarned: 5 // Bonus for organizing an event
       });
     }
-    
+
     return newEvent;
   }
 
@@ -1086,11 +1124,11 @@ export class MemStorage implements IStorage {
       .filter(message => message.groupId === groupId)
       .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
   }
-  
+
   async createGroupMessage(messageData: { groupId: number, userId: number, content: string }): Promise<GroupMessage> {
     const id = this.groupMessageIdCounter++;
     const now = new Date();
-    
+
     const newMessage: GroupMessage = {
       id,
       groupId: messageData.groupId,
@@ -1098,7 +1136,7 @@ export class MemStorage implements IStorage {
       content: messageData.content,
       sentAt: now
     };
-    
+
     this.groupMessages.set(id, newMessage);
     return newMessage;
   }
@@ -1106,12 +1144,12 @@ export class MemStorage implements IStorage {
   // Direct message operations
   async getDirectMessages(userId1: number, userId2: number): Promise<any[]> {
     const messages = Array.from(this.directMessages.values())
-      .filter(message => 
+      .filter(message =>
         (message.senderId === userId1 && message.receiverId === userId2) ||
         (message.senderId === userId2 && message.receiverId === userId1)
       )
       .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
-    
+
     // Enrich with sender data
     const enrichedMessages = await Promise.all(
       messages.map(async (msg) => {
@@ -1124,23 +1162,23 @@ export class MemStorage implements IStorage {
         };
       })
     );
-    
+
     return enrichedMessages;
   }
 
   async getConversations(userId: number): Promise<any[]> {
     // Get all messages where user is sender or receiver
     const userMessages = Array.from(this.directMessages.values())
-      .filter(message => 
+      .filter(message =>
         message.senderId === userId || message.receiverId === userId
       );
-    
+
     // Group by conversation partner
     const conversationsMap = new Map<number, any>();
-    
+
     for (const message of userMessages) {
       const partnerId = message.senderId === userId ? message.receiverId : message.senderId;
-      
+
       const existing = conversationsMap.get(partnerId);
       if (!existing || new Date(message.sentAt) > new Date(existing.lastMessage.sentAt)) {
         conversationsMap.set(partnerId, {
@@ -1149,24 +1187,24 @@ export class MemStorage implements IStorage {
         });
       }
     }
-    
+
     // Enrich with partner data and unread count
     const conversations = await Promise.all(
       Array.from(conversationsMap.values()).map(async (conv) => {
         const partner = await this.getUser(conv.partnerId);
         const unreadCount = Array.from(this.directMessages.values())
-          .filter(msg => 
-            msg.senderId === conv.partnerId && 
-            msg.receiverId === userId && 
+          .filter(msg =>
+            msg.senderId === conv.partnerId &&
+            msg.receiverId === userId &&
             !msg.isRead
           ).length;
-        
+
         return {
-          partner: partner ? { 
-            id: partner.id, 
-            name: partner.name, 
-            avatar: partner.avatar, 
-            username: partner.username 
+          partner: partner ? {
+            id: partner.id,
+            name: partner.name,
+            avatar: partner.avatar,
+            username: partner.username
           } : null,
           lastMessage: {
             content: conv.lastMessage.content,
@@ -1176,9 +1214,9 @@ export class MemStorage implements IStorage {
         };
       })
     );
-    
+
     // Sort by most recent message
-    return conversations.sort((a, b) => 
+    return conversations.sort((a, b) =>
       new Date(b.lastMessage.sentAt).getTime() - new Date(a.lastMessage.sentAt).getTime()
     );
   }
@@ -1186,7 +1224,7 @@ export class MemStorage implements IStorage {
   async createDirectMessage(messageData: { senderId: number, receiverId: number, content: string }): Promise<any> {
     const id = this.directMessageIdCounter++;
     const now = new Date();
-    
+
     const newMessage: DirectMessage = {
       id,
       senderId: messageData.senderId,
@@ -1195,29 +1233,35 @@ export class MemStorage implements IStorage {
       isRead: false,
       sentAt: now
     };
-    
+
     this.directMessages.set(id, newMessage);
-    
-    // Enrich with sender data
+
+    // Enrich with sender and receiver data
     const sender = await this.getUser(messageData.senderId);
+    const receiver = await this.getUser(messageData.receiverId);
+
     return {
       ...newMessage,
-      sender: sender ? { id: sender.id, name: sender.name, avatar: sender.avatar, username: sender.username } : null
+      sender: sender ? { id: sender.id, name: sender.name, avatar: sender.avatar, username: sender.username } : null,
+      receiver: receiver ? { id: receiver.id, name: receiver.name, avatar: receiver.avatar, username: receiver.username } : null
     };
   }
 
   async markMessageAsRead(messageId: number): Promise<any> {
     const message = this.directMessages.get(messageId);
     if (!message) return null;
-    
+
     const updatedMessage = { ...message, isRead: true };
     this.directMessages.set(messageId, updatedMessage);
     return updatedMessage;
   }
 
   // Posts operations
-  async getPosts(filter?: { type?: string; subject?: string; offset?: number; limit?: number }): Promise<Post[]> {
+  async getPosts(filter?: { type?: string; subject?: string; userId?: number; offset?: number; limit?: number }): Promise<Post[]> {
     let list = Array.from(this.posts.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (filter?.userId) {
+      list = list.filter(p => p.userId === filter.userId);
+    }
     if (filter?.type) {
       list = list.filter(p => p.type === filter.type);
     }
@@ -1268,25 +1312,25 @@ export class MemStorage implements IStorage {
     });
     return updated;
   }
-  
+
   // Leaderboard
-  async getLeaderboard(): Promise<{id: number, name: string, university: string, exchanges: number, points: number, avatar: string}[]> {
+  async getLeaderboard(): Promise<{ id: number, name: string, university: string, exchanges: number, points: number, avatar: string }[]> {
     // Get all users
     const allUsers = Array.from(this.users.values());
-    
+
     // Count exchanges for each user
     const userExchanges = new Map<number, number>();
-    
+
     for (const exchange of Array.from(this.exchanges.values())) {
       const teacherId = exchange.teacherId;
       const studentId = exchange.studentId;
-      
+
       if (exchange.status === "completed") {
         userExchanges.set(teacherId, (userExchanges.get(teacherId) || 0) + 1);
         userExchanges.set(studentId, (userExchanges.get(studentId) || 0) + 1);
       }
     }
-    
+
     // Build leaderboard entries
     const leaderboard = allUsers.map(user => ({
       id: user.id,
@@ -1296,11 +1340,11 @@ export class MemStorage implements IStorage {
       points: user.points || 0,  // Handle null points
       avatar: user.avatar || ""
     }));
-    
+
     // Sort by points (descending)
     return leaderboard.sort((a, b) => (b.points || 0) - (a.points || 0));
   }
-  
+
   // Find potential skill matches
   async findSkillMatches(teachingSkillId: number, learningSkillId: number): Promise<{
     userId: number,
@@ -1309,46 +1353,46 @@ export class MemStorage implements IStorage {
     avatar: string,
     university: string,
     rating: number,
-    teachingSkill: {id: number, name: string},
-    learningSkill: {id: number, name: string},
+    teachingSkill: { id: number, name: string },
+    learningSkill: { id: number, name: string },
     matchPercentage: number
   }[]> {
     const matches: any[] = [];
-    
+
     // Get the requesting user's skills
     const myTeachingSkill = await this.getSkill(teachingSkillId);
     const myLearningSkill = await this.getSkill(learningSkillId);
-    
+
     if (!myTeachingSkill || !myLearningSkill) {
       return [];
     }
-    
+
     const myUserId = myTeachingSkill.userId;
-    
+
     // Get all teaching skills that match the user's learning interest
     const potentialTeachingSkills = Array.from(this.skills.values())
-      .filter(skill => 
-        skill.userId !== myUserId && 
-        skill.isTeaching && 
+      .filter(skill =>
+        skill.userId !== myUserId &&
+        skill.isTeaching &&
         skill.name === myLearningSkill.name
       );
-    
+
     // Get all learning skills from those users that match what the user can teach
     for (const theirTeachingSkill of potentialTeachingSkills) {
       const theirUserId = theirTeachingSkill.userId;
-      
+
       // Get this user's learning interests
       const theirLearningSkills = Array.from(this.skills.values())
-        .filter(skill => 
-          skill.userId === theirUserId && 
+        .filter(skill =>
+          skill.userId === theirUserId &&
           !skill.isTeaching
         );
-      
+
       // Find if any of their learning interests match what I can teach
       const matchingLearningSkill = theirLearningSkills.find(
         skill => skill.name === myTeachingSkill.name
       );
-      
+
       if (matchingLearningSkill) {
         // Get the other user
         const otherUser = await this.getUser(theirUserId);
@@ -1356,10 +1400,10 @@ export class MemStorage implements IStorage {
           // Calculate a stable match percentage based on user ID
           // This ensures the same match always shows the same percentage
           const matchPercentage = 70 + (otherUser.id * 7) % 25; // 70% to 95% based on user ID
-          
+
           // Get actual rating from reviews
           const { rating } = await this.getUserRating(otherUser.id);
-          
+
           matches.push({
             userId: otherUser.id,
             username: otherUser.username,
@@ -1380,9 +1424,54 @@ export class MemStorage implements IStorage {
         }
       }
     }
-    
+
     // Sort by match percentage
     return matches.sort((a, b) => b.matchPercentage - a.matchPercentage);
+  }
+
+
+  // Friend operations
+  async getFriends(userId: number): Promise<Friend[]> {
+    return Array.from(this.friends.values()).filter(
+      (friend) => (friend.userId === userId || friend.friendId === userId) && friend.status === "accepted"
+    );
+  }
+
+  async getFriendRequests(userId: number): Promise<Friend[]> {
+    return Array.from(this.friends.values()).filter(
+      (friend) => friend.friendId === userId && friend.status === "pending"
+    );
+  }
+
+  async sendFriendRequest(userId: number, friendId: number): Promise<Friend> {
+    const id = this.friendIdCounter++;
+    const now = new Date();
+    const newFriend: Friend = {
+      id,
+      userId,
+      friendId,
+      status: "pending",
+      createdAt: now
+    };
+    this.friends.set(id, newFriend);
+    return newFriend;
+  }
+
+  async respondToFriendRequest(requestId: number, status: "accepted" | "rejected"): Promise<Friend | undefined> {
+    const request = this.friends.get(requestId);
+    if (!request) return undefined;
+
+    const updatedRequest = { ...request, status };
+    this.friends.set(requestId, updatedRequest);
+    return updatedRequest;
+  }
+
+  async checkFriendStatus(userId: number, friendId: number): Promise<Friend | undefined> {
+    return Array.from(this.friends.values()).find(
+      (friend) =>
+      ((friend.userId === userId && friend.friendId === friendId) ||
+        (friend.userId === friendId && friend.friendId === userId))
+    );
   }
 }
 

@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, Home, User, Repeat, MessageCircle, Video, Users, Trophy, Bell } from 'lucide-react';
+import { LogOut, Home, User, Repeat, Video, Users, Trophy, Bell, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import logoImage from "../../assets/logo.png";
@@ -83,17 +83,14 @@ export function Navbar() {
             </div>
 
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
-              <Link to="/feed">
-                <Button variant="outline" className="border-white/40 text-primary-foreground hover:bg-white/10">
-                  Feed
-                </Button>
-              </Link>
-              <Link to="/messages">
-                <Button variant="outline" className="border-white/40 text-primary-foreground hover:bg-white/10" data-testid="button-messages">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Messages
-                </Button>
-              </Link>
+              {user?.isAdmin && (
+                <Link to="/admin-dashboard">
+                  <Button variant="outline" className="border-white/40 text-primary-foreground hover:bg-white/10 bg-yellow-500/20 hover:bg-yellow-500/30" data-testid="button-admin">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
             </nav>
           </div>
 

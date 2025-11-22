@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useLocation, Link } from 'wouter';
 import { 
-  User, Repeat, Settings, CreditCard, GraduationCap, Trophy, Users
+  User, Repeat, Settings, CreditCard, GraduationCap, Trophy, Users, Newspaper, MessageCircle
 } from 'lucide-react';
 
 interface NavItem {
   label: string;
   icon: React.ReactNode;
   target: string;
+  isRoute?: boolean;
 }
 
 export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
@@ -20,32 +21,50 @@ export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void 
     {
       label: 'Profile',
       icon: <User className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: '#profile-tab'
+      target: '#profile-tab',
+      isRoute: false
+    },
+    {
+      label: 'Feed',
+      icon: <Newspaper className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: '/feed',
+      isRoute: true
+    },
+    {
+      label: 'Messages',
+      icon: <MessageCircle className="w-5 h-5 mr-3 text-neutral-400" />,
+      target: '/messages',
+      isRoute: true
     },
     {
       label: 'Barter',
       icon: <Repeat className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: '#barter-tab'
+      target: '#barter-tab',
+      isRoute: false
     },
     {
       label: 'Points',
       icon: <CreditCard className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: '#points-tab'
+      target: '#points-tab',
+      isRoute: false
     },
     {
       label: 'Learn',
       icon: <GraduationCap className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: '#learn-tab'
+      target: '#learn-tab',
+      isRoute: false
     },
     {
       label: 'Achievements',
       icon: <Trophy className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: '#achievements-tab'
+      target: '#achievements-tab',
+      isRoute: false
     },
     {
       label: 'Community',
       icon: <Users className="w-5 h-5 mr-3 text-neutral-400" />,
-      target: '#study-group-tab'
+      target: '#study-group-tab',
+      isRoute: false
     }
   ];
 
@@ -53,16 +72,30 @@ export function Sidebar({ setActiveTab }: { setActiveTab: (tab: string) => void 
     <div className="hidden md:block md:w-64 md:flex-shrink-0">
       <div className="sticky top-6 py-6 flex flex-col h-[calc(100vh-80px)]">
         <nav className="flex-1 space-y-2">
-          {navItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => setActiveTab(item.target.substring(1))}
-              className="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-neutral-500 hover:bg-white hover:text-primary transition-colors"
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
+          {navItems.map((item) => {
+            if (item.isRoute) {
+              return (
+                <Link key={item.label} to={item.target}>
+                  <button
+                    className="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-neutral-500 hover:bg-white hover:text-primary transition-colors"
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                </Link>
+              );
+            }
+            return (
+              <button
+                key={item.label}
+                onClick={() => setActiveTab(item.target.substring(1))}
+                className="w-full flex items-center px-4 py-2 text-sm font-medium rounded-md text-neutral-500 hover:bg-white hover:text-primary transition-colors"
+              >
+                {item.icon}
+                {item.label}
+              </button>
+            );
+          })}
         </nav>
         
         <div className="mt-auto pt-6">

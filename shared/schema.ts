@@ -345,3 +345,21 @@ export const insertDirectMessageSchema = createInsertSchema(directMessages).pick
 
 export type DirectMessage = typeof directMessages.$inferSelect;
 export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;
+
+// Friends system
+export const friends = pgTable("friends", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  friendId: integer("friend_id").notNull(),
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertFriendSchema = createInsertSchema(friends).pick({
+  userId: true,
+  friendId: true,
+  status: true,
+});
+
+export type Friend = typeof friends.$inferSelect;
+export type InsertFriend = z.infer<typeof insertFriendSchema>;

@@ -18,13 +18,15 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import { Layout } from "@/components/layout";
 import FeedPage from "@/pages/feed-page";
 import MessagesPage from "@/pages/messages-page";
+import FindFriendsPage from "@/pages/find-friends";
+import UserProfilePage from "@/pages/user-profile";
 
 // New protected route specifically for admin access
 const AdminRoute = ({ component: Component, ...rest }: any) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  
+
   // useEffect for redirects to ensure they happen after render
   useEffect(() => {
     // If not authenticated, redirect to auth page
@@ -63,7 +65,7 @@ const AdminRoute = ({ component: Component, ...rest }: any) => {
 function Router() {
   const [location] = useLocation();
   const { user } = useAuth();
-  
+
   // Don't show layout on auth page
   const showLayout = location !== "/auth" && user !== null;
 
@@ -81,6 +83,8 @@ function Router() {
       <ProtectedRoute path="/groups" component={GroupsPage} />
       <ProtectedRoute path="/feed" component={FeedPage} />
       <ProtectedRoute path="/messages" component={MessagesPage} />
+      <ProtectedRoute path="/find-friends" component={FindFriendsPage} />
+      <ProtectedRoute path="/users/:id" component={UserProfilePage} />
       <AdminRoute path="/admin-dashboard" component={AdminDashboard} />
       <AdminRoute path="/admin" component={() => {
         // Redirect to admin-dashboard when /admin is accessed

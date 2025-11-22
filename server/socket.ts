@@ -78,8 +78,8 @@ export function setupWebSockets(httpServer: Server) {
               
               participants.forEach(participantId => {
                 const client = clients.get(participantId);
-                if (clientData && clientData.ws.readyState === WebSocket.OPEN && participantId !== clientId) {
-                  clientData.ws.send(JSON.stringify({
+                if (client && client.ws.readyState === WebSocket.OPEN && participantId !== clientId) {
+                  client.ws.send(JSON.stringify({
                     type: 'user-joined',
                     payload: { userData, sessionId }
                   }));
@@ -104,8 +104,8 @@ export function setupWebSockets(httpServer: Server) {
                 // Notify remaining participants
                 participants.forEach(participantId => {
                   const client = clients.get(participantId);
-                  if (clientData && clientData.ws.readyState === WebSocket.OPEN) {
-                    clientData.ws.send(JSON.stringify({
+                  if (client && client.ws.readyState === WebSocket.OPEN) {
+                    client.ws.send(JSON.stringify({
                       type: 'user-left',
                       payload: { userId, sessionId }
                     }));
@@ -132,8 +132,8 @@ export function setupWebSockets(httpServer: Server) {
               // Broadcast to all participants except sender
               participants.forEach(participantId => {
                 const client = clients.get(participantId);
-                if (clientData && clientData.ws.readyState === WebSocket.OPEN && participantId !== clientId) {
-                  clientData.ws.send(JSON.stringify({
+                if (client && client.ws.readyState === WebSocket.OPEN && participantId !== clientId) {
+                  client.ws.send(JSON.stringify({
                     type: 'whiteboard-update',
                     payload: { whiteboardData, sessionId }
                   }));
@@ -153,8 +153,8 @@ export function setupWebSockets(httpServer: Server) {
               // Find target client
               participants.forEach((participantId: string) => {
                 const client = clients.get(participantId);
-                if (clientData && clientData.ws.readyState === WebSocket.OPEN && participantId !== clientId) {
-                  clientData.ws.send(JSON.stringify({
+                if (client && client.ws.readyState === WebSocket.OPEN && participantId !== clientId) {
+                  client.ws.send(JSON.stringify({
                     type: 'video-signal',
                     payload: { 
                       fromClientId: clientId,
@@ -183,8 +183,8 @@ export function setupWebSockets(httpServer: Server) {
                 // Broadcast to all participants
                 participants.forEach(participantId => {
                   const client = clients.get(participantId);
-                  if (clientData && clientData.ws.readyState === WebSocket.OPEN) {
-                    clientData.ws.send(JSON.stringify({
+                  if (client && client.ws.readyState === WebSocket.OPEN) {
+                    client.ws.send(JSON.stringify({
                       type: 'chat-message',
                       payload: { 
                         message, 
@@ -262,8 +262,8 @@ export function setupWebSockets(httpServer: Server) {
           // Notify other participants
           participants.forEach((participantId: string) => {
             const client = clients.get(participantId);
-            if (clientData && clientData.ws.readyState === WebSocket.OPEN) {
-              clientData.ws.send(JSON.stringify({
+            if (client && client.ws.readyState === WebSocket.OPEN) {
+              client.ws.send(JSON.stringify({
                 type: 'user-left',
                 payload: { clientId, sessionId }
               }));
