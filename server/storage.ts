@@ -11,6 +11,8 @@ import {
   Review, InsertReview,
   Group, GroupMember, GroupEvent, GroupFile, GroupMessage,
   Post, InsertPost,
+  PostComment, InsertPostComment,
+  PostLike, InsertPostLike,
   DirectMessage, InsertDirectMessage,
   Friend, InsertFriend
 } from "@shared/schema";
@@ -117,6 +119,25 @@ export interface IStorage {
   respondToFriendRequest(requestId: number, status: "accepted" | "rejected"): Promise<Friend | undefined>;
   checkFriendStatus(userId: number, friendId: number): Promise<Friend | undefined>;
 
+  // Post operations
+  getPost(id: number): Promise<Post | undefined>;
+  getAllPosts(filters?: { type?: string, subject?: string }): Promise<Post[]>;
+  getPostsByUser(userId: number): Promise<Post[]>;
+  createPost(postData: InsertPost): Promise<Post>;
+  updatePost(id: number, postData: Partial<Post>): Promise<Post | undefined>;
+  deletePost(id: number): Promise<boolean>;
+
+  // Post comment operations
+  getPostComments(postId: number): Promise<any[]>;
+  createPostComment(commentData: { postId: number, userId: number, content: string }): Promise<any>;
+  deletePostComment(id: number): Promise<boolean>;
+
+  // Post like operations
+  likePost(postId: number, userId: number): Promise<boolean>;
+  unlikePost(postId: number, userId: number): Promise<boolean>;
+  hasUserLikedPost(postId: number, userId: number): Promise<boolean>;
+  getPostLikeCount(postId: number): Promise<number>;
+
   // Leaderboard
   getLeaderboard(): Promise<{ id: number, name: string, university: string, exchanges: number, points: number, avatar: string }[]>;
 
@@ -154,6 +175,8 @@ export class MemStorage implements IStorage {
   private groupFiles: Map<number, GroupFile>;
   private groupMessages: Map<number, GroupMessage>;
   private posts: Map<number, Post>;
+  private postComments: Map<number, PostComment>;
+  private postLikes: Map<number, PostLike>;
   private directMessages: Map<number, DirectMessage>;
   private friends: Map<number, Friend>;
 
@@ -173,6 +196,8 @@ export class MemStorage implements IStorage {
   private groupFileIdCounter: number;
   private groupMessageIdCounter: number;
   private postIdCounter: number;
+  private postCommentIdCounter: number;
+  private postLikeIdCounter: number;
   private directMessageIdCounter: number;
   private friendIdCounter: number;
 
@@ -195,6 +220,8 @@ export class MemStorage implements IStorage {
     this.groupFiles = new Map();
     this.groupMessages = new Map();
     this.posts = new Map();
+    this.postComments = new Map();
+    this.postLikes = new Map();
     this.directMessages = new Map();
     this.friends = new Map();
 
@@ -214,7 +241,8 @@ export class MemStorage implements IStorage {
     this.groupFileIdCounter = 1;
     this.groupMessageIdCounter = 1;
     this.postIdCounter = 1;
-    this.postIdCounter = 1;
+    this.postCommentIdCounter = 1;
+    this.postLikeIdCounter = 1;
     this.directMessageIdCounter = 1;
     this.friendIdCounter = 1;
 
@@ -1472,6 +1500,192 @@ export class MemStorage implements IStorage {
       ((friend.userId === userId && friend.friendId === friendId) ||
         (friend.userId === friendId && friend.friendId === userId))
     );
+  }
+
+  // Post operations
+  async getPost(id: number): Promise<Post | undefined> {
+    return this.posts.get(id);
+  }
+
+  async getAllPosts(filters?: { type?: string, subject?: string }): Promise<Post[]> {
+    let posts = Array.from(this.posts.values());
+
+    if (filters?.type) {
+      posts = posts.filter(post => post.type === filters.type);
+    }
+
+    if (filters?.subject) {
+      posts = posts.filter(post =>
+        post.subject?.toLowerCase().includes(filters.subject!.toLowerCase())
+      );
+    }
+
+    // Sort by creation date, newest first
+    return posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getPostsByUser(userId: number): Promise<Post[]> {
+    return Array.from(this.posts.values())
+      .filter(post => post.userId === userId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createPost(postData: InsertPost): Promise<Post> {
+    const id = this.postIdCounter++;
+    const now = new Date();
+    const newPost: Post = {
+      id,
+      userId: postData.userId,
+      type: postData.type,
+      title: postData.title,
+      subject: postData.subject || null,
+      content: postData.content,
+      imageUrl: postData.imageUrl || null,
+      likes: 0,
+      createdAt: now
+    };
+    this.posts.set(id, newPost);
+    return newPost;
+  }
+
+  async updatePost(id: number, postData: Partial<Post>): Promise<Post | undefined> {
+    const post = await this.getPost(id);
+    if (!post) return undefined;
+
+    const updatedPost = { ...post, ...postData };
+    this.posts.set(id, updatedPost);
+    return updatedPost;
+  }
+
+  async deletePost(id: number): Promise<boolean> {
+    const deleted = this.posts.delete(id);
+
+    // Also delete all comments and likes for this post
+    if (deleted) {
+      // Delete comments
+      const comments = Array.from(this.postComments.values()).filter(c => c.postId === id);
+      comments.forEach(c => this.postComments.delete(c.id));
+
+      // Delete likes
+      const likes = Array.from(this.postLikes.values()).filter(l => l.postId === id);
+      likes.forEach(l => this.postLikes.delete(l.id));
+    }
+
+    return deleted;
+  }
+
+  // Post comment operations
+  async getPostComments(postId: number): Promise<any[]> {
+    const comments = Array.from(this.postComments.values())
+      .filter(comment => comment.postId === postId)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+    // Enrich with user data
+    const enrichedComments = await Promise.all(
+      comments.map(async (comment) => {
+        const user = await this.getUser(comment.userId);
+        return {
+          ...comment,
+          user: user ? {
+            id: user.id,
+            name: user.name,
+            avatar: user.avatar
+          } : null
+        };
+      })
+    );
+
+    return enrichedComments;
+  }
+
+  async createPostComment(commentData: { postId: number, userId: number, content: string }): Promise<any> {
+    const id = this.postCommentIdCounter++;
+    const now = new Date();
+    const newComment: PostComment = {
+      id,
+      postId: commentData.postId,
+      userId: commentData.userId,
+      content: commentData.content,
+      createdAt: now
+    };
+    this.postComments.set(id, newComment);
+
+    // Get user data for the response
+    const user = await this.getUser(commentData.userId);
+    return {
+      ...newComment,
+      user: user ? {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar
+      } : null
+    };
+  }
+
+  async deletePostComment(id: number): Promise<boolean> {
+    return this.postComments.delete(id);
+  }
+
+  // Post like operations
+  async likePost(postId: number, userId: number): Promise<boolean> {
+    // Check if user already liked this post
+    const existingLike = Array.from(this.postLikes.values()).find(
+      like => like.postId === postId && like.userId === userId
+    );
+
+    if (existingLike) {
+      return false; // Already liked
+    }
+
+    const id = this.postLikeIdCounter++;
+    const now = new Date();
+    const newLike: PostLike = {
+      id,
+      postId,
+      userId,
+      createdAt: now
+    };
+    this.postLikes.set(id, newLike);
+
+    // Update post likes count
+    const post = await this.getPost(postId);
+    if (post) {
+      await this.updatePost(postId, { likes: post.likes + 1 });
+    }
+
+    return true;
+  }
+
+  async unlikePost(postId: number, userId: number): Promise<boolean> {
+    const existingLike = Array.from(this.postLikes.values()).find(
+      like => like.postId === postId && like.userId === userId
+    );
+
+    if (!existingLike) {
+      return false; // Not liked
+    }
+
+    this.postLikes.delete(existingLike.id);
+
+    // Update post likes count
+    const post = await this.getPost(postId);
+    if (post && post.likes > 0) {
+      await this.updatePost(postId, { likes: post.likes - 1 });
+    }
+
+    return true;
+  }
+
+  async hasUserLikedPost(postId: number, userId: number): Promise<boolean> {
+    return Array.from(this.postLikes.values()).some(
+      like => like.postId === postId && like.userId === userId
+    );
+  }
+
+  async getPostLikeCount(postId: number): Promise<number> {
+    return Array.from(this.postLikes.values()).filter(
+      like => like.postId === postId
+    ).length;
   }
 }
 

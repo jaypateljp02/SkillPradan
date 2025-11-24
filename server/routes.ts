@@ -1652,6 +1652,293 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =========================================
+  // Post routes (Feed)
+  // =========================================
+
+  // Get all posts with optional filters
+  app.get("/api/posts", isAuthenticatedEither, async (req, res) => {
+    try {
+      const { type, subject } = req.query;
+      const filters: any = {};
+
+      if (type && typeof type === 'string') {
+        filters.type = type;
+      }
+
+      if (subject && typeof subject === 'string') {
+        filters.subject = subject;
+      }
+
+      const posts = await storage.getAllPosts(filters);
+
+      // Enrich with user data and like status
+      const userId = req.user!.id;
+      const enrichedPosts = await Promise.all(
+        posts.map(async (post) => {
+          const user = await storage.getUser(post.userId);
+          const hasLiked = await storage.hasUserLikedPost(post.id, userId);
+          const comments = await storage.getPostComments(post.id);
+
+          return {
+            ...post,
+            user: user ? {
+              id: user.id,
+              name: user.name,
+              avatar: user.avatar
+            } : null,
+            hasLiked,
+            commentCount: comments.length,
+            isOwner: post.userId === userId
+          };
+        })
+      );
+
+      res.json(enrichedPosts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ message: "Error fetching posts" });
+    }
+  });
+
+  // Get a single post
+  app.get("/api/posts/:id", isAuthenticatedEither, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const post = await storage.getPost(postId);
+
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      const user = await storage.getUser(post.userId);
+      const userId = req.user!.id;
+      const hasLiked = await storage.hasUserLikedPost(post.id, userId);
+      const comments = await storage.getPostComments(post.id);
+
+      res.json({
+        ...post,
+        user: user ? {
+          id: user.id,
+          name: user.name,
+          avatar: user.avatar
+        } : null,
+        hasLiked,
+        comments,
+        isOwner: post.userId === userId
+      });
+    } catch (error) {
+      console.error("Error fetching post:", error);
+      res.status(500).json({ message: "Error fetching post" });
+    }
+  });
+
+  // Create a new post
+  app.post("/api/posts", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { type, title, subject, content, imageUrl } = req.body;
+
+      if (!type || !title || !content) {
+        return res.status(400).json({ message: "Type, title, and content are required" });
+      }
+
+      if (type !== 'question' && type !== 'success') {
+        return res.status(400).json({ message: "Type must be 'question' or 'success'" });
+      }
+
+      const post = await storage.createPost({
+        userId,
+        type,
+        title,
+        subject: subject || null,
+        content,
+        imageUrl: imageUrl || null
+      });
+
+      // Create activity
+      await storage.createActivity({
+        userId,
+        type: "badge",
+        description: `Posted a new ${type === 'question' ? 'question' : 'success story'}`,
+        pointsEarned: 10
+      });
+
+      res.status(201).json(post);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ message: "Error creating post" });
+    }
+  });
+
+  // Update a post
+  app.put("/api/posts/:id", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const postId = parseInt(req.params.id);
+
+      const post = await storage.getPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      if (post.userId !== userId) {
+        return res.status(403).json({ message: "You can only edit your own posts" });
+      }
+
+      const { title, subject, content, imageUrl } = req.body;
+      const updatedPost = await storage.updatePost(postId, {
+        title,
+        subject,
+        content,
+        imageUrl
+      });
+
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error updating post:", error);
+      res.status(500).json({ message: "Error updating post" });
+    }
+  });
+
+  // Delete a post
+  app.delete("/api/posts/:id", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const postId = parseInt(req.params.id);
+
+      const post = await storage.getPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      if (post.userId !== userId) {
+        return res.status(403).json({ message: "You can only delete your own posts" });
+      }
+
+      const deleted = await storage.deletePost(postId);
+
+      if (deleted) {
+        res.json({ message: "Post deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Error deleting post" });
+      }
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      res.status(500).json({ message: "Error deleting post" });
+    }
+  });
+
+  // Like/Unlike a post
+  app.put("/api/posts/:id/like", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const postId = parseInt(req.params.id);
+
+      const post = await storage.getPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      const hasLiked = await storage.hasUserLikedPost(postId, userId);
+
+      if (hasLiked) {
+        // Unlike
+        await storage.unlikePost(postId, userId);
+      } else {
+        // Like
+        await storage.likePost(postId, userId);
+      }
+
+      const updatedPost = await storage.getPost(postId);
+      res.json(updatedPost);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      res.status(500).json({ message: "Error toggling like" });
+    }
+  });
+
+  // Get comments for a post
+  app.get("/api/posts/:id/comments", isAuthenticatedEither, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const comments = await storage.getPostComments(postId);
+      res.json(comments);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      res.status(500).json({ message: "Error fetching comments" });
+    }
+  });
+
+  // Add a comment to a post
+  app.post("/api/posts/:id/comments", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const postId = parseInt(req.params.id);
+      const { content } = req.body;
+
+      if (!content) {
+        return res.status(400).json({ message: "Content is required" });
+      }
+
+      const post = await storage.getPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      const comment = await storage.createPostComment({
+        postId,
+        userId,
+        content
+      });
+
+      // Create activity
+      await storage.createActivity({
+        userId,
+        type: "badge",
+        description: `${post.type === 'question' ? 'Answered' : 'Commented on'} a post`,
+        pointsEarned: 5
+      });
+
+      res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ message: "Error creating comment" });
+    }
+  });
+
+  // Delete a comment
+  app.delete("/api/posts/:postId/comments/:commentId", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const commentId = parseInt(req.params.commentId);
+
+      // Get all comments for this post to find the one we want
+      const postId = parseInt(req.params.postId);
+      const comments = await storage.getPostComments(postId);
+      const comment = comments.find(c => c.id === commentId);
+
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      if (comment.userId !== userId) {
+        return res.status(403).json({ message: "You can only delete your own comments" });
+      }
+
+      const deleted = await storage.deletePostComment(commentId);
+
+      if (deleted) {
+        res.json({ message: "Comment deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Error deleting comment" });
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      res.status(500).json({ message: "Error deleting comment" });
+    }
+  });
+
   // Register admin routes
   app.use("/api/admin", adminRouter);
 

@@ -327,6 +327,40 @@ export const insertPostSchema = createInsertSchema(posts).pick({
 export type Post = typeof posts.$inferSelect;
 export type InsertPost = z.infer<typeof insertPostSchema>;
 
+// Post Comments/Answers
+export const postComments = pgTable("post_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  userId: integer("user_id").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPostCommentSchema = createInsertSchema(postComments).pick({
+  postId: true,
+  userId: true,
+  content: true,
+});
+
+export type PostComment = typeof postComments.$inferSelect;
+export type InsertPostComment = z.infer<typeof insertPostCommentSchema>;
+
+// Post Likes
+export const postLikes = pgTable("post_likes", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").notNull(),
+  userId: integer("user_id").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertPostLikeSchema = createInsertSchema(postLikes).pick({
+  postId: true,
+  userId: true,
+});
+
+export type PostLike = typeof postLikes.$inferSelect;
+export type InsertPostLike = z.infer<typeof insertPostLikeSchema>;
+
 // Direct Messages for 1-to-1 conversations
 export const directMessages = pgTable("direct_messages", {
   id: serial("id").primaryKey(),
