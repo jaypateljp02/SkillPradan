@@ -48,14 +48,14 @@ export function SkillsSection() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  
+
   const { data: skills = [], isLoading } = useQuery<Skill[]>({
     queryKey: ["/api/skills"],
   });
-  
+
   const teachingSkills = skills.filter(skill => skill.isTeaching);
   const learningSkills = skills.filter(skill => !skill.isTeaching);
-  
+
   const addSkillMutation = useMutation({
     mutationFn: async (skillData: Omit<InsertSkill, "userId">) => {
       const res = await apiRequest("POST", "/api/skills", skillData);
@@ -68,6 +68,7 @@ export function SkillsSection() {
         description: "Your skill has been added successfully",
       });
       setDialogOpen(false);
+      form.reset();
     },
     onError: (error) => {
       toast({
@@ -77,7 +78,27 @@ export function SkillsSection() {
       });
     },
   });
-  
+
+  const deleteSkillMutation = useMutation({
+    mutationFn: async (skillId: number) => {
+      await apiRequest("DELETE", `/api/skills/${skillId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/skills'] });
+      toast({
+        title: "Skill removed",
+        description: "Your skill has been removed successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to remove skill",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const form = useForm<SkillFormValues>({
     resolver: zodResolver(skillFormSchema),
     defaultValues: {
@@ -86,7 +107,7 @@ export function SkillsSection() {
       proficiencyLevel: "beginner",
     },
   });
-  
+
   function onSubmit(data: SkillFormValues) {
     addSkillMutation.mutate({
       name: data.name,
@@ -95,7 +116,13 @@ export function SkillsSection() {
       isVerified: false,
     });
   }
-  
+
+  const getSkillColor = (skillName: string, index: number): "primary" | "secondary" | "accent" | "neutral" => {
+    const colors: ("primary" | "secondary" | "accent")[] = ["primary", "secondary", "accent"];
+    const hash = skillName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
+
   const renderSkillDialog = () => (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
@@ -135,7 +162,7 @@ export function SkillsSection() {
                   <FormControl>
                     <Select
                       onValueChange={(value) => field.onChange(value === "teaching")}
-                      defaultValue={field.value ? "teaching" : "learning"}
+                      value={field.value ? "teaching" : "learning"}
                     >
                       <SelectTrigger className="bg-white text-neutral-900">
                         <SelectValue placeholder="Select skill type" />
@@ -194,14 +221,15 @@ export function SkillsSection() {
       <div>
         <h3 className="text-lg font-medium text-neutral-900">My Skills</h3>
         <p className="text-sm text-neutral-500">Skills you can teach others</p>
-        
+
         <div className="mt-4 flex flex-wrap gap-2">
-          {teachingSkills.map((skill) => (
+          {teachingSkills.map((skill, index) => (
             <SkillTag
               key={skill.id}
               name={skill.name}
               verified={skill.isVerified}
-              color={skill.name === "Web Development" ? "primary" : skill.name === "React" ? "secondary" : skill.name === "JavaScript" ? "accent" : "neutral"}
+              color={getSkillColor(skill.name, index)}
+              onRemove={() => deleteSkillMutation.mutate(skill.id)}
             />
           ))}
           {renderSkillDialog()}
@@ -211,13 +239,14 @@ export function SkillsSection() {
       <div>
         <h3 className="text-lg font-medium text-neutral-900">Skills I Want to Learn</h3>
         <p className="text-sm text-neutral-500">Skills you're interested in learning from others</p>
-        
+
         <div className="mt-4 flex flex-wrap gap-2">
-          {learningSkills.map((skill) => (
+          {learningSkills.map((skill, index) => (
             <SkillTag
               key={skill.id}
               name={skill.name}
-              color="neutral"
+              color={getSkillColor(skill.name, index)}
+              onRemove={() => deleteSkillMutation.mutate(skill.id)}
             />
           ))}
           {renderSkillDialog()}

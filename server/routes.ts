@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, storagePromise } from "./storage";
 import { WebSocketServer } from "ws";
 import { setupWebSockets } from "./socket";
 import { z } from "zod";
@@ -17,6 +17,11 @@ import adminRouter from "./routes/admin";
 import { setupAuth, isAuthenticated } from "./token-auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Wait for storage to be initialized before registering routes
+  console.log("⏳ Waiting for storage initialization...");
+  await storagePromise;
+  console.log("✅ Storage ready, registering routes...");
+
   // Add a debug route to check server status
   app.get('/api/debug/status', (_req, res) => {
     res.json({
@@ -95,6 +100,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const updatedSkill = await storage.updateSkill(skillId, req.body);
     res.json(updatedSkill);
   });
+
+  app.delete("/api/skills/:id", isAuthenticatedEither, async (req, res) => {
+    const userId = req.user!.id;
+    const skillId = parseInt(req.params.id);
+
+    const skill = await storage.getSkill(skillId);
+    if (!skill) return res.status(404).send("Skill not found");
+    if (skill.userId !== userId) return res.status(403).send("Forbidden");
+
+    await storage.deleteSkill(skillId);
+    res.status(204).send();
+  });
+
 
   // User profile
   app.get("/api/profile", isAuthenticatedEither, async (req, res) => {
@@ -1236,19 +1254,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
+    console.log(`[DEBUG] GET messages for group ${groupId} by user ${userId}`);
 
     const group = await storage.getGroup(groupId);
-    if (!group) return res.status(404).send("Group not found");
+    if (!group) {
+      console.log(`[DEBUG] Group ${groupId} not found`);
+      return res.status(404).send("Group not found");
+    }
 
     // Check if the user is a member of this group
     const members = await storage.getGroupMembers(groupId);
     const isMember = members.some(member => member.userId === userId);
 
     if (!isMember) {
+      console.log(`[DEBUG] User ${userId} is NOT a member of group ${groupId}`);
       return res.status(403).send("You need to be a member to view messages in this group");
     }
 
     const messages = await storage.getGroupMessages(groupId);
+    console.log(`[DEBUG] Found ${messages.length} messages for group ${groupId}`);
 
     // Get sender info for each message
     const enrichedMessages = await Promise.all(messages.map(async (message) => {
@@ -1269,6 +1293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const userId = req.user!.id;
     const groupId = parseInt(req.params.groupId);
+    console.log(`[DEBUG] POST message to group ${groupId} by user ${userId}`);
 
     const group = await storage.getGroup(groupId);
     if (!group) return res.status(404).send("Group not found");
@@ -1278,6 +1303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const isMember = members.some(member => member.userId === userId);
 
     if (!isMember) {
+      console.log(`[DEBUG] User ${userId} is NOT a member of group ${groupId} (cannot post)`);
       return res.status(403).send("You need to be a member to send messages in this group");
     }
 
@@ -1291,6 +1317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create the message
       const message = await storage.createGroupMessage(validatedData);
+      console.log(`[DEBUG] Message created: ${message.id}`);
 
       // Get sender info
       const sender = await storage.getUser(userId);
@@ -1305,6 +1332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(201).json(message);
       }
     } catch (error) {
+      console.error(`[DEBUG] Error creating message:`, error);
       res.status(400).json({ error: (error as Error).message });
     }
   });
@@ -1390,58 +1418,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error marking message as read:", error);
       res.status(500).json({ error: "Failed to mark message as read" });
-    }
-  });
-
-  // =========================================
-  // Posts routes (questions + success stories)
-  // =========================================
-  app.get("/api/posts", isAuthenticatedEither, async (req, res) => {
-    try {
-      const type = typeof req.query.type === 'string' ? req.query.type : undefined;
-      const subject = typeof req.query.subject === 'string' ? req.query.subject : undefined;
-      const userId = req.query.userId ? Number(req.query.userId) : undefined;
-      const offset = req.query.offset ? Number(req.query.offset) : undefined;
-      const limit = req.query.limit ? Number(req.query.limit) : undefined;
-      const posts = await storage.getPosts({ type, subject, userId, offset, limit });
-      res.json(posts);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      res.status(500).json({ message: "Failed to fetch posts" });
-    }
-  });
-
-  app.post("/api/posts", isAuthenticatedEither, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const { type, title, subject, content, imageUrl } = req.body;
-      if (!type || !title || !content) {
-        return res.status(400).json({ message: "type, title and content are required" });
-      }
-      if (type !== 'question' && type !== 'success') {
-        return res.status(400).json({ message: "type must be 'question' or 'success'" });
-      }
-      const post = await storage.createPost({ userId, type, title, subject, content, imageUrl });
-      res.status(201).json(post);
-    } catch (error) {
-      console.error("Error creating post:", error);
-      res.status(400).json({ message: (error as Error).message });
-    }
-  });
-
-  app.put("/api/posts/:id/like", isAuthenticatedEither, async (req, res) => {
-    try {
-      const userId = req.user!.id;
-      const postId = Number(req.params.id);
-      if (isNaN(postId)) {
-        return res.status(400).json({ message: "Invalid post id" });
-      }
-      const updated = await storage.toggleLikePost(postId, userId);
-      if (!updated) return res.status(404).json({ message: "Post not found" });
-      res.json(updated);
-    } catch (error) {
-      console.error("Error liking post:", error);
-      res.status(400).json({ message: (error as Error).message });
     }
   });
 
@@ -1572,6 +1548,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching friend requests:", error);
       res.status(500).json({ message: "Error fetching friend requests" });
+    }
+  });
+
+  // Get sent friend requests
+  app.get("/api/friends/requests/sent", isAuthenticatedEither, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const requests = await storage.getSentFriendRequests(userId);
+
+      // Enrich with user data (the recipient)
+      const enrichedRequests = await Promise.all(requests.map(async (request) => {
+        const user = await storage.getUser(request.friendId);
+        if (!user) return null;
+
+        const { password, ...userData } = user;
+        return {
+          ...request,
+          user: userData
+        };
+      }));
+
+      res.json(enrichedRequests.filter(r => r !== null));
+    } catch (error) {
+      console.error("Error fetching sent friend requests:", error);
+      res.status(500).json({ message: "Error fetching sent friend requests" });
     }
   });
 

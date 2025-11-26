@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Link } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export function StudyGroups() {
   const [newGroup, setNewGroup] = useState({
@@ -18,11 +20,12 @@ export function StudyGroups() {
     description: "",
     isPrivate: false
   });
-  
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  
+
   const queryClient = useQueryClient();
-  
+  const { toast } = useToast();
+
   interface Group {
     id: number;
     name: string;
@@ -34,83 +37,83 @@ export function StudyGroups() {
   }
 
   const { data: myGroups = [], isLoading: myGroupsLoading } = useQuery<Group[]>({
-    queryKey: ["/api/groups"],
+    queryKey: ["/api/groups", "my-teams"],
     queryFn: async () => {
-      const response = await fetch("/api/groups");
-      if (!response.ok) {
-        return [];
-      }
-      const groups = await response.json();
-      // Filter for team projects only
-      return groups.filter((group: any) => group.isTeamProject === true);
+      const response = await apiRequest("GET", "/api/groups/user?isTeamProject=true");
+      return response.json();
     }
   });
-  
+
   const { data: allGroups = [], isLoading: allGroupsLoading } = useQuery<Group[]>({
-    queryKey: ["/api/groups", "all"],
+    queryKey: ["/api/groups", "all-teams"],
     queryFn: async () => {
-      const response = await fetch("/api/groups?all=true");
-      if (!response.ok) {
-        return [];
-      }
-      const groups = await response.json();
-      // Filter for team projects only
-      return groups.filter((group: any) => group.isTeamProject === true);
+      const response = await apiRequest("GET", "/api/groups?isTeamProject=true");
+      return response.json();
     }
   });
 
   const createGroupMutation = useMutation({
     mutationFn: async (groupData: typeof newGroup) => {
-      const response = await fetch("/api/groups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...groupData,
-          isTeamProject: true // Mark this as a team project
-        })
+      const response = await apiRequest("POST", "/api/groups", {
+        ...groupData,
+        isTeamProject: true
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to create group");
+        throw new Error(error.error || error.message || "Failed to create team");
       }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/groups", "all"] });
+      toast({
+        title: "Success!",
+        description: "Team created successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", "my-teams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", "all-teams"] });
+      setNewGroup({ name: "", description: "", isPrivate: false });
       setCreateDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create team. Please try again.",
+        variant: "destructive",
+      });
     }
   });
 
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
-      const response = await fetch(`/api/groups/${groupId}/members`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
+      const response = await apiRequest("POST", `/api/groups/${groupId}/join`, {});
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to join group");
+        throw new Error(error.error || error.message || "Failed to join team");
       }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/groups"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/groups", "all"] });
+      toast({
+        title: "Success!",
+        description: "Joined team successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", "my-teams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", "all-teams"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to join team. Please try again.",
+        variant: "destructive",
+      });
     }
   });
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await createGroupMutation.mutateAsync(newGroup);
-      setNewGroup({ name: "", description: "", isPrivate: false });
-    } catch (error) {
-      console.error("Error creating group:", error);
-    }
+    createGroupMutation.mutate(newGroup);
   };
-  
+
   // Check if a user is a member of a group already
   const isGroupMember = (groupId: number) => {
     return myGroups.some(group => group.id === groupId);
@@ -160,8 +163,8 @@ export function StudyGroups() {
                 />
                 <Label htmlFor="private">Private Group</Label>
               </div>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full"
                 disabled={createGroupMutation.isPending}
               >
@@ -271,7 +274,7 @@ function GroupCard({ group, isMember, onJoin, isJoining = false }: GroupCardProp
             </Button>
           </>
         ) : (
-          <Button 
+          <Button
             size="sm"
             onClick={onJoin}
             disabled={isJoining}

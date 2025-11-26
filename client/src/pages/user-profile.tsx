@@ -239,8 +239,7 @@ function UserPosts({ userId }: { userId: number }) {
     const { data: posts, isLoading } = useQuery<any[]>({
         queryKey: [`/api/posts`, { userId }],
         queryFn: async () => {
-            const res = await fetch(`/api/posts?userId=${userId}`);
-            if (!res.ok) throw new Error("Failed to fetch posts");
+            const res = await apiRequest("GET", `/api/posts?userId=${userId}`);
             return res.json();
         }
     });
@@ -271,7 +270,15 @@ function UserPosts({ userId }: { userId: number }) {
                         <div className="flex justify-between items-start">
                             <div>
                                 <CardTitle className="text-lg">{post.title}</CardTitle>
-                                <CardDescription>{new Date(post.createdAt).toLocaleDateString()}</CardDescription>
+                                <CardDescription>
+                                    {(() => {
+                                        try {
+                                            return new Date(post.createdAt).toLocaleDateString();
+                                        } catch (e) {
+                                            return "Unknown date";
+                                        }
+                                    })()}
+                                </CardDescription>
                             </div>
                             <Badge variant={post.type === 'question' ? 'secondary' : 'default'}>
                                 {post.type}

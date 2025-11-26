@@ -27,7 +27,7 @@ export function MobileNav({ setActiveTab, activeTab }: MobileNavProps) {
       isRoute: true
     },
     {
-      label: 'Barter',
+      label: 'Skill Exchange',
       icon: <Repeat className="text-lg" />,
       target: 'barter-tab',
       isRoute: false
@@ -76,11 +76,10 @@ export function MobileNav({ setActiveTab, activeTab }: MobileNavProps) {
             <button
               key={item.label}
               onClick={() => setActiveTab(item.target)}
-              className={`flex flex-col items-center p-3 ${
-                isActive
-                  ? 'text-primary' 
+              className={`flex flex-col items-center p-3 ${isActive
+                  ? 'text-primary'
                   : 'text-neutral-500 hover:text-primary'
-              }`}
+                }`}
             >
               {item.icon}
               <span className="text-xs mt-1">{item.label}</span>

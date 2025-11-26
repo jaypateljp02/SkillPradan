@@ -35,6 +35,8 @@ export interface IStorage {
   getSkillsByUser(userId: number): Promise<Skill[]>;
   createSkill(skill: InsertSkill): Promise<Skill>;
   updateSkill(id: number, skillData: Partial<Skill>): Promise<Skill | undefined>;
+  deleteSkill(id: number): Promise<boolean>;
+
 
   // Exchange operations
   getExchange(id: number): Promise<Exchange | undefined>;
@@ -115,6 +117,7 @@ export interface IStorage {
   // Friend operations
   getFriends(userId: number): Promise<Friend[]>;
   getFriendRequests(userId: number): Promise<Friend[]>;
+  getSentFriendRequests(userId: number): Promise<Friend[]>;
   sendFriendRequest(userId: number, friendId: number): Promise<Friend>;
   respondToFriendRequest(requestId: number, status: "accepted" | "rejected"): Promise<Friend | undefined>;
   checkFriendStatus(userId: number, friendId: number): Promise<Friend | undefined>;
@@ -630,6 +633,11 @@ export class MemStorage implements IStorage {
     this.skills.set(id, updatedSkill);
     return updatedSkill;
   }
+
+  async deleteSkill(id: number): Promise<boolean> {
+    return this.skills.delete(id);
+  }
+
 
   // Exchange operations
   async getExchange(id: number): Promise<Exchange | undefined> {
@@ -1471,6 +1479,12 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getSentFriendRequests(userId: number): Promise<Friend[]> {
+    return Array.from(this.friends.values()).filter(
+      (friend) => friend.userId === userId && friend.status === "pending"
+    );
+  }
+
   async sendFriendRequest(userId: number, friendId: number): Promise<Friend> {
     const id = this.friendIdCounter++;
     const now = new Date();
@@ -1530,23 +1544,7 @@ export class MemStorage implements IStorage {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
-  async createPost(postData: InsertPost): Promise<Post> {
-    const id = this.postIdCounter++;
-    const now = new Date();
-    const newPost: Post = {
-      id,
-      userId: postData.userId,
-      type: postData.type,
-      title: postData.title,
-      subject: postData.subject || null,
-      content: postData.content,
-      imageUrl: postData.imageUrl || null,
-      likes: 0,
-      createdAt: now
-    };
-    this.posts.set(id, newPost);
-    return newPost;
-  }
+
 
   async updatePost(id: number, postData: Partial<Post>): Promise<Post | undefined> {
     const post = await this.getPost(id);
@@ -1689,4 +1687,40 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { SupabaseStorage } from "./supabase-storage";
+import { testSupabaseConnection } from "./supabase.config";
+
+// Initialize storage with automatic fallback
+async function initializeStorage(): Promise<IStorage> {
+  console.log("🚀 Initializing Storage...");
+
+  // Test Supabase connection
+  const isSupabaseReady = await testSupabaseConnection();
+
+  if (isSupabaseReady) {
+    console.log("✅ Using Supabase Storage (Persistent)");
+    return new SupabaseStorage();
+  } else {
+    console.log("⚠️  Supabase not configured - using MemStorage (In-Memory)");
+    console.log("📝 To enable persistent storage, follow the setup instructions in SETUP_INSTRUCTIONS.md");
+    return new MemStorage();
+  }
+}
+
+// Export a promise that resolves to the storage instance
+export const storagePromise = initializeStorage();
+
+// For backwards compatibility, export a synchronous storage that will be initialized
+// This is a temporary MemStorage that will be replaced once the async initialization completes
+export let storage: IStorage = new MemStorage();
+
+// Replace the storage once initialization is complete
+storagePromise.then(initializedStorage => {
+  storage = initializedStorage;
+  console.log("✅ Storage initialized successfully");
+}).catch(error => {
+  console.error("❌ Storage initialization failed:", error);
+  console.log("⚠️  Falling back to MemStorage");
+  storage = new MemStorage();
+});
+

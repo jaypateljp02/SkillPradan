@@ -362,9 +362,15 @@ export default function MessagesPage() {
                           {conversation.lastMessage.content}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(conversation.lastMessage.sentAt), {
-                            addSuffix: true
-                          })}
+                          {(() => {
+                            try {
+                              const date = new Date(conversation.lastMessage.sentAt);
+                              if (isNaN(date.getTime())) return "Recently";
+                              return formatDistanceToNow(date, { addSuffix: true });
+                            } catch {
+                              return "Recently";
+                            }
+                          })()}
                         </p>
                       </div>
                     </div>

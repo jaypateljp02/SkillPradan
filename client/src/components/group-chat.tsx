@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface Message {
   id: number;
   content: string;
-  createdAt: string;
+  sentAt: string;
   sender: {
     id: number;
     name: string;
@@ -41,6 +41,8 @@ interface Group {
   }[];
 }
 
+import { apiRequest } from "@/lib/queryClient";
+
 export function GroupChat() {
   const { groupId } = useParams();
   const [message, setMessage] = useState("");
@@ -51,10 +53,7 @@ export function GroupChat() {
   const { data: group, isLoading: groupLoading } = useQuery<Group>({
     queryKey: [`/api/groups/${groupId}`],
     queryFn: async () => {
-      const response = await fetch(`/api/groups/${groupId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch group');
-      }
+      const response = await apiRequest("GET", `/api/groups/${groupId}`);
       return response.json();
     }
   });
@@ -63,10 +62,7 @@ export function GroupChat() {
   const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
     queryKey: [`/api/groups/${groupId}/messages`],
     queryFn: async () => {
-      const response = await fetch(`/api/groups/${groupId}/messages`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch messages');
-      }
+      const response = await apiRequest("GET", `/api/groups/${groupId}/messages`);
       return response.json();
     },
     refetchInterval: 5000 // Poll for new messages every 5 seconds
@@ -74,26 +70,18 @@ export function GroupChat() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      const response = await fetch(`/api/groups/${groupId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content })
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to send message');
-      }
+      const response = await apiRequest("POST", `/api/groups/${groupId}/messages`, { content });
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({queryKey: [`/api/groups/${groupId}/messages`]});
+      queryClient.invalidateQueries({ queryKey: [`/api/groups/${groupId}/messages`] });
     }
   });
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
-    
+
     try {
       await sendMessageMutation.mutateAsync(message);
       setMessage("");
@@ -114,14 +102,14 @@ export function GroupChat() {
   const formatMessageDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
-    
+
     // If message is from today, only show time
     if (date.toDateString() === today.toDateString()) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
-    
+
     // Otherwise show date and time
-    return date.toLocaleDateString([], { 
+    return date.toLocaleDateString([], {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -148,7 +136,7 @@ export function GroupChat() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
-          
+
           {groupLoading ? (
             <Skeleton className="h-6 w-48" />
           ) : (
@@ -183,7 +171,7 @@ export function GroupChat() {
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="info">Info</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="chat" className="flex-1 flex flex-col">
           {/* Messages area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -212,7 +200,7 @@ export function GroupChat() {
                     <div className="flex items-baseline gap-2">
                       <span className="font-medium">{msg.sender.name}</span>
                       <span className="text-xs text-muted-foreground">
-                        {formatMessageDate(msg.createdAt)}
+                        {formatMessageDate(msg.sentAt)}
                       </span>
                     </div>
                     <p className="text-sm mt-1">{msg.content}</p>
@@ -222,7 +210,7 @@ export function GroupChat() {
             )}
             <div ref={messagesEndRef} />
           </div>
-          
+
           {/* Message input form */}
           <form onSubmit={handleSendMessage} className="p-4 border-t">
             <div className="flex gap-2">
@@ -232,8 +220,8 @@ export function GroupChat() {
                 placeholder="Type a message..."
                 disabled={sendMessageMutation.isPending}
               />
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={sendMessageMutation.isPending || !message.trim()}
               >
                 <Send className="h-4 w-4" />
@@ -241,7 +229,7 @@ export function GroupChat() {
             </div>
           </form>
         </TabsContent>
-        
+
         <TabsContent value="info" className="flex-1 p-4 overflow-y-auto">
           {groupLoading ? (
             <div className="space-y-4">
@@ -266,7 +254,7 @@ export function GroupChat() {
                   </p>
                 </CardContent>
               </Card>
-              
+
               <h3 className="font-medium mt-6 mb-2">Members ({group?.members.length || 0})</h3>
               <div className="space-y-3">
                 {group?.members.map((member) => (

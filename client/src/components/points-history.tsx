@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity } from "@shared/schema";
-import { 
+import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
-  TableRow 
+  TableRow
 } from "@/components/ui/table";
 import { format } from "date-fns";
 
@@ -14,7 +14,7 @@ export function PointsHistory() {
   const { data: activities = [], isLoading } = useQuery<Activity[]>({
     queryKey: ["/api/activities"],
   });
-  
+
   if (isLoading) {
     return (
       <div className="mt-8 animate-pulse">
@@ -23,16 +23,20 @@ export function PointsHistory() {
       </div>
     );
   }
-  
+
   // Filter and sort activities by date (newest first)
   const pointActivities = activities
     .filter(activity => activity.pointsEarned !== 0)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
   return (
     <div className="mt-8">
       <h4 className="text-md font-medium text-neutral-900">Points History</h4>
-      
+
       <div className="mt-4 bg-white border border-neutral-200 rounded-lg overflow-hidden">
         {pointActivities.length === 0 ? (
           <div className="p-4 text-center text-neutral-500">
@@ -54,7 +58,7 @@ export function PointsHistory() {
                     {activity.description}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(activity.createdAt), "MMM d, yyyy")}
+                    {activity.createdAt ? format(new Date(activity.createdAt), "MMM d, yyyy") : "N/A"}
                   </TableCell>
                   <TableCell className="text-right">
                     <span className={activity.pointsEarned > 0 ? "text-green-600" : "text-red-600"}>
@@ -67,6 +71,6 @@ export function PointsHistory() {
           </Table>
         )}
       </div>
-    </div>
+    </div >
   );
 }

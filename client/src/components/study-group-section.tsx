@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { 
-  Users, Calendar, MessageCircle, Video, Plus, FileText, 
+import {
+  Users, Calendar, MessageCircle, Video, Plus, FileText,
   Settings, FolderUp, Globe, Lock, Code, Hammer, Loader2,
   Building2, Trash2, Phone
 } from "lucide-react";
@@ -36,6 +36,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useLocation } from "wouter";
 
 // Group schema for form validation
 const createGroupSchema = z.object({
@@ -46,7 +47,8 @@ const createGroupSchema = z.object({
 
 export function StudyGroupSection() {
   const [activeTab, setActiveTab] = useState("study-groups");
-  
+  const [, setLocation] = useLocation();
+
   // Effect to refetch data when tab changes
   useEffect(() => {
     // Invalidate queries with the new activeTab value to force refetch
@@ -58,7 +60,7 @@ export function StudyGroupSection() {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   // Create group form
   const form = useForm<z.infer<typeof createGroupSchema>>({
     resolver: zodResolver(createGroupSchema),
@@ -68,7 +70,7 @@ export function StudyGroupSection() {
       isPrivate: false,
     },
   });
-  
+
   interface GroupItem {
     id: number;
     name: string;
@@ -82,12 +84,12 @@ export function StudyGroupSection() {
     deadline?: string;
     isTeamProject?: boolean;
   }
-  
+
   // Fetch groups based on active tab
-  const { 
-    data: groups = [] as GroupItem[], 
+  const {
+    data: groups = [] as GroupItem[],
     isLoading: isLoadingGroups,
-    error: groupsError 
+    error: groupsError
   } = useQuery<GroupItem[]>({
     queryKey: ['/api/groups', activeTab],
     queryFn: async () => {
@@ -95,27 +97,27 @@ export function StudyGroupSection() {
       if (!token) {
         return [];
       }
-      
+
       const isTeamProject = activeTab === 'team-projects';
       const response = await fetch(`/api/groups?isTeamProject=${isTeamProject}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch groups');
       }
-      
+
       return await response.json();
     },
     enabled: !!user,
   });
-  
+
   // Fetch user's groups based on active tab
-  const { 
-    data: userGroups = [] as GroupItem[], 
-    isLoading: isLoadingUserGroups 
+  const {
+    data: userGroups = [] as GroupItem[],
+    isLoading: isLoadingUserGroups
   } = useQuery<GroupItem[]>({
     queryKey: ['/api/groups/user', activeTab],
     queryFn: async () => {
@@ -123,32 +125,32 @@ export function StudyGroupSection() {
       if (!token) {
         return [];
       }
-      
+
       const isTeamProject = activeTab === 'team-projects';
       const response = await fetch(`/api/groups/user?isTeamProject=${isTeamProject}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch user groups');
       }
-      
+
       return await response.json();
     },
     enabled: !!user,
   });
-  
+
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createGroupSchema>) => {
       const token = getAuthToken();
-      
+
       if (!token) {
         throw new Error('You must be logged in to create a study group');
       }
-      
+
       return await fetch('/api/groups', {
         method: 'POST',
         headers: {
@@ -184,28 +186,28 @@ export function StudyGroupSection() {
       });
     },
   });
-  
+
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
       const token = getAuthToken();
-      
+
       if (!token) {
         throw new Error('You must be logged in to join a group');
       }
-      
+
       // Check if user is already a member or creator of this group
       const isCreator = groups.some(group => group.id === groupId && group.createdById === user?.id);
       const isAlreadyMember = userGroups.some(group => group.id === groupId);
-      
+
       if (isCreator) {
         throw new Error('You can\'t join a group you created');
       }
-      
+
       if (isAlreadyMember) {
         throw new Error('You are already a member of this group');
       }
-      
+
       return await fetch(`/api/groups/${groupId}/join`, {
         method: 'POST',
         headers: {
@@ -235,7 +237,7 @@ export function StudyGroupSection() {
       });
     },
   });
-  
+
   // Handle form submission
   const onSubmit = (data: z.infer<typeof createGroupSchema>) => {
     if (!user) {
@@ -246,10 +248,10 @@ export function StudyGroupSection() {
       });
       return;
     }
-    
+
     createGroupMutation.mutate(data);
   };
-  
+
   const handleGroupClick = (groupId: number) => {
     setSelectedGroup(groupId);
     setSelectedTeam(null);
@@ -259,7 +261,7 @@ export function StudyGroupSection() {
     setSelectedTeam(teamId);
     setSelectedGroup(null);
   };
-  
+
   const handleJoinGroup = (groupId: number) => {
     if (!user) {
       toast({
@@ -269,10 +271,10 @@ export function StudyGroupSection() {
       });
       return;
     }
-    
+
     joinGroupMutation.mutate(groupId);
   };
-  
+
   // Placeholder function for showing features in development
   const handleFeatureInDevelopment = (featureName: string) => {
     toast({
@@ -284,27 +286,27 @@ export function StudyGroupSection() {
 
   const selectedGroupData = groups.find((group: GroupItem) => group.id === selectedGroup);
   const selectedTeamData = userGroups.find((team: GroupItem) => team.id === selectedTeam);
-  
+
   // Check if user is the creator of a group
   const isCreatorOfGroup = (groupId: number) => {
     const group = groups.find(g => g.id === groupId);
     return group && group.createdById === user?.id;
   };
-  
+
   // Check if user is already a member of a group
   const isAlreadyMember = (groupId: number) => {
     return userGroups.some(group => group.id === groupId);
   };
-  
+
   // Delete group mutation
   const deleteGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
       const token = getAuthToken();
-      
+
       if (!token) {
         throw new Error('You must be logged in to delete a group');
       }
-      
+
       return await fetch(`/api/groups/${groupId}`, {
         method: 'DELETE',
         headers: {
@@ -339,7 +341,7 @@ export function StudyGroupSection() {
       });
     },
   });
-  
+
   // Handle group deletion
   const handleDeleteGroup = (groupId: number) => {
     if (!user) {
@@ -350,16 +352,16 @@ export function StudyGroupSection() {
       });
       return;
     }
-    
+
     // Confirm deletion
-    if (confirm(activeTab === "team-projects" 
-      ? "Are you sure you want to delete this team? This action cannot be undone." 
+    if (confirm(activeTab === "team-projects"
+      ? "Are you sure you want to delete this team? This action cannot be undone."
       : "Are you sure you want to delete this group? This action cannot be undone."
     )) {
       deleteGroupMutation.mutate(groupId);
     }
   };
-  
+
   return (
     <div>
       <Tabs defaultValue="study-groups" className="w-full" onValueChange={setActiveTab}>
@@ -367,7 +369,7 @@ export function StudyGroupSection() {
           <TabsTrigger value="study-groups">Study Groups</TabsTrigger>
           <TabsTrigger value="team-projects">Team Projects</TabsTrigger>
         </TabsList>
-        
+
         {/* Study Groups Tab */}
         <TabsContent value="study-groups" className="space-y-8">
           <div>
@@ -390,7 +392,7 @@ export function StudyGroupSection() {
                       Set up a study group for collaborative learning. Fill out the details below.
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       <FormField
@@ -406,7 +408,7 @@ export function StudyGroupSection() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="description"
@@ -414,7 +416,7 @@ export function StudyGroupSection() {
                           <FormItem>
                             <FormLabel>Description</FormLabel>
                             <FormControl>
-                              <Textarea 
+                              <Textarea
                                 placeholder="Briefly describe the purpose and focus of this study group"
                                 {...field}
                               />
@@ -423,7 +425,7 @@ export function StudyGroupSection() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="isPrivate"
@@ -444,10 +446,10 @@ export function StudyGroupSection() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <DialogFooter>
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           disabled={createGroupMutation.isPending}
                           className="w-full"
                         >
@@ -462,7 +464,7 @@ export function StudyGroupSection() {
                 </DialogContent>
               </Dialog>
             </div>
-            
+
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
               {isLoadingGroups ? (
                 <div className="col-span-3 flex justify-center py-8">
@@ -474,16 +476,15 @@ export function StudyGroupSection() {
                 </div>
               ) : (
                 groups.map((group: any) => (
-                  <div 
+                  <div
                     key={group.id}
-                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${
-                      selectedGroup === group.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
-                    }`}
+                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedGroup === group.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
+                      }`}
                     onClick={() => handleGroupClick(group.id)}
                   >
                     <div className={`h-24 ${!group.isPrivate ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gradient-to-r from-purple-500 to-pink-600'} flex items-center justify-center text-white`}>
-                      {!group.isPrivate ? 
-                        <Globe className="h-10 w-10" /> : 
+                      {!group.isPrivate ?
+                        <Globe className="h-10 w-10" /> :
                         <Lock className="h-10 w-10" />
                       }
                     </div>
@@ -502,9 +503,9 @@ export function StudyGroupSection() {
                           {group.memberCount || 0} members
                         </span>
                         {isCreatorOfGroup(group.id) ? (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="text-red-500 border-red-200"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -519,18 +520,18 @@ export function StudyGroupSection() {
                             Delete
                           </Button>
                         ) : isAlreadyMember(group.id) ? (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="text-primary"
                             disabled={true}
                           >
                             Joined
                           </Button>
                         ) : (
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             className="text-primary"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -551,7 +552,7 @@ export function StudyGroupSection() {
               )}
             </div>
           </div>
-          
+
           {selectedGroupData && (
             <div className="border border-neutral-200 rounded-lg">
               <div className="p-4 border-b border-neutral-200">
@@ -573,27 +574,27 @@ export function StudyGroupSection() {
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">{selectedGroupData.description}</p>
               </div>
-              
+
               <div className="p-4">
                 <div className="flex space-x-4">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment('group chat')}
+                    onClick={() => setLocation(`/groups/${selectedGroupData.id}/chat`)}
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Group Chat
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 flex items-center justify-center"
                     onClick={() => handleFeatureInDevelopment('virtual session')}
                   >
                     <Video className="h-4 w-4 mr-2" />
                     Start Session
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 flex items-center justify-center"
                     onClick={() => handleFeatureInDevelopment('file sharing')}
                   >
@@ -601,7 +602,7 @@ export function StudyGroupSection() {
                     Share Files
                   </Button>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">📂 Shared Files</h5>
                   <div className="space-y-2">
@@ -619,9 +620,9 @@ export function StudyGroupSection() {
                       </div>
                       <span className="text-xs text-neutral-500">Shared 1 week ago</span>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="mt-2 text-primary"
                       onClick={() => handleFeatureInDevelopment('file upload')}
                     >
@@ -630,15 +631,15 @@ export function StudyGroupSection() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Members ({selectedGroupData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
                     {Array.from({ length: Math.min(selectedGroupData.memberCount || 0, 5) }).map((_, i) => (
-                      <UserAvatar 
-                        key={i} 
-                        name={`Member ${i+1}`} 
-                        size="sm" 
+                      <UserAvatar
+                        key={i}
+                        name={`Member ${i + 1}`}
+                        size="sm"
                       />
                     ))}
                     {(selectedGroupData.memberCount || 0) > 5 && (
@@ -652,7 +653,7 @@ export function StudyGroupSection() {
             </div>
           )}
         </TabsContent>
-        
+
         {/* Team Projects Tab */}
         <TabsContent value="team-projects" className="space-y-8">
           <div>
@@ -666,7 +667,7 @@ export function StudyGroupSection() {
                 Create Team
               </Button>
             </div>
-            
+
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {isLoadingUserGroups ? (
                 <div className="col-span-2 flex justify-center py-8">
@@ -678,11 +679,10 @@ export function StudyGroupSection() {
                 </div>
               ) : (
                 userGroups.map((team: any) => (
-                  <div 
+                  <div
                     key={team.id}
-                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${
-                      selectedTeam === team.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
-                    }`}
+                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedTeam === team.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
+                      }`}
                     onClick={() => handleTeamClick(team.id)}
                   >
                     <div className="h-24 bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white">
@@ -714,7 +714,7 @@ export function StudyGroupSection() {
               )}
             </div>
           </div>
-          
+
           {selectedTeamData && (
             <div className="border border-neutral-200 rounded-lg">
               <div className="p-4 border-b border-neutral-200">
@@ -729,9 +729,9 @@ export function StudyGroupSection() {
                   </div>
                   <div className="flex space-x-2">
                     {isCreatorOfGroup(selectedTeamData.id) && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="text-red-500"
                         onClick={() => handleDeleteGroup(selectedTeamData.id)}
                       >
@@ -739,9 +739,9 @@ export function StudyGroupSection() {
                         Delete Team
                       </Button>
                     )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleFeatureInDevelopment('team management')}
                     >
                       <Settings className="h-4 w-4 mr-1" />
@@ -759,27 +759,27 @@ export function StudyGroupSection() {
                   </div>
                 )}
               </div>
-              
+
               <div className="p-4">
                 <div className="flex space-x-4">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 flex items-center justify-center"
-                    onClick={() => handleFeatureInDevelopment('team chat')}
+                    onClick={() => setLocation(`/groups/${selectedTeamData.id}/chat`)}
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Team Chat
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 flex items-center justify-center"
                     onClick={() => handleFeatureInDevelopment('code collaboration')}
                   >
                     <Code className="h-4 w-4 mr-2" />
                     Collaborate
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 flex items-center justify-center"
                     onClick={() => handleFeatureInDevelopment('team call')}
                   >
@@ -787,7 +787,7 @@ export function StudyGroupSection() {
                     Team Call
                   </Button>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">📂 Project Files</h5>
                   <div className="space-y-2">
@@ -812,9 +812,9 @@ export function StudyGroupSection() {
                       </div>
                       <span className="text-xs text-neutral-500">Updated 5 hours ago</span>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="mt-2 text-primary"
                       onClick={() => handleFeatureInDevelopment('file upload')}
                     >
@@ -823,15 +823,15 @@ export function StudyGroupSection() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Team Members ({selectedTeamData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
                     {Array.from({ length: Math.min(selectedTeamData.memberCount || 0, 5) }).map((_, i) => (
-                      <UserAvatar 
-                        key={i} 
-                        name={`Team Member ${i+1}`} 
-                        size="sm" 
+                      <UserAvatar
+                        key={i}
+                        name={`Team Member ${i + 1}`}
+                        size="sm"
                       />
                     ))}
                     {(selectedTeamData.memberCount || 0) > 5 && (
@@ -841,11 +841,11 @@ export function StudyGroupSection() {
                     )}
                   </div>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Project Progress</h5>
                   <div className="h-4 bg-neutral-200 rounded overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-primary to-blue-600"
                       style={{ width: '65%' }}
                     ></div>

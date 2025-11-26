@@ -71,7 +71,7 @@ export default function HomePage() {
       isRoute: true
     },
     {
-      label: 'Barter',
+      label: 'Skill Exchange',
       icon: <Repeat className="w-5 h-5 text-neutral-700" />,
       target: 'barter-tab',
       isRoute: false
