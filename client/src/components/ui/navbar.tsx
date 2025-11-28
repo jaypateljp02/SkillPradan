@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { useAuth } from '@/hooks/use-auth';
-import { LogOut, Home, User, Repeat, Video, Users, Trophy, Bell, Shield } from 'lucide-react';
+import { LogOut, Home, User, Repeat, Video, Users, Trophy, Bell, Shield, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import logoImage from "../../assets/logo.png";
