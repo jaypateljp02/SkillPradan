@@ -169,7 +169,8 @@ export class SupabaseStorage implements IStorage {
             name: item.name,
             isVerified: item.is_verified,
             proficiencyLevel: item.proficiency_level,
-            isTeaching: item.is_teaching
+            isTeaching: item.is_teaching,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -187,6 +188,7 @@ export class SupabaseStorage implements IStorage {
             id: item.id,
             userId: item.user_id,
             name: item.name,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date(),
             isVerified: item.is_verified,
             proficiencyLevel: item.proficiency_level,
             isTeaching: item.is_teaching
@@ -217,7 +219,8 @@ export class SupabaseStorage implements IStorage {
             name: item.name,
             isVerified: item.is_verified,
             proficiencyLevel: item.proficiency_level,
-            isTeaching: item.is_teaching
+            isTeaching: item.is_teaching,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -237,7 +240,8 @@ export class SupabaseStorage implements IStorage {
             name: item.name,
             isVerified: item.is_verified,
             proficiencyLevel: item.proficiency_level,
-            isTeaching: item.is_teaching
+            isTeaching: item.is_teaching,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -269,7 +273,8 @@ export class SupabaseStorage implements IStorage {
             studentSkillId: item.student_skill_id,
             status: item.status,
             sessionsCompleted: item.sessions_completed,
-            totalSessions: item.total_sessions
+            totalSessions: item.total_sessions,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -291,7 +296,8 @@ export class SupabaseStorage implements IStorage {
             studentSkillId: item.student_skill_id,
             status: item.status,
             sessionsCompleted: item.sessions_completed,
-            totalSessions: item.total_sessions
+            totalSessions: item.total_sessions,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         }));
     }
 
@@ -323,7 +329,8 @@ export class SupabaseStorage implements IStorage {
             studentSkillId: item.student_skill_id,
             status: item.status,
             sessionsCompleted: item.sessions_completed,
-            totalSessions: item.total_sessions
+            totalSessions: item.total_sessions,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -345,7 +352,8 @@ export class SupabaseStorage implements IStorage {
             studentSkillId: item.student_skill_id,
             status: item.status,
             sessionsCompleted: item.sessions_completed,
-            totalSessions: item.total_sessions
+            totalSessions: item.total_sessions,
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -365,8 +373,9 @@ export class SupabaseStorage implements IStorage {
             scheduledTime: new Date(item.scheduled_time),
             duration: item.duration,
             status: item.status,
-            notes: item.notes,
-            whiteboardData: item.whiteboard_data
+            notes: item.notes || '',
+            whiteboardData: item.whiteboard_data || {},
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -386,8 +395,9 @@ export class SupabaseStorage implements IStorage {
             scheduledTime: new Date(item.scheduled_time),
             duration: item.duration,
             status: item.status,
-            notes: item.notes,
-            whiteboardData: item.whiteboard_data
+            notes: item.notes || '',
+            whiteboardData: item.whiteboard_data || {},
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         }));
     }
 
@@ -416,8 +426,9 @@ export class SupabaseStorage implements IStorage {
             scheduledTime: new Date(item.scheduled_time),
             duration: item.duration,
             status: item.status,
-            notes: item.notes,
-            whiteboardData: item.whiteboard_data
+            notes: item.notes || '',
+            whiteboardData: item.whiteboard_data || {},
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -437,8 +448,9 @@ export class SupabaseStorage implements IStorage {
             scheduledTime: new Date(item.scheduled_time),
             duration: item.duration,
             status: item.status,
-            notes: item.notes,
-            whiteboardData: item.whiteboard_data
+            notes: item.notes || '',
+            whiteboardData: item.whiteboard_data || {},
+            createdAt: item.created_at ? new Date(item.created_at) : new Date()
         };
     }
 
@@ -602,7 +614,7 @@ export class SupabaseStorage implements IStorage {
             id: item.id,
             userId: item.user_id,
             badgeId: item.badge_id,
-            awardedAt: new Date(item.awarded_at)
+            earnedAt: new Date(item.awarded_at || item.earned_at || new Date())
         }));
     }
 
@@ -637,7 +649,7 @@ export class SupabaseStorage implements IStorage {
             id: item.id,
             userId: item.user_id,
             badgeId: item.badge_id,
-            awardedAt: new Date(item.awarded_at)
+            earnedAt: new Date(item.awarded_at || item.earned_at || new Date())
         };
     }
 
@@ -728,8 +740,8 @@ export class SupabaseStorage implements IStorage {
             userId: item.user_id,
             challengeId: item.challenge_id,
             currentCount: item.current_count,
-            completed: item.completed,
-            completedAt: item.completed_at ? new Date(item.completed_at) : undefined
+            startedAt: item.started_at ? new Date(item.started_at) : new Date(),
+            completedAt: item.completed_at ? new Date(item.completed_at) : null
         }));
     }
 
@@ -754,8 +766,8 @@ export class SupabaseStorage implements IStorage {
             userId: item.user_id,
             challengeId: item.challenge_id,
             currentCount: item.current_count,
-            completed: item.completed,
-            completedAt: item.completed_at ? new Date(item.completed_at) : undefined
+            startedAt: item.started_at ? new Date(item.started_at) : new Date(),
+            completedAt: item.completed_at ? new Date(item.completed_at) : null
         };
     }
 
@@ -774,8 +786,8 @@ export class SupabaseStorage implements IStorage {
             userId: item.user_id,
             challengeId: item.challenge_id,
             currentCount: item.current_count,
-            completed: item.completed,
-            completedAt: item.completed_at ? new Date(item.completed_at) : undefined
+            startedAt: item.started_at ? new Date(item.started_at) : new Date(),
+            completedAt: item.completed_at ? new Date(item.completed_at) : null
         };
     }
 
@@ -1151,7 +1163,7 @@ export class SupabaseStorage implements IStorage {
             title: item.title,
             description: item.description,
             startTime: new Date(item.start_time),
-            endTime: item.end_time ? new Date(item.end_time) : undefined,
+            endTime: item.end_time ? new Date(item.end_time) : null,
             createdById: item.created_by_id
         };
     }
@@ -1173,7 +1185,7 @@ export class SupabaseStorage implements IStorage {
             title: item.title,
             description: item.description,
             startTime: new Date(item.start_time),
-            endTime: item.end_time ? new Date(item.end_time) : undefined,
+            endTime: item.end_time ? new Date(item.end_time) : null,
             createdById: item.created_by_id
         }));
     }
@@ -1203,7 +1215,7 @@ export class SupabaseStorage implements IStorage {
             title: item.title,
             description: item.description,
             startTime: new Date(item.start_time),
-            endTime: item.end_time ? new Date(item.end_time) : undefined,
+            endTime: item.end_time ? new Date(item.end_time) : null,
             createdById: item.created_by_id
         };
     }

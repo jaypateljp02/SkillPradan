@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, Link } from "wouter";
-import { Loader2, MapPin, GraduationCap, Trophy, UserPlus, UserCheck, UserX, MessageSquare } from "lucide-react";
+import { Loader2, MapPin, GraduationCap, Trophy, UserPlus, UserCheck, UserX, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Skill {
     id: number;
@@ -236,6 +237,10 @@ export default function UserProfilePage() {
 }
 
 function UserPosts({ userId }: { userId: number }) {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+
     const { data: posts, isLoading } = useQuery<any[]>({
         queryKey: [`/api/posts`, { userId }],
         queryFn: async () => {
@@ -243,6 +248,37 @@ function UserPosts({ userId }: { userId: number }) {
             return res.json();
         }
     });
+
+    const deletePostMutation = useMutation({
+        mutationFn: async (postId: number) => {
+            const res = await apiRequest("DELETE", `/api/posts/${postId}`);
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || "Failed to delete post");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Post deleted successfully",
+            });
+            queryClient.invalidateQueries({ queryKey: [`/api/posts`, { userId }] });
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Error",
+                description: error.message || "Failed to delete post",
+                variant: "destructive",
+            });
+        }
+    });
+
+    const handleDeletePost = (postId: number) => {
+        if (confirm("Are you sure you want to delete this post?")) {
+            deletePostMutation.mutate(postId);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -268,7 +304,7 @@ function UserPosts({ userId }: { userId: number }) {
                 <Card key={post.id}>
                     <CardHeader>
                         <div className="flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                                 <CardTitle className="text-lg">{post.title}</CardTitle>
                                 <CardDescription>
                                     {(() => {
@@ -280,9 +316,23 @@ function UserPosts({ userId }: { userId: number }) {
                                     })()}
                                 </CardDescription>
                             </div>
-                            <Badge variant={post.type === 'question' ? 'secondary' : 'default'}>
-                                {post.type}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                                <Badge variant={post.type === 'question' ? 'secondary' : 'default'}>
+                                    {post.type}
+                                </Badge>
+                                {user && user.id === post.userId && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDeletePost(post.id)}
+                                        disabled={deletePostMutation.isPending}
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        title="Delete post"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent>

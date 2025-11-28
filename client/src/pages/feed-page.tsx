@@ -606,87 +606,8 @@ export default function FeedPage() {
     },
   });
 
-  const navItems = [
-    {
-      label: 'Profile',
-      icon: <User className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Feed',
-      icon: <Newspaper className="w-5 h-5 text-neutral-700" />,
-      target: '/feed',
-      isRoute: true
-    },
-    {
-      label: 'Messages',
-      icon: <MessageCircle className="w-5 h-5 text-neutral-700" />,
-      target: '/messages',
-      isRoute: true
-    },
-    {
-      label: 'Barter',
-      icon: <Repeat className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Points',
-      icon: <CreditCard className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Learn',
-      icon: <GraduationCap className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Achievements',
-      icon: <Trophy className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Community',
-      icon: <Users className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Find Friends',
-      icon: <UserPlus className="w-5 h-5 text-neutral-700" />,
-      target: '/find-friends',
-      isRoute: true
-    }
-  ];
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-      {/* Icon-only navigation buttons */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {navItems.map((item) => {
-          const isActive = item.target === '/feed';
-          return (
-            <Link key={item.label} to={item.target}>
-              <button
-                className={`flex items-center justify-center w-12 h-12 rounded-md transition-all ${isActive
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-white text-neutral-600 hover:bg-neutral-50 border border-neutral-200'
-                  }`}
-                aria-label={item.label}
-              >
-                {React.cloneElement(item.icon as React.ReactElement, {
-                  className: `h-6 w-6 ${isActive ? 'text-white' : ''}`
-                })}
-              </button>
-            </Link>
-          );
-        })}
-      </div>
-
       <h1 className="text-3xl font-bold text-neutral-900 mb-2">Community Feed</h1>
       <p className="text-sm text-neutral-600 mb-6">Ask questions, share success stories, and connect with the community</p>
 
@@ -740,6 +661,6 @@ export default function FeedPage() {
           posts.map(p => <PostCard key={p.id} post={p} currentUserId={user?.id || 0} />)
         )}
       </div>
-    </div>
+    </div >
   );
 }

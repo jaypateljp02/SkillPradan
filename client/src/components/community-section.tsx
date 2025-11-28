@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { 
-  Users, Calendar, MessageCircle, Video, Plus, FileText, 
+import {
+  Users, Calendar, MessageCircle, Video, Plus, FileText,
   Settings, FolderUp, Globe, Lock, Code, Hammer, Loader2,
   Building2
 } from "lucide-react";
@@ -51,7 +52,7 @@ export function CommunitySection() {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   // Create group form
   const form = useForm<z.infer<typeof createGroupSchema>>({
     resolver: zodResolver(createGroupSchema),
@@ -61,7 +62,7 @@ export function CommunitySection() {
       isPrivate: false,
     },
   });
-  
+
   interface GroupItem {
     id: number;
     name: string;
@@ -74,35 +75,35 @@ export function CommunitySection() {
     isPublic?: boolean;
     deadline?: string;
   }
-  
+
   // Fetch groups
-  const { 
-    data: groups = [] as GroupItem[], 
+  const {
+    data: groups = [] as GroupItem[],
     isLoading: isLoadingGroups,
-    error: groupsError 
+    error: groupsError
   } = useQuery<GroupItem[]>({
     queryKey: ['/api/groups'],
     enabled: !!user,
   });
-  
+
   // Fetch user's groups
-  const { 
-    data: userGroups = [] as GroupItem[], 
-    isLoading: isLoadingUserGroups 
+  const {
+    data: userGroups = [] as GroupItem[],
+    isLoading: isLoadingUserGroups
   } = useQuery<GroupItem[]>({
     queryKey: ['/api/groups/user'],
     enabled: !!user,
   });
-  
+
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createGroupSchema>) => {
       const token = getAuthToken();
-      
+
       if (!token) {
         throw new Error('You must be logged in to create a community');
       }
-      
+
       return await fetch('/api/groups', {
         method: 'POST',
         headers: {
@@ -135,16 +136,16 @@ export function CommunitySection() {
       });
     },
   });
-  
+
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (groupId: number) => {
       const token = getAuthToken();
-      
+
       if (!token) {
         throw new Error('You must be logged in to join a community');
       }
-      
+
       return await fetch(`/api/groups/${groupId}/join`, {
         method: 'POST',
         headers: {
@@ -163,7 +164,7 @@ export function CommunitySection() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
       queryClient.invalidateQueries({ queryKey: ['/api/groups/user'] });
-      
+
       // Refresh the groups data
       window.location.reload();
     },
@@ -176,7 +177,7 @@ export function CommunitySection() {
       });
     },
   });
-  
+
   // Handle form submission
   const onSubmit = (data: z.infer<typeof createGroupSchema>) => {
     if (!user) {
@@ -187,10 +188,10 @@ export function CommunitySection() {
       });
       return;
     }
-    
+
     createGroupMutation.mutate(data);
   };
-  
+
   const handleGroupClick = (groupId: number) => {
     setSelectedGroup(groupId);
     setSelectedTeam(null);
@@ -200,7 +201,7 @@ export function CommunitySection() {
     setSelectedTeam(teamId);
     setSelectedGroup(null);
   };
-  
+
   const handleJoinGroup = (groupId: number) => {
     if (!user) {
       toast({
@@ -210,13 +211,13 @@ export function CommunitySection() {
       });
       return;
     }
-    
+
     joinGroupMutation.mutate(groupId);
   };
 
   const selectedGroupData = groups.find((group: GroupItem) => group.id === selectedGroup);
   const selectedTeamData = userGroups.find((team: GroupItem) => team.id === selectedTeam);
-  
+
   return (
     <div>
       <Tabs defaultValue="study-groups" className="w-full" onValueChange={setActiveTab}>
@@ -224,7 +225,7 @@ export function CommunitySection() {
           <TabsTrigger value="study-groups">Communities</TabsTrigger>
           <TabsTrigger value="team-projects">Team Projects</TabsTrigger>
         </TabsList>
-        
+
         {/* Communities Tab */}
         <TabsContent value="study-groups" className="space-y-8">
           <div>
@@ -247,7 +248,7 @@ export function CommunitySection() {
                       Set up a community for collaborative learning. Fill out the details below.
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                       <FormField
@@ -263,7 +264,7 @@ export function CommunitySection() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="description"
@@ -271,7 +272,7 @@ export function CommunitySection() {
                           <FormItem>
                             <FormLabel>Description</FormLabel>
                             <FormControl>
-                              <Textarea 
+                              <Textarea
                                 placeholder="Briefly describe the purpose and focus of this community"
                                 {...field}
                               />
@@ -280,7 +281,7 @@ export function CommunitySection() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="isPrivate"
@@ -301,10 +302,10 @@ export function CommunitySection() {
                           </FormItem>
                         )}
                       />
-                      
+
                       <DialogFooter>
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           disabled={createGroupMutation.isPending}
                           className="w-full"
                         >
@@ -319,7 +320,7 @@ export function CommunitySection() {
                 </DialogContent>
               </Dialog>
             </div>
-            
+
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
               {isLoadingGroups ? (
                 <div className="col-span-3 flex justify-center py-8">
@@ -331,16 +332,15 @@ export function CommunitySection() {
                 </div>
               ) : (
                 groups.map((group: any) => (
-                  <div 
+                  <div
                     key={group.id}
-                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${
-                      selectedGroup === group.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
-                    }`}
+                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedGroup === group.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
+                      }`}
                     onClick={() => handleGroupClick(group.id)}
                   >
                     <div className={`h-24 ${!group.isPrivate ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gradient-to-r from-purple-500 to-pink-600'} flex items-center justify-center text-white`}>
-                      {!group.isPrivate ? 
-                        <Globe className="h-10 w-10" /> : 
+                      {!group.isPrivate ?
+                        <Globe className="h-10 w-10" /> :
                         <Lock className="h-10 w-10" />
                       }
                     </div>
@@ -358,9 +358,9 @@ export function CommunitySection() {
                         <span className="text-xs text-neutral-500">
                           {group.memberCount || 0} members
                         </span>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           className="text-primary"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -380,7 +380,7 @@ export function CommunitySection() {
               )}
             </div>
           </div>
-          
+
           {selectedGroupData && (
             <div className="border border-neutral-200 rounded-lg">
               <div className="p-4 border-b border-neutral-200">
@@ -400,13 +400,15 @@ export function CommunitySection() {
                 </div>
                 <p className="mt-1 text-sm text-neutral-500">{selectedGroupData.description}</p>
               </div>
-              
+
               <div className="p-4">
                 <div className="flex space-x-4">
-                  <Button variant="outline" className="flex-1 flex items-center justify-center">
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Community Chat
-                  </Button>
+                  <Link href={`/groups/${selectedGroupData.id}/chat`}>
+                    <Button variant="outline" className="flex-1 flex items-center justify-center">
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Community Chat
+                    </Button>
+                  </Link>
                   <Button variant="outline" className="flex-1 flex items-center justify-center">
                     <Video className="h-4 w-4 mr-2" />
                     Start Session
@@ -416,7 +418,7 @@ export function CommunitySection() {
                     Share Files
                   </Button>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">📂 Shared Files</h5>
                   <div className="space-y-2">
@@ -440,15 +442,15 @@ export function CommunitySection() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Members ({selectedGroupData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
                     {Array.from({ length: Math.min(selectedGroupData.memberCount || 0, 5) }).map((_, i) => (
-                      <UserAvatar 
-                        key={i} 
-                        name={`Member ${i+1}`} 
-                        size="sm" 
+                      <UserAvatar
+                        key={i}
+                        name={`Member ${i + 1}`}
+                        size="sm"
                       />
                     ))}
                     {(selectedGroupData.memberCount || 0) > 5 && (
@@ -462,7 +464,7 @@ export function CommunitySection() {
             </div>
           )}
         </TabsContent>
-        
+
         {/* Team Projects Tab */}
         <TabsContent value="team-projects" className="space-y-8">
           <div>
@@ -476,7 +478,7 @@ export function CommunitySection() {
                 Create Team
               </Button>
             </div>
-            
+
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {isLoadingUserGroups ? (
                 <div className="col-span-2 flex justify-center py-8">
@@ -488,11 +490,10 @@ export function CommunitySection() {
                 </div>
               ) : (
                 userGroups.map((team: any) => (
-                  <div 
+                  <div
                     key={team.id}
-                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${
-                      selectedTeam === team.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
-                    }`}
+                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedTeam === team.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
+                      }`}
                     onClick={() => handleTeamClick(team.id)}
                   >
                     <div className="h-24 bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center text-white">
@@ -513,7 +514,7 @@ export function CommunitySection() {
               )}
             </div>
           </div>
-          
+
           {selectedTeamData && (
             <div className="border border-neutral-200 rounded-lg">
               <div className="p-4 border-b border-neutral-200">
@@ -530,7 +531,7 @@ export function CommunitySection() {
                   <span className="ml-1 text-xs text-neutral-700">Deadline: {selectedTeamData.deadline}</span>
                 </div>
               </div>
-              
+
               <div className="p-4">
                 <h5 className="text-md font-medium text-neutral-900 mb-3">💬 Team Chat</h5>
                 <div className="bg-neutral-50 rounded-md p-4 h-48 overflow-y-auto mb-4">
@@ -557,16 +558,16 @@ export function CommunitySection() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex">
-                  <input 
-                    type="text" 
-                    placeholder="Type your message..." 
-                    className="flex-1 py-2 px-3 border border-neutral-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+                  <input
+                    type="text"
+                    placeholder="Type your message..."
+                    className="flex-1 py-2 px-3 border border-neutral-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                   <Button className="rounded-l-none">Send</Button>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-3">Shared Code & Resources</h5>
                   <div className="space-y-2">
@@ -590,15 +591,15 @@ export function CommunitySection() {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="mt-6">
                   <h5 className="text-md font-medium text-neutral-900 mb-2">Team Members ({selectedTeamData.memberCount || 0})</h5>
                   <div className="flex flex-wrap gap-2">
                     {[...Array(Math.min(selectedTeamData.memberCount || 0, 5))].map((_, i) => (
-                      <UserAvatar 
-                        key={i} 
-                        name={`Teammate ${i+1}`} 
-                        size="sm" 
+                      <UserAvatar
+                        key={i}
+                        name={`Teammate ${i + 1}`}
+                        size="sm"
                       />
                     ))}
                   </div>

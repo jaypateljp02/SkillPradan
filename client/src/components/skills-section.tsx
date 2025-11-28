@@ -48,6 +48,7 @@ export function SkillsSection() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [activeSkillType, setActiveSkillType] = useState<"teaching" | "learning">("teaching");
 
   const { data: skills = [], isLoading } = useQuery<Skill[]>({
     queryKey: ["/api/skills"],
@@ -117,104 +118,21 @@ export function SkillsSection() {
     });
   }
 
+  const openDialog = (type: "teaching" | "learning") => {
+    setActiveSkillType(type);
+    form.reset({
+      name: "",
+      isTeaching: type === "teaching",
+      proficiencyLevel: "beginner",
+    });
+    setDialogOpen(true);
+  };
+
   const getSkillColor = (skillName: string, index: number): "primary" | "secondary" | "accent" | "neutral" => {
     const colors: ("primary" | "secondary" | "accent")[] = ["primary", "secondary", "accent"];
     const hash = skillName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[hash % colors.length];
   };
-
-  const renderSkillDialog = () => (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="skill-tag inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-neutral-100 text-neutral-500 border border-dashed border-neutral-300 hover:bg-neutral-200">
-          <Plus className="w-4 h-4 mr-1" />
-          Add Skill
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add a New Skill</DialogTitle>
-          <DialogDescription>
-            Add a skill you can teach or want to learn
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Skill Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. JavaScript, Design, Photography" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="isTeaching"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Skill Type</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={(value) => field.onChange(value === "teaching")}
-                      value={field.value ? "teaching" : "learning"}
-                    >
-                      <SelectTrigger className="bg-white text-neutral-900">
-                        <SelectValue placeholder="Select skill type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="teaching">I can teach this</SelectItem>
-                        <SelectItem value="learning">I want to learn this</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {form.watch("isTeaching") && (
-              <FormField
-                control={form.control}
-                name="proficiencyLevel"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Proficiency Level</FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger className="bg-white text-neutral-900">
-                          <SelectValue placeholder="Select proficiency level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="beginner">Beginner</SelectItem>
-                          <SelectItem value="intermediate">Intermediate</SelectItem>
-                          <SelectItem value="advanced">Advanced</SelectItem>
-                          <SelectItem value="expert">Expert</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            <DialogFooter>
-              <Button type="submit" disabled={addSkillMutation.isPending}>
-                {addSkillMutation.isPending ? "Adding..." : "Add Skill"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
 
   return (
     <div className="space-y-8">
@@ -232,7 +150,14 @@ export function SkillsSection() {
               onRemove={() => deleteSkillMutation.mutate(skill.id)}
             />
           ))}
-          {renderSkillDialog()}
+          <Button
+            variant="outline"
+            className="skill-tag inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-neutral-100 text-neutral-500 border border-dashed border-neutral-300 hover:bg-neutral-200"
+            onClick={() => openDialog("teaching")}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Skill
+          </Button>
         </div>
       </div>
 
@@ -249,9 +174,101 @@ export function SkillsSection() {
               onRemove={() => deleteSkillMutation.mutate(skill.id)}
             />
           ))}
-          {renderSkillDialog()}
+          <Button
+            variant="outline"
+            className="skill-tag inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-neutral-100 text-neutral-500 border border-dashed border-neutral-300 hover:bg-neutral-200"
+            onClick={() => openDialog("learning")}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Add Skill
+          </Button>
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add a New Skill</DialogTitle>
+            <DialogDescription>
+              Add a skill you can teach or want to learn
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. JavaScript, Design, Photography" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="isTeaching"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Skill Type</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(value) => field.onChange(value === "teaching")}
+                        value={field.value ? "teaching" : "learning"}
+                      >
+                        <SelectTrigger className="bg-white text-neutral-900">
+                          <SelectValue placeholder="Select skill type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="teaching">I can teach this</SelectItem>
+                          <SelectItem value="learning">I want to learn this</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {form.watch("isTeaching") && (
+                <FormField
+                  control={form.control}
+                  name="proficiencyLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Proficiency Level</FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger className="bg-white text-neutral-900">
+                            <SelectValue placeholder="Select proficiency level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="beginner">Beginner</SelectItem>
+                            <SelectItem value="intermediate">Intermediate</SelectItem>
+                            <SelectItem value="advanced">Advanced</SelectItem>
+                            <SelectItem value="expert">Expert</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              <DialogFooter>
+                <Button type="submit" disabled={addSkillMutation.isPending}>
+                  {addSkillMutation.isPending ? "Adding..." : "Add Skill"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

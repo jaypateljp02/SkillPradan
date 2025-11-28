@@ -21,6 +21,7 @@ export function StudyGroups() {
     isPrivate: false
   });
 
+  const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
@@ -207,19 +208,34 @@ export function StudyGroups() {
           )}
         </TabsContent>
         <TabsContent value="discover">
+          <div className="mb-4">
+            <Input
+              placeholder="Search teams..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
           {allGroupsLoading ? (
             <p>Loading teams...</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allGroups.filter(group => !group.isPrivate || isGroupMember(group.id)).map((group) => (
-                <GroupCard
-                  key={group.id}
-                  group={group}
-                  isMember={isGroupMember(group.id)}
-                  onJoin={() => joinGroupMutation.mutate(group.id)}
-                  isJoining={joinGroupMutation.isPending}
-                />
-              ))}
+              {allGroups
+                .filter(group => {
+                  const matchesSearch = group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (group.description && group.description.toLowerCase().includes(searchQuery.toLowerCase()));
+                  const isVisible = !group.isPrivate || isGroupMember(group.id);
+                  return matchesSearch && isVisible;
+                })
+                .map((group) => (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    isMember={isGroupMember(group.id)}
+                    onJoin={() => joinGroupMutation.mutate(group.id)}
+                    isJoining={joinGroupMutation.isPending}
+                  />
+                ))}
             </div>
           )}
         </TabsContent>

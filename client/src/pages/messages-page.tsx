@@ -12,6 +12,7 @@ import { Send, MessageSquare, ArrowLeft, Loader2, User, Repeat, CreditCard, Grad
 import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { Link } from "wouter";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Conversation {
   partner: {
@@ -46,6 +47,15 @@ interface Message {
   };
 }
 
+interface Friend {
+  id: number;
+  friend: {
+    id: number;
+    name: string;
+    username: string;
+  };
+}
+
 export default function MessagesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -72,6 +82,12 @@ export default function MessagesPage() {
   const { data: conversations = [], isLoading: conversationsLoading, error: conversationsError } = useQuery<Conversation[]>({
     queryKey: ["/api/messages/conversations"],
     refetchInterval: 5000,
+  });
+
+  // Fetch friends list
+  const { data: friends = [], isLoading: friendsLoading } = useQuery<Friend[]>({
+    queryKey: ["/api/friends"],
+    enabled: !!user,
   });
 
   // Fetch messages for selected conversation
@@ -223,87 +239,8 @@ export default function MessagesPage() {
     );
   }
 
-  const navItems = [
-    {
-      label: 'Profile',
-      icon: <User className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Feed',
-      icon: <Newspaper className="w-5 h-5 text-neutral-700" />,
-      target: '/feed',
-      isRoute: true
-    },
-    {
-      label: 'Messages',
-      icon: <MessageCircle className="w-5 h-5 text-neutral-700" />,
-      target: '/messages',
-      isRoute: true
-    },
-    {
-      label: 'Barter',
-      icon: <Repeat className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Points',
-      icon: <CreditCard className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Learn',
-      icon: <GraduationCap className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Achievements',
-      icon: <Trophy className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Community',
-      icon: <Users className="w-5 h-5 text-neutral-700" />,
-      target: '/',
-      isRoute: true
-    },
-    {
-      label: 'Find Friends',
-      icon: <UserPlus className="w-5 h-5 text-neutral-700" />,
-      target: '/find-friends',
-      isRoute: true
-    }
-  ];
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-      {/* Icon-only navigation buttons */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {navItems.map((item) => {
-          const isActive = item.target === '/messages';
-          return (
-            <Link key={item.label} to={item.target}>
-              <button
-                className={`flex items-center justify-center w-12 h-12 rounded-md ${isActive
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-white text-neutral-600 hover:bg-neutral-50'
-                  }`}
-                aria-label={item.label}
-              >
-                {React.cloneElement(item.icon as React.ReactElement, {
-                  className: "h-6 w-6"
-                })}
-              </button>
-            </Link>
-          );
-        })}
-      </div>
-
       <div className="flex h-[calc(100vh-16rem)] max-h-[calc(100vh-16rem)] bg-white rounded-lg shadow-sm overflow-hidden">
         {/* Conversations List */}
         <Card className={`${showConversationList ? 'flex' : 'hidden'} md:flex w-full md:w-80 flex-col border-r md:rounded-none rounded-none`}>
@@ -315,69 +252,125 @@ export default function MessagesPage() {
           </div>
 
           <ScrollArea className="flex-1">
-            {conversationsLoading ? (
-              <div className="p-4 text-center">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Loading conversations...</p>
-              </div>
-            ) : conversationsError ? (
-              <div className="p-4 text-center text-sm text-destructive">
-                Failed to load conversations. Please refresh the page.
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="p-8 text-center">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-                <p className="text-sm text-muted-foreground">No conversations yet.</p>
-                <p className="text-xs text-muted-foreground mt-1">Start chatting with someone from skill exchange!</p>
-              </div>
-            ) : (
-              <div className="divide-y">
-                {conversations.map((conversation) => (
-                  <button
-                    key={conversation.partner.id}
-                    onClick={() => handleSelectConversation(conversation.partner.id)}
-                    className={`w-full p-4 text-left hover-elevate active-elevate-2 transition-all ${selectedUserId === conversation.partner.id ? 'bg-accent' : ''
-                      }`}
-                    data-testid={`conversation-${conversation.partner.id}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Avatar className="w-10 h-10 flex-shrink-0">
-                        <AvatarImage src={conversation.partner.avatar} />
-                        <AvatarFallback>
-                          {conversation.partner.name.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium text-sm truncate">
-                            {conversation.partner.name}
-                          </p>
-                          {conversation.unreadCount > 0 && (
-                            <Badge variant="default" className="h-5 min-w-5 px-1.5 flex-shrink-0">
-                              {conversation.unreadCount}
-                            </Badge>
-                          )}
+            <Tabs defaultValue="conversations" className="w-full">
+              <TabsList className="w-full grid grid-cols-2 mx-4 mt-2">
+                <TabsTrigger value="conversations">Chats</TabsTrigger>
+                <TabsTrigger value="friends">Friends</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="conversations" className="mt-0">
+                {conversationsLoading ? (
+                  <div className="p-4 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading conversations...</p>
+                  </div>
+                ) : conversationsError ? (
+                  <div className="p-4 text-center text-sm text-destructive">
+                    Failed to load conversations. Please refresh the page.
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
+                    <p className="text-sm text-muted-foreground">No conversations yet.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Switch to Friends tab to start chatting!</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {conversations.map((conversation) => (
+                      <button
+                        key={conversation.partner.id}
+                        onClick={() => handleSelectConversation(conversation.partner.id)}
+                        className={`w-full p-4 text-left hover-elevate active-elevate-2 transition-all ${selectedUserId === conversation.partner.id ? 'bg-accent' : ''
+                          }`}
+                        data-testid={`conversation-${conversation.partner.id}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-10 h-10 flex-shrink-0">
+                            <AvatarImage src={conversation.partner.avatar} />
+                            <AvatarFallback>
+                              {conversation.partner.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-medium text-sm truncate">
+                                {conversation.partner.name}
+                              </p>
+                              {conversation.unreadCount > 0 && (
+                                <Badge variant="default" className="h-5 min-w-5 px-1.5 flex-shrink-0">
+                                  {conversation.unreadCount}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {conversation.lastMessage.content}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {(() => {
+                                try {
+                                  const date = new Date(conversation.lastMessage.sentAt);
+                                  if (isNaN(date.getTime())) return "Recently";
+                                  return formatDistanceToNow(date, { addSuffix: true });
+                                } catch {
+                                  return "Recently";
+                                }
+                              })()}
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {conversation.lastMessage.content}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {(() => {
-                            try {
-                              const date = new Date(conversation.lastMessage.sentAt);
-                              if (isNaN(date.getTime())) return "Recently";
-                              return formatDistanceToNow(date, { addSuffix: true });
-                            } catch {
-                              return "Recently";
-                            }
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="friends" className="mt-0">
+                {friendsLoading ? (
+                  <div className="p-4 text-center">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Loading friends...</p>
+                  </div>
+                ) : friends.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
+                    <p className="text-sm text-muted-foreground mb-3">No friends yet.</p>
+                    <Link to="/find-friends">
+                      <Button variant="outline" size="sm">
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Find Friends
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {friends.map((friendship) => (
+                      <button
+                        key={friendship.friend.id}
+                        onClick={() => handleSelectConversation(friendship.friend.id)}
+                        className="w-full p-4 text-left hover:bg-accent transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-10 h-10 flex-shrink-0">
+                            <AvatarFallback>
+                              {friendship.friend.name.substring(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">
+                              {friendship.friend.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              @{friendship.friend.username}
+                            </p>
+                          </div>
+                          <MessageCircle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </ScrollArea>
         </Card>
 
@@ -396,22 +389,29 @@ export default function MessagesPage() {
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
-                <Avatar className="w-10 h-10 flex-shrink-0">
-                  <AvatarImage
-                    src={conversations.find(c => c.partner.id === selectedUserId)?.partner.avatar}
-                  />
-                  <AvatarFallback>
-                    {conversations.find(c => c.partner.id === selectedUserId)?.partner.name.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold truncate">
-                    {conversations.find(c => c.partner.id === selectedUserId)?.partner.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    @{conversations.find(c => c.partner.id === selectedUserId)?.partner.username}
-                  </p>
-                </div>
+                {(() => {
+                  const partner = conversations.find(c => c.partner.id === selectedUserId)?.partner
+                    || friends.find(f => f.friend.id === selectedUserId)?.friend;
+
+                  return (
+                    <>
+                      <Avatar className="w-10 h-10 flex-shrink-0">
+                        <AvatarImage src={partner?.avatar} />
+                        <AvatarFallback>
+                          {partner?.name?.substring(0, 2).toUpperCase() || "??"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold truncate">
+                          {partner?.name || "Unknown User"}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          @{partner?.username || "unknown"}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Messages */}
@@ -509,6 +509,6 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }

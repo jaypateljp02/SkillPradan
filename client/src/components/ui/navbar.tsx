@@ -19,6 +19,13 @@ export function Navbar() {
     refetchInterval: 10000, // Poll every 10 seconds
   });
 
+  // Fetch pending friend requests
+  const { data: receivedRequests = [] } = useQuery<any[]>({
+    queryKey: ["/api/friends/requests/received"],
+    enabled: !!user,
+    refetchInterval: 10000,
+  });
+
   // Calculate total unread messages
   const unreadCount = conversations.reduce((total: number, conv: any) => total + (conv.unreadCount || 0), 0);
 
@@ -83,6 +90,21 @@ export function Navbar() {
             </div>
 
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
+              <Link href="/feed">
+                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-white/80 border-b-2 border-transparent hover:border-white/50 transition-colors">
+                  Feed
+                </a>
+              </Link>
+              <Link href="/find-friends">
+                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-white/80 border-b-2 border-transparent hover:border-white/50 transition-colors">
+                  Find Friends
+                </a>
+              </Link>
+              <Link href="/groups">
+                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-white/80 border-b-2 border-transparent hover:border-white/50 transition-colors">
+                  Communities
+                </a>
+              </Link>
               {user?.isAdmin && (
                 <Link to="/admin-dashboard">
                   <Button variant="outline" className="border-white/40 text-primary-foreground hover:bg-white/10 bg-yellow-500/20 hover:bg-yellow-500/30" data-testid="button-admin">
@@ -99,6 +121,24 @@ export function Navbar() {
               <>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
+                    <Link href="/find-friends">
+                      <button
+                        className="relative p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                        data-testid="button-notifications-bell"
+                        aria-label="Notifications"
+                        title="Notifications - View Friend Requests"
+                      >
+                        <Bell className="h-5 w-5" />
+                        {receivedRequests.length > 0 && (
+                          <Badge
+                            variant="destructive"
+                            className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center text-xs"
+                          >
+                            {receivedRequests.length > 9 ? '9+' : receivedRequests.length}
+                          </Badge>
+                        )}
+                      </button>
+                    </Link>
                     <Link to="/messages">
                       <button
                         className="relative p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
@@ -106,7 +146,7 @@ export function Navbar() {
                         aria-label="Messages"
                         title="Messages - View your conversations"
                       >
-                        <Bell className="h-5 w-5" />
+                        <MessageCircle className="h-5 w-5" />
                         {unreadCount > 0 && (
                           <Badge
                             variant="destructive"
