@@ -1,12 +1,12 @@
 
-import { StudyGroups } from '@/components/study-groups';
+import { StudyGroupSection } from '@/components/study-group-section';
 import { GroupChat } from '@/components/group-chat';
 import { Route, Switch } from 'wouter';
 
 export default function GroupsPage() {
   return (
     <Switch>
-      <Route path="/groups" component={StudyGroups} />
+      <Route path="/groups" component={StudyGroupSection} />
       <Route path="/groups/:groupId/chat" component={GroupChat} />
       <Route path="/groups/:groupId">
         {(params) => <GroupDetail groupId={params.groupId} />}

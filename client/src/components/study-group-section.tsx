@@ -57,6 +57,7 @@ export function StudyGroupSection() {
   }, [activeTab]);
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -465,6 +466,15 @@ export function StudyGroupSection() {
               </Dialog>
             </div>
 
+            <div className="mt-4 mb-6">
+              <Input
+                placeholder="Search study groups..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
+
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
               {isLoadingGroups ? (
                 <div className="col-span-3 flex justify-center py-8">
@@ -475,80 +485,85 @@ export function StudyGroupSection() {
                   <p className="text-neutral-500">No study groups available. Create one to get started!</p>
                 </div>
               ) : (
-                groups.map((group: any) => (
-                  <div
-                    key={group.id}
-                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedGroup === group.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
-                      }`}
-                    onClick={() => handleGroupClick(group.id)}
-                  >
-                    <div className={`h-24 ${!group.isPrivate ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gradient-to-r from-purple-500 to-pink-600'} flex items-center justify-center text-white`}>
-                      {!group.isPrivate ?
-                        <Globe className="h-10 w-10" /> :
-                        <Lock className="h-10 w-10" />
-                      }
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-center">
-                        <h4 className="font-medium text-neutral-900">{group.name}</h4>
-                        {!group.isPrivate ? (
-                          <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">Public</span>
-                        ) : (
-                          <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full">Private</span>
-                        )}
+                groups
+                  .filter(group =>
+                    group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    group.description.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((group: any) => (
+                    <div
+                      key={group.id}
+                      className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedGroup === group.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
+                        }`}
+                      onClick={() => handleGroupClick(group.id)}
+                    >
+                      <div className={`h-24 ${!group.isPrivate ? 'bg-gradient-to-r from-blue-500 to-indigo-600' : 'bg-gradient-to-r from-purple-500 to-pink-600'} flex items-center justify-center text-white`}>
+                        {!group.isPrivate ?
+                          <Globe className="h-10 w-10" /> :
+                          <Lock className="h-10 w-10" />
+                        }
                       </div>
-                      <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{group.description}</p>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-neutral-500">
-                          {group.memberCount || 0} members
-                        </span>
-                        {isCreatorOfGroup(group.id) ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-500 border-red-200"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteGroup(group.id);
-                            }}
-                            disabled={deleteGroupMutation.isPending}
-                          >
-                            {deleteGroupMutation.isPending && (
-                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            )}
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            Delete
-                          </Button>
-                        ) : isAlreadyMember(group.id) ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-primary"
-                            disabled={true}
-                          >
-                            Joined
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-primary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleJoinGroup(group.id);
-                            }}
-                            disabled={joinGroupMutation.isPending}
-                          >
-                            {joinGroupMutation.isPending && (
-                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                            )}
-                            Join
-                          </Button>
-                        )}
+                      <div className="p-4">
+                        <div className="flex items-center">
+                          <h4 className="font-medium text-neutral-900">{group.name}</h4>
+                          {!group.isPrivate ? (
+                            <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">Public</span>
+                          ) : (
+                            <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full">Private</span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{group.description}</p>
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-xs text-neutral-500">
+                            {group.memberCount || 0} members
+                          </span>
+                          {isCreatorOfGroup(group.id) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-500 border-red-200"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteGroup(group.id);
+                              }}
+                              disabled={deleteGroupMutation.isPending}
+                            >
+                              {deleteGroupMutation.isPending && (
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                              )}
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete
+                            </Button>
+                          ) : isAlreadyMember(group.id) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-primary"
+                              disabled={true}
+                            >
+                              Joined
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleJoinGroup(group.id);
+                              }}
+                              disabled={joinGroupMutation.isPending}
+                            >
+                              {joinGroupMutation.isPending && (
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                              )}
+                              Join
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           </div>
@@ -668,6 +683,15 @@ export function StudyGroupSection() {
               </Button>
             </div>
 
+            <div className="mt-4 mb-6">
+              <Input
+                placeholder="Search teams..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
+
             <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {isLoadingUserGroups ? (
                 <div className="col-span-2 flex justify-center py-8">
@@ -678,39 +702,44 @@ export function StudyGroupSection() {
                   <p className="text-neutral-500">You haven't joined any teams yet. Create one to get started!</p>
                 </div>
               ) : (
-                userGroups.map((team: any) => (
-                  <div
-                    key={team.id}
-                    className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedTeam === team.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
-                      }`}
-                    onClick={() => handleTeamClick(team.id)}
-                  >
-                    <div className="h-24 bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white">
-                      <Hammer className="h-10 w-10" />
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-center">
-                        <h4 className="font-medium text-neutral-900">{team.name}</h4>
-                        {!team.isPrivate ? (
-                          <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">Public</span>
-                        ) : (
-                          <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">Private</span>
-                        )}
+                userGroups
+                  .filter(team =>
+                    team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    team.description.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+                  .map((team: any) => (
+                    <div
+                      key={team.id}
+                      className={`border rounded-lg overflow-hidden cursor-pointer transition-all ${selectedTeam === team.id ? 'border-primary ring-2 ring-primary ring-opacity-30' : 'border-neutral-200 hover:border-primary'
+                        }`}
+                      onClick={() => handleTeamClick(team.id)}
+                    >
+                      <div className="h-24 bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center text-white">
+                        <Hammer className="h-10 w-10" />
                       </div>
-                      <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{team.description}</p>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xs text-neutral-500">
-                          {team.memberCount || 0} members
-                        </span>
-                        {team.deadline && (
-                          <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                            Due: {new Date(team.deadline).toLocaleDateString()}
+                      <div className="p-4">
+                        <div className="flex items-center">
+                          <h4 className="font-medium text-neutral-900">{team.name}</h4>
+                          {!team.isPrivate ? (
+                            <span className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs rounded-full">Public</span>
+                          ) : (
+                            <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">Private</span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-sm text-neutral-500 line-clamp-2">{team.description}</p>
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-xs text-neutral-500">
+                            {team.memberCount || 0} members
                           </span>
-                        )}
+                          {team.deadline && (
+                            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                              Due: {new Date(team.deadline).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
           </div>

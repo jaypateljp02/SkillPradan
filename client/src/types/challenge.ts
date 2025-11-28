@@ -16,4 +16,6 @@ export interface Challenge {
 export interface ChallengeCardProps {
   challenge: Challenge;
   className?: string;
+  onStart?: () => void;
+  isStarting?: boolean;
 }
