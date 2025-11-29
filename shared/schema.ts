@@ -102,6 +102,35 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Skill Badges - badges earned by verifying skills through assessments
+export const skillBadges = pgTable("skill_badges", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  skillId: integer("skill_id").notNull(),
+  skillName: text("skill_name").notNull(),
+  badgeLevel: text("badge_level").notNull(), // beginner, intermediate, advanced, expert
+  score: integer("score").notNull(),
+  percentage: integer("percentage").notNull(),
+  earnedAt: timestamp("earned_at").notNull().defaultNow(),
+});
+
+// Skill Assessments - record of all assessment attempts
+export const skillAssessments = pgTable("skill_assessments", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  skillId: integer("skill_id").notNull(),
+  skillName: text("skill_name").notNull(),
+  difficulty: text("difficulty").notNull(), // beginner, intermediate, advanced, expert
+  questions: json("questions").notNull(), // Array of question objects
+  userAnswers: json("user_answers").notNull(), // Array of user's answers
+  score: integer("score").notNull(),
+  totalQuestions: integer("total_questions").notNull(),
+  percentage: integer("percentage").notNull(),
+  badgeAwarded: text("badge_awarded"), // beginner, intermediate, advanced, expert, or null
+  completedAt: timestamp("completed_at").notNull().defaultNow(),
+});
+
+
 // Define zod schemas for inserts
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -172,6 +201,29 @@ export const insertReviewSchema = createInsertSchema(reviews).pick({
   comment: true,
 });
 
+export const insertSkillBadgeSchema = createInsertSchema(skillBadges).pick({
+  userId: true,
+  skillId: true,
+  skillName: true,
+  badgeLevel: true,
+  score: true,
+  percentage: true,
+});
+
+export const insertSkillAssessmentSchema = createInsertSchema(skillAssessments).pick({
+  userId: true,
+  skillId: true,
+  skillName: true,
+  difficulty: true,
+  questions: true,
+  userAnswers: true,
+  score: true,
+  totalQuestions: true,
+  percentage: true,
+  badgeAwarded: true,
+});
+
+
 // Define export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -199,6 +251,13 @@ export type InsertChallenge = z.infer<typeof insertChallengeSchema>;
 
 export type UserChallenge = typeof userChallenges.$inferSelect;
 export type InsertUserChallenge = z.infer<typeof insertUserChallengeSchema>;
+
+export type SkillBadge = typeof skillBadges.$inferSelect;
+export type InsertSkillBadge = z.infer<typeof insertSkillBadgeSchema>;
+
+export type SkillAssessment = typeof skillAssessments.$inferSelect;
+export type InsertSkillAssessment = z.infer<typeof insertSkillAssessmentSchema>;
+
 
 export const groups = pgTable("groups", {
   id: serial("id").primaryKey(),

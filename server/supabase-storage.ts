@@ -16,7 +16,9 @@ import {
     PostComment, InsertPostComment,
     PostLike, InsertPostLike,
     DirectMessage, InsertDirectMessage,
-    Friend, InsertFriend
+    Friend, InsertFriend,
+    SkillBadge, InsertSkillBadge,
+    SkillAssessment, InsertSkillAssessment
 } from "@shared/schema";
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
@@ -1978,5 +1980,241 @@ export class SupabaseStorage implements IStorage {
         }
 
         return matches.sort((a, b) => b.matchPercentage - a.matchPercentage);
+    }
+
+    // Skill badge operations
+    async getSkillBadge(id: number): Promise<SkillBadge | undefined> {
+        const { data, error } = await supabase
+            .from("skill_badges")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (error) {
+            if (error.code !== "PGRST116") {
+                console.error("Error fetching skill badge:", error);
+            }
+            return undefined;
+        }
+
+        const item = data as any;
+        return {
+            id: item.id,
+            userId: item.user_id,
+            skillId: item.skill_id,
+            skillName: item.skill_name,
+            badgeLevel: item.badge_level,
+            score: item.score,
+            percentage: item.percentage,
+            earnedAt: new Date(item.earned_at ?? item.created_at ?? new Date())
+        };
+    }
+
+    async getSkillBadgesByUser(userId: number): Promise<SkillBadge[]> {
+        const { data, error } = await supabase
+            .from("skill_badges")
+            .select("*")
+            .eq("user_id", userId);
+
+        if (error) {
+            console.error("Error fetching skill badges by user:", error);
+            return [];
+        }
+
+        return (data ?? []).map((item: any) => ({
+            id: item.id,
+            userId: item.user_id,
+            skillId: item.skill_id,
+            skillName: item.skill_name,
+            badgeLevel: item.badge_level,
+            score: item.score,
+            percentage: item.percentage,
+            earnedAt: new Date(item.earned_at ?? item.created_at ?? new Date())
+        }));
+    }
+
+    async getSkillBadgeBySkill(skillId: number): Promise<SkillBadge | undefined> {
+        const { data, error } = await supabase
+            .from("skill_badges")
+            .select("*")
+            .eq("skill_id", skillId)
+            .single();
+
+        if (error) {
+            if (error.code !== "PGRST116") {
+                console.error("Error fetching skill badge by skill:", error);
+            }
+            return undefined;
+        }
+
+        const item = data as any;
+        return {
+            id: item.id,
+            userId: item.user_id,
+            skillId: item.skill_id,
+            skillName: item.skill_name,
+            badgeLevel: item.badge_level,
+            score: item.score,
+            percentage: item.percentage,
+            earnedAt: new Date(item.earned_at ?? item.created_at ?? new Date())
+        };
+    }
+
+    async createSkillBadge(badgeData: InsertSkillBadge): Promise<SkillBadge> {
+        const { data, error } = await supabase
+            .from("skill_badges")
+            .insert({
+                user_id: badgeData.userId,
+                skill_id: badgeData.skillId,
+                skill_name: badgeData.skillName,
+                badge_level: badgeData.badgeLevel,
+                score: badgeData.score,
+                percentage: badgeData.percentage
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Error creating skill badge:", error);
+            throw new Error(`Failed to create skill badge: ${error.message}`);
+        }
+
+        const item = data as any;
+        return {
+            id: item.id,
+            userId: item.user_id,
+            skillId: item.skill_id,
+            skillName: item.skill_name,
+            badgeLevel: item.badge_level,
+            score: item.score,
+            percentage: item.percentage,
+            earnedAt: new Date(item.earned_at ?? item.created_at ?? new Date())
+        };
+    }
+
+    // Skill assessment operations
+    async getSkillAssessment(id: number): Promise<SkillAssessment | undefined> {
+        const { data, error } = await supabase
+            .from("skill_assessments")
+            .select("*")
+            .eq("id", id)
+            .single();
+
+        if (error) {
+            if (error.code !== "PGRST116") {
+                console.error("Error fetching skill assessment:", error);
+            }
+            return undefined;
+        }
+
+        const item = data as any;
+        return {
+            id: item.id,
+            userId: item.user_id,
+            skillId: item.skill_id,
+            skillName: item.skill_name,
+            difficulty: item.difficulty,
+            questions: item.questions,
+            userAnswers: item.user_answers,
+            score: item.score,
+            totalQuestions: item.total_questions,
+            percentage: item.percentage,
+            badgeAwarded: item.badge_awarded,
+            completedAt: new Date(item.completed_at ?? item.created_at ?? new Date())
+        };
+    }
+
+    async getSkillAssessmentsByUser(userId: number): Promise<SkillAssessment[]> {
+        const { data, error } = await supabase
+            .from("skill_assessments")
+            .select("*")
+            .eq("user_id", userId);
+
+        if (error) {
+            console.error("Error fetching skill assessments by user:", error);
+            return [];
+        }
+
+        return (data ?? []).map((item: any) => ({
+            id: item.id,
+            userId: item.user_id,
+            skillId: item.skill_id,
+            skillName: item.skill_name,
+            difficulty: item.difficulty,
+            questions: item.questions,
+            userAnswers: item.user_answers,
+            score: item.score,
+            totalQuestions: item.total_questions,
+            percentage: item.percentage,
+            badgeAwarded: item.badge_awarded,
+            completedAt: new Date(item.completed_at ?? item.created_at ?? new Date())
+        }));
+    }
+
+    async getSkillAssessmentsBySkill(skillId: number): Promise<SkillAssessment[]> {
+        const { data, error } = await supabase
+            .from("skill_assessments")
+            .select("*")
+            .eq("skill_id", skillId);
+
+        if (error) {
+            console.error("Error fetching skill assessments by skill:", error);
+            return [];
+        }
+
+        return (data ?? []).map((item: any) => ({
+            id: item.id,
+            userId: item.user_id,
+            skillId: item.skill_id,
+            skillName: item.skill_name,
+            difficulty: item.difficulty,
+            questions: item.questions,
+            userAnswers: item.user_answers,
+            score: item.score,
+            totalQuestions: item.total_questions,
+            percentage: item.percentage,
+            badgeAwarded: item.badge_awarded,
+            completedAt: new Date(item.completed_at ?? item.created_at ?? new Date())
+        }));
+    }
+
+    async createSkillAssessment(assessmentData: InsertSkillAssessment): Promise<SkillAssessment> {
+        const { data, error } = await supabase
+            .from("skill_assessments")
+            .insert({
+                user_id: assessmentData.userId,
+                skill_id: assessmentData.skillId,
+                skill_name: assessmentData.skillName,
+                difficulty: assessmentData.difficulty,
+                questions: assessmentData.questions,
+                user_answers: assessmentData.userAnswers,
+                score: assessmentData.score,
+                total_questions: assessmentData.totalQuestions,
+                percentage: assessmentData.percentage,
+                badge_awarded: assessmentData.badgeAwarded ?? null
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Error creating skill assessment:", error);
+            throw new Error(`Failed to create skill assessment: ${error.message}`);
+        }
+
+        const item = data as any;
+        return {
+            id: item.id,
+            userId: item.user_id,
+            skillId: item.skill_id,
+            skillName: item.skill_name,
+            difficulty: item.difficulty,
+            questions: item.questions,
+            userAnswers: item.user_answers,
+            score: item.score,
+            totalQuestions: item.total_questions,
+            percentage: item.percentage,
+            badgeAwarded: item.badge_awarded,
+            completedAt: new Date(item.completed_at ?? item.created_at ?? new Date())
+        };
     }
 }

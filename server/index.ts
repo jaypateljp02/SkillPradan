@@ -1,13 +1,30 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
+import { dirname, join } from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
+import dotenv from "dotenv";
 
-const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load environment variables with explicit path
+const envPath = join(__dirname, '..', '.env');
+dotenv.config({ path: envPath });
+
+// Fallback: If dotenv didn't load the key, set it manually
+if (!process.env.GEMINI_API_KEY) {
+  process.env.GEMINI_API_KEY = "AIzaSyAHPPBytOXjrmp9sxK0eQDv-9k1ypSsxnY";
+  console.log("⚠️  Dotenv failed, using hardcoded API key");
+}
+
+console.log("🔑 Environment file path:", envPath);
+console.log("🔑 Gemini API Key loaded:", process.env.GEMINI_API_KEY ? `Yes ✓ (${process.env.GEMINI_API_KEY.substring(0, 10)}...)` : "No ✗");
+
+
+const app = express();
+
 
 // Enable CORS for all routes
 app.use(cors({

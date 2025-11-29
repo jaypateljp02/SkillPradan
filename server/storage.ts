@@ -14,7 +14,9 @@ import {
   PostComment, InsertPostComment,
   PostLike, InsertPostLike,
   DirectMessage, InsertDirectMessage,
-  Friend, InsertFriend
+  Friend, InsertFriend,
+  SkillBadge, InsertSkillBadge,
+  SkillAssessment, InsertSkillAssessment
 } from "@shared/schema";
 import session from "express-session";
 import type { Store as SessionStore } from "express-session";
@@ -141,6 +143,19 @@ export interface IStorage {
   hasUserLikedPost(postId: number, userId: number): Promise<boolean>;
   getPostLikeCount(postId: number): Promise<number>;
 
+  // Skill badge operations
+  getSkillBadge(id: number): Promise<SkillBadge | undefined>;
+  getSkillBadgesByUser(userId: number): Promise<SkillBadge[]>;
+  getSkillBadgeBySkill(skillId: number): Promise<SkillBadge | undefined>;
+  createSkillBadge(badgeData: InsertSkillBadge): Promise<SkillBadge>;
+
+  // Skill assessment operations
+  getSkillAssessment(id: number): Promise<SkillAssessment | undefined>;
+  getSkillAssessmentsByUser(userId: number): Promise<SkillAssessment[]>;
+  getSkillAssessmentsBySkill(skillId: number): Promise<SkillAssessment[]>;
+  createSkillAssessment(assessmentData: InsertSkillAssessment): Promise<SkillAssessment>;
+
+
   // Leaderboard
   getLeaderboard(): Promise<{ id: number, name: string, university: string, exchanges: number, points: number, avatar: string }[]>;
 
@@ -182,6 +197,8 @@ export class MemStorage implements IStorage {
   private postLikes: Map<number, PostLike>;
   private directMessages: Map<number, DirectMessage>;
   private friends: Map<number, Friend>;
+  private skillBadges: Map<number, SkillBadge>;
+  private skillAssessments: Map<number, SkillAssessment>;
 
   private userIdCounter: number;
   private skillIdCounter: number;
@@ -203,6 +220,9 @@ export class MemStorage implements IStorage {
   private postLikeIdCounter: number;
   private directMessageIdCounter: number;
   private friendIdCounter: number;
+  private skillBadgeIdCounter: number;
+  private skillAssessmentIdCounter: number;
+
 
   sessionStore: SessionStore;
 
@@ -227,6 +247,8 @@ export class MemStorage implements IStorage {
     this.postLikes = new Map();
     this.directMessages = new Map();
     this.friends = new Map();
+    this.skillBadges = new Map();
+    this.skillAssessments = new Map();
 
     this.userIdCounter = 1;
     this.skillIdCounter = 1;
@@ -248,6 +270,9 @@ export class MemStorage implements IStorage {
     this.postLikeIdCounter = 1;
     this.directMessageIdCounter = 1;
     this.friendIdCounter = 1;
+    this.skillBadgeIdCounter = 1;
+    this.skillAssessmentIdCounter = 1;
+
 
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000
@@ -1685,7 +1710,84 @@ export class MemStorage implements IStorage {
       like => like.postId === postId
     ).length;
   }
+
+  // Skill badge operations
+  async getSkillBadge(id: number): Promise<SkillBadge | undefined> {
+    return this.skillBadges.get(id);
+  }
+
+  async getSkillBadgesByUser(userId: number): Promise<SkillBadge[]> {
+    return Array.from(this.skillBadges.values()).filter(
+      badge => badge.userId === userId
+    );
+  }
+
+  async getSkillBadgeBySkill(skillId: number): Promise<SkillBadge | undefined> {
+    return Array.from(this.skillBadges.values()).find(
+      badge => badge.skillId === skillId
+    );
+  }
+
+  async createSkillBadge(badgeData: InsertSkillBadge): Promise<SkillBadge> {
+    const id = this.skillBadgeIdCounter++;
+    const now = new Date();
+
+    const newBadge: SkillBadge = {
+      id,
+      userId: badgeData.userId,
+      skillId: badgeData.skillId,
+      skillName: badgeData.skillName,
+      badgeLevel: badgeData.badgeLevel,
+      score: badgeData.score,
+      percentage: badgeData.percentage,
+      earnedAt: now
+    };
+
+    this.skillBadges.set(id, newBadge);
+    return newBadge;
+  }
+
+  // Skill assessment operations
+  async getSkillAssessment(id: number): Promise<SkillAssessment | undefined> {
+    return this.skillAssessments.get(id);
+  }
+
+  async getSkillAssessmentsByUser(userId: number): Promise<SkillAssessment[]> {
+    return Array.from(this.skillAssessments.values()).filter(
+      assessment => assessment.userId === userId
+    );
+  }
+
+  async getSkillAssessmentsBySkill(skillId: number): Promise<SkillAssessment[]> {
+    return Array.from(this.skillAssessments.values()).filter(
+      assessment => assessment.skillId === skillId
+    );
+  }
+
+  async createSkillAssessment(assessmentData: InsertSkillAssessment): Promise<SkillAssessment> {
+    const id = this.skillAssessmentIdCounter++;
+    const now = new Date();
+
+    const newAssessment: SkillAssessment = {
+      id,
+      userId: assessmentData.userId,
+      skillId: assessmentData.skillId,
+      skillName: assessmentData.skillName,
+      difficulty: assessmentData.difficulty,
+      questions: assessmentData.questions,
+      userAnswers: assessmentData.userAnswers,
+      score: assessmentData.score,
+      totalQuestions: assessmentData.totalQuestions,
+      percentage: assessmentData.percentage,
+      badgeAwarded: assessmentData.badgeAwarded || null,
+      completedAt: now
+    };
+
+    this.skillAssessments.set(id, newAssessment);
+    return newAssessment;
+  }
 }
+
 
 import { SupabaseStorage } from "./supabase-storage";
 import { testSupabaseConnection } from "./supabase.config";

@@ -50,6 +50,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up token-based authentication routes
   setupAuth(app);
 
+  // Import and register skill verification routes
+  const { registerSkillVerificationRoutes } = await import("./routes-skill-verification");
+  registerSkillVerificationRoutes(app, storage);
+
+
   // Authentication middleware that uses token-based authentication
   const isAuthenticatedEither = isAuthenticated;
 

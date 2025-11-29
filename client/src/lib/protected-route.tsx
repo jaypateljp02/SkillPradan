@@ -7,7 +7,8 @@ export function ProtectedRoute({
   component: Component,
 }: {
   path: string;
-  component: () => React.JSX.Element;
+  // Allow components that may temporarily render nothing (e.g. redirect-only wrappers)
+  component: () => React.JSX.Element | null;
 }) {
   const { user, isLoading } = useAuth();
 

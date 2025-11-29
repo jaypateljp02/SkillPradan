@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SkillTag } from "@/components/ui/skill-tag";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { SkillVerificationDialog } from "@/components/skill-verification-dialog";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Plus, Award, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const skillFormSchema = z.object({
@@ -49,6 +50,8 @@ export function SkillsSection() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeSkillType, setActiveSkillType] = useState<"teaching" | "learning">("teaching");
+  const [verifyingSkill, setVerifyingSkill] = useState<{ id: number; name: string } | null>(null);
+  const [newlyAddedSkill, setNewlyAddedSkill] = useState<{ id: number; name: string; isTeaching: boolean } | null>(null);
 
   const { data: skills = [], isLoading } = useQuery<Skill[]>({
     queryKey: ["/api/skills"],
@@ -62,14 +65,28 @@ export function SkillsSection() {
       const res = await apiRequest("POST", "/api/skills", skillData);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newSkill) => {
       queryClient.invalidateQueries({ queryKey: ['/api/skills'] });
-      toast({
-        title: "Skill added",
-        description: "Your skill has been added successfully",
-      });
+      setNewlyAddedSkill(newSkill);
       setDialogOpen(false);
       form.reset();
+
+      // If it's a teaching skill, prompt for verification
+      if (newSkill.isTeaching) {
+        toast({
+          title: "Skill added!",
+          description: "Let's verify your expertise with a quick test.",
+        });
+        // Open verification dialog after a brief delay
+        setTimeout(() => {
+          setVerifyingSkill({ id: newSkill.id, name: newSkill.name });
+        }, 500);
+      } else {
+        toast({
+          title: "Skill added",
+          description: "Your skill has been added successfully",
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -142,13 +159,30 @@ export function SkillsSection() {
 
         <div className="mt-4 flex flex-wrap gap-2">
           {teachingSkills.map((skill, index) => (
-            <SkillTag
-              key={skill.id}
-              name={skill.name}
-              verified={skill.isVerified}
-              color={getSkillColor(skill.name, index)}
-              onRemove={() => deleteSkillMutation.mutate(skill.id)}
-            />
+            <div key={skill.id} className="relative group">
+              <SkillTag
+                name={skill.name}
+                verified={skill.isVerified}
+                color={getSkillColor(skill.name, index)}
+                onRemove={() => deleteSkillMutation.mutate(skill.id)}
+              />
+              {!skill.isVerified && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-amber-100 text-amber-600 hover:bg-amber-200 opacity-0 group-hover:opacity-100 transition-opacity p-0"
+                  onClick={() => setVerifyingSkill({ id: skill.id, name: skill.name })}
+                  title="Verify this skill"
+                >
+                  <Award className="w-3 h-3" />
+                </Button>
+              )}
+              {skill.isVerified && (
+                <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                  <CheckCircle2 className="w-3 h-3 text-white" />
+                </div>
+              )}
+            </div>
           ))}
           <Button
             variant="outline"
@@ -185,12 +219,15 @@ export function SkillsSection() {
         </div>
       </div>
 
+      {/* Add Skill Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Add a New Skill</DialogTitle>
             <DialogDescription>
-              Add a skill you can teach or want to learn
+              {activeSkillType === "teaching"
+                ? "Add a skill you can teach. You'll take a quick verification test after adding it."
+                : "Add a skill you want to learn"}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -216,7 +253,10 @@ export function SkillsSection() {
                     <FormLabel>Skill Type</FormLabel>
                     <FormControl>
                       <Select
-                        onValueChange={(value) => field.onChange(value === "teaching")}
+                        onValueChange={(value) => {
+                          field.onChange(value === "teaching");
+                          setActiveSkillType(value as "teaching" | "learning");
+                        }}
                         value={field.value ? "teaching" : "learning"}
                       >
                         <SelectTrigger className="bg-white text-neutral-900">
@@ -233,32 +273,12 @@ export function SkillsSection() {
                 )}
               />
               {form.watch("isTeaching") && (
-                <FormField
-                  control={form.control}
-                  name="proficiencyLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Proficiency Level</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <SelectTrigger className="bg-white text-neutral-900">
-                            <SelectValue placeholder="Select proficiency level" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="beginner">Beginner</SelectItem>
-                            <SelectItem value="intermediate">Intermediate</SelectItem>
-                            <SelectItem value="advanced">Advanced</SelectItem>
-                            <SelectItem value="expert">Expert</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <p className="text-xs text-blue-800">
+                    <Award className="w-4 h-4 inline mr-1" />
+                    After adding, you'll take a quick AI-powered test to verify your expertise and earn a badge!
+                  </p>
+                </div>
               )}
               <DialogFooter>
                 <Button type="submit" disabled={addSkillMutation.isPending}>
@@ -269,6 +289,16 @@ export function SkillsSection() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Skill Verification Dialog */}
+      {verifyingSkill && (
+        <SkillVerificationDialog
+          skillId={verifyingSkill.id}
+          skillName={verifyingSkill.name}
+          open={verifyingSkill !== null}
+          onClose={() => setVerifyingSkill(null)}
+        />
+      )}
     </div>
   );
 }
