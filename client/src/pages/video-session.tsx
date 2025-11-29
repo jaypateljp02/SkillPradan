@@ -10,12 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { 
-  ArrowLeft, 
-  Send, 
-  Video, 
-  PencilRuler, 
-  MessageSquare 
+import {
+  ArrowLeft,
+  Send,
+  Video,
+  PencilRuler,
+  MessageSquare
 } from "lucide-react";
 import { formatDistance } from "date-fns";
 
@@ -34,25 +34,25 @@ function SessionContent() {
   const { joinSession, leaveSession, messages, sendChatMessage } = useSocket();
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("video");
-  
+
   // Get exchange details
   const { data: exchanges = [] } = useQuery<EnrichedExchange[]>({
     queryKey: ["/api/exchanges"],
   });
-  
+
   const exchange = exchanges.find(ex => ex.id === sessionId);
-  
+
   // Get the other user
   const otherUser = exchange ? (
     exchange.teacherId === user?.id ? exchange.studentUser : exchange.teacherUser
   ) : null;
-  
+
   // Join session when component mounts
   useEffect(() => {
     if (sessionId && user) {
       joinSession(sessionId);
     }
-    
+
     // Leave session when component unmounts
     return () => {
       if (sessionId) {
@@ -60,7 +60,7 @@ function SessionContent() {
       }
     };
   }, [sessionId, user]);
-  
+
   // Send a chat message
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +69,7 @@ function SessionContent() {
       setMessage("");
     }
   };
-  
+
   if (!exchange) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -85,9 +85,9 @@ function SessionContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-premium-gradient">
       {/* Header */}
-      <header className="bg-white border-b p-4">
+      <header className="bg-white/80 backdrop-blur-md border-b border-white/20 p-4 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center">
             <Button variant="ghost" size="sm" asChild>
@@ -97,15 +97,15 @@ function SessionContent() {
               </Link>
             </Button>
           </div>
-          
+
           <div className="flex items-center">
             <h1 className="text-lg font-medium">
               Session with {otherUser?.name || "User"}
             </h1>
           </div>
-          
+
           <div>
-            <UserAvatar 
+            <UserAvatar
               src={user?.avatar}
               name={user?.name || ""}
               size="sm"
@@ -113,7 +113,7 @@ function SessionContent() {
           </div>
         </div>
       </header>
-      
+
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         <div className="max-w-7xl mx-auto h-full p-4">
@@ -129,29 +129,29 @@ function SessionContent() {
                     <PencilRuler className="h-4 w-4 mr-2" /> Whiteboard
                   </TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="video" className="h-[calc(100%-44px)]">
-                  <VideoCall 
-                    sessionId={sessionId} 
+                  <VideoCall
+                    sessionId={sessionId}
                     username={user?.name || "User"}
                   />
                 </TabsContent>
-                
+
                 <TabsContent value="whiteboard" className="h-[calc(100%-44px)]">
                   <Whiteboard sessionId={sessionId} />
                 </TabsContent>
               </Tabs>
             </div>
-            
+
             {/* Right panel - Chat */}
-            <div className="w-full md:w-80 flex flex-col bg-white border rounded-lg">
-              <div className="p-3 border-b">
+            <div className="w-full md:w-80 flex flex-col bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl shadow-lg">
+              <div className="p-3 border-b border-white/20">
                 <div className="flex items-center">
                   <MessageSquare className="h-5 w-5 text-neutral-500 mr-2" />
                   <h3 className="font-medium">Chat</h3>
                 </div>
               </div>
-              
+
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-3 space-y-4">
                 {messages.length === 0 ? (
@@ -161,7 +161,7 @@ function SessionContent() {
                   </div>
                 ) : (
                   messages.map(msg => (
-                    <div 
+                    <div
                       key={msg.id}
                       className={`flex ${msg.user.id === user?.id ? 'justify-end' : 'justify-start'}`}
                     >
@@ -172,12 +172,11 @@ function SessionContent() {
                             <span className="ml-2 text-xs font-medium">{msg.user.name}</span>
                           </div>
                         )}
-                        <div 
-                          className={`p-3 rounded-lg ${
-                            msg.user.id === user?.id 
-                              ? 'bg-primary text-white rounded-br-none' 
-                              : 'bg-neutral-100 rounded-bl-none'
-                          }`}
+                        <div
+                          className={`p-3 rounded-xl shadow-sm backdrop-blur-sm ${msg.user.id === user?.id
+                              ? 'bg-primary text-white rounded-br-none shadow-md'
+                              : 'bg-white/80 border border-white/40 rounded-bl-none'
+                            }`}
                         >
                           <p className="text-sm">{msg.message}</p>
                         </div>
@@ -189,19 +188,19 @@ function SessionContent() {
                   ))
                 )}
               </div>
-              
+
               {/* Message input */}
-              <div className="p-3 border-t">
+              <div className="p-3 border-t border-white/20 bg-white/40 backdrop-blur-sm rounded-b-xl">
                 <form onSubmit={handleSendMessage} className="flex">
-                  <Input 
+                  <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Type a message..."
-                    className="flex-1"
+                    className="flex-1 bg-white/50 border-white/30 focus:bg-white/80 transition-all"
                   />
-                  <Button 
-                    type="submit" 
-                    size="sm" 
+                  <Button
+                    type="submit"
+                    size="sm"
                     className="ml-2"
                     disabled={!message.trim()}
                   >

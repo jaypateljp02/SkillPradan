@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "../lib/queryClient";
+import logoImage from "../assets/logo.png";
 
 // Define response types
 interface AdminStats {
@@ -36,13 +39,13 @@ interface AdminSkill {
   proficiencyLevel: string;
   isTeaching: boolean;
 }
-import { useAuth } from "@/hooks/use-auth";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
+
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,13 +72,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { 
-  Users, 
-  Lightbulb, 
-  RefreshCcw, 
-  Shield, 
-  ShieldX, 
-  BarChart, 
+import {
+  Users,
+  Lightbulb,
+  RefreshCcw,
+  Shield,
+  ShieldX,
+  BarChart,
   UserCheck,
   Award,
   Search,
@@ -87,7 +90,7 @@ const AdminDashboard = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [searchTerm, setSearchTerm] = useState("");
-  
+
   // Show helpful message if user isn't properly recognized as admin
   useEffect(() => {
     if (user && !user.isAdmin) {
@@ -98,7 +101,7 @@ const AdminDashboard = () => {
       });
     }
   }, [user, toast]);
-  
+
   // Fetch system statistics using apiRequest to include auth token properly
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
@@ -108,7 +111,7 @@ const AdminDashboard = () => {
     },
     retry: 1
   });
-  
+
   // Fetch all users using apiRequest to include auth token properly
   const { data: users, isLoading: usersLoading, error: usersError } = useQuery<AdminUser[]>({
     queryKey: ["/api/admin/users"],
@@ -118,7 +121,7 @@ const AdminDashboard = () => {
     },
     retry: 1
   });
-  
+
   // Fetch all skills using apiRequest to include auth token properly
   const { data: skills, isLoading: skillsLoading, error: skillsError } = useQuery<AdminSkill[]>({
     queryKey: ["/api/admin/skills"],
@@ -128,7 +131,7 @@ const AdminDashboard = () => {
     },
     retry: 1
   });
-  
+
   // Fetch all exchanges using apiRequest to include auth token properly
   const { data: exchanges, isLoading: exchangesLoading, error: exchangesError } = useQuery<any[]>({
     queryKey: ["/api/admin/exchanges"],
@@ -162,7 +165,7 @@ const AdminDashboard = () => {
       });
     },
   });
-  
+
   // Mutation to remove admin status
   const removeAdminMutation = useMutation({
     mutationFn: async (userId: number) => {
@@ -190,7 +193,7 @@ const AdminDashboard = () => {
   // Filter users based on search term
   const filteredUsers = users ? users.filter((user: AdminUser) => {
     if (!searchTerm) return true;
-    
+
     const term = searchTerm.toLowerCase();
     return (
       user.name?.toLowerCase().includes(term) ||
@@ -203,9 +206,9 @@ const AdminDashboard = () => {
   // Generate top skills data for dashboard
   const getTopSkills = () => {
     if (!skills) return [];
-    
+
     const skillCount: Record<string, number> = {};
-    
+
     skills.forEach((skill: AdminSkill) => {
       if (skillCount[skill.name]) {
         skillCount[skill.name]++;
@@ -213,19 +216,19 @@ const AdminDashboard = () => {
         skillCount[skill.name] = 1;
       }
     });
-    
+
     return Object.entries(skillCount)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   };
-  
+
   // Calculate university distribution
   const getUniversityDistribution = () => {
     if (!users) return [];
-    
+
     const uniCount: Record<string, number> = {};
-    
+
     users.forEach((user: AdminUser) => {
       if (user.university && uniCount[user.university]) {
         uniCount[user.university]++;
@@ -233,14 +236,14 @@ const AdminDashboard = () => {
         uniCount[user.university] = 1;
       }
     });
-    
+
     return Object.entries(uniCount)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6 bg-premium-gradient min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img src={logoImage} alt="Skill Pradan" className="h-8 w-8" />
@@ -260,7 +263,7 @@ const AdminDashboard = () => {
           )}
         </div>
       </div>
-      
+
       {/* Admin check warning */}
       {user && !user.isAdmin && (
         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md flex items-center">
@@ -271,7 +274,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
-      
+
       <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4 mb-8">
           <TabsTrigger value="overview" className="flex items-center gap-2">
@@ -291,7 +294,7 @@ const AdminDashboard = () => {
             <span>Exchanges</span>
           </TabsTrigger>
         </TabsList>
-        
+
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {statsError ? (
@@ -301,7 +304,7 @@ const AdminDashboard = () => {
             </div>
           ) : statsLoading ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {[1,2,3,4].map((i) => (
+              {[1, 2, 3, 4].map((i) => (
                 <Card key={i}>
                   <CardHeader className="pb-2">
                     <div className="h-5 w-24 bg-gray-200 animate-pulse rounded"></div>
@@ -314,7 +317,7 @@ const AdminDashboard = () => {
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
+              <Card className="glass-card border-0">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-gray-500">Total Users</CardTitle>
                 </CardHeader>
@@ -322,7 +325,7 @@ const AdminDashboard = () => {
                   <div className="text-3xl font-bold">{stats && stats.stats ? stats.stats.users : 0}</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="glass-card border-0">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-gray-500">Total Skills</CardTitle>
                 </CardHeader>
@@ -330,7 +333,7 @@ const AdminDashboard = () => {
                   <div className="text-3xl font-bold">{stats && stats.stats ? stats.stats.skills : 0}</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="glass-card border-0">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-gray-500">Exchanges</CardTitle>
                 </CardHeader>
@@ -338,7 +341,7 @@ const AdminDashboard = () => {
                   <div className="text-3xl font-bold">{stats && stats.stats ? stats.stats.exchanges : 0}</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="glass-card border-0">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-gray-500">Sessions</CardTitle>
                 </CardHeader>
@@ -348,10 +351,10 @@ const AdminDashboard = () => {
               </Card>
             </div>
           )}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Platform Activity */}
-            <Card>
+            <Card className="glass-card border-0">
               <CardHeader>
                 <CardTitle>Platform Statistics</CardTitle>
                 <CardDescription>
@@ -381,9 +384,9 @@ const AdminDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          
+
             {/* Top Skills */}
-            <Card>
+            <Card className="glass-card border-0">
               <CardHeader>
                 <CardTitle>Top Skills</CardTitle>
                 <CardDescription>
@@ -398,11 +401,11 @@ const AdminDashboard = () => {
                         <span className="text-sm font-medium">{skill.name}</span>
                       </div>
                       <div className="flex items-center">
-                        <div 
+                        <div
                           className="h-2 w-32 mr-2 bg-secondary rounded-full overflow-hidden"
                         >
-                          <div 
-                            className="h-full bg-primary" 
+                          <div
+                            className="h-full bg-primary"
                             style={{ width: `${skill.count * 10}%` }}
                           ></div>
                         </div>
@@ -414,9 +417,9 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* University Breakdown */}
-          <Card>
+          <Card className="glass-card border-0">
             <CardHeader>
               <CardTitle>University Distribution</CardTitle>
               <CardDescription>
@@ -440,10 +443,10 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-6">
-          <Card>
+          <Card className="glass-card border-0">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -455,8 +458,8 @@ const AdminDashboard = () => {
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input 
-                      placeholder="Search users..." 
+                    <Input
+                      placeholder="Search users..."
                       className="pl-9 w-64"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -503,7 +506,7 @@ const AdminDashboard = () => {
                       filteredUsers?.map((user: any) => (
                         <TableRow key={user.id}>
                           <TableCell className="flex items-center gap-2">
-                            <UserAvatar 
+                            <UserAvatar
                               name={user.name || "User"}
                               src={user.avatar || undefined}
                               className="h-8 w-8"
@@ -541,7 +544,7 @@ const AdminDashboard = () => {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Remove Admin Privileges</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Are you sure you want to remove admin privileges from {user.name}? 
+                                      Are you sure you want to remove admin privileges from {user.name}?
                                       They will no longer have access to the admin dashboard.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
@@ -568,7 +571,7 @@ const AdminDashboard = () => {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Grant Admin Privileges</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      Are you sure you want to make {user.name} an admin? 
+                                      Are you sure you want to make {user.name} an admin?
                                       They will have full access to the admin dashboard and all management features.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
@@ -593,10 +596,10 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Skills Tab */}
         <TabsContent value="skills" className="space-y-6">
-          <Card>
+          <Card className="glass-card border-0">
             <CardHeader>
               <CardTitle>All Skills</CardTitle>
               <CardDescription>
@@ -651,8 +654,8 @@ const AdminDashboard = () => {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <div className="h-2 w-16 bg-secondary rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-primary" 
+                                  <div
+                                    className="h-full bg-primary"
                                     style={{ width: `${progress}%` }}
                                   ></div>
                                 </div>
@@ -684,10 +687,10 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        
+
         {/* Exchanges Tab */}
         <TabsContent value="exchanges" className="space-y-6">
-          <Card>
+          <Card className="glass-card border-0">
             <CardHeader>
               <CardTitle>Active Exchanges</CardTitle>
               <CardDescription>
@@ -737,7 +740,7 @@ const AdminDashboard = () => {
                         const teacherSkill = skills?.find((s: any) => s.id === exchange.teacherSkillId);
                         const studentSkill = skills?.find((s: any) => s.id === exchange.studentSkillId);
                         const progress = (exchange.sessionsCompleted / exchange.totalSessions) * 100;
-                        
+
                         return (
                           <TableRow key={exchange.id}>
                             <TableCell>{exchange.id}</TableCell>
@@ -777,8 +780,8 @@ const AdminDashboard = () => {
                                   exchange.status === "active"
                                     ? "bg-green-100 text-green-800"
                                     : exchange.status === "completed"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-yellow-100 text-yellow-800"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-yellow-100 text-yellow-800"
                                 }
                               >
                                 {exchange.status}
@@ -787,8 +790,8 @@ const AdminDashboard = () => {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <div className="h-2 w-16 bg-secondary rounded-full overflow-hidden">
-                                  <div 
-                                    className="h-full bg-primary" 
+                                  <div
+                                    className="h-full bg-primary"
                                     style={{ width: `${progress}%` }}
                                   ></div>
                                 </div>
@@ -813,5 +816,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-import { Link } from "wouter";
-import logoImage from "../assets/logo.png";

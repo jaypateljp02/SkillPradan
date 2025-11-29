@@ -154,6 +154,24 @@
   .no-default-active-elevate {
     @apply active:brightness-100 !important;
   }
+
+  /* Premium Background Gradient */
+  .bg-premium-gradient {
+    @apply bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-200 via-purple-100 to-pink-100;
+  }
+
+  .dark .bg-premium-gradient {
+    @apply bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-slate-800 to-indigo-900;
+  }
+
+  /* Glassmorphism Card Utility */
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+
+  .dark .glass-card {
+    @apply bg-slate-900/70 backdrop-blur-md border border-white/10 shadow-xl;
+  }
 }
 
 /* Windows-friendly scrollbar styling (Chrome/Edge) */

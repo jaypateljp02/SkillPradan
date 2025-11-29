@@ -93,31 +93,36 @@ export default function UserProfilePage() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Profile Header */}
-            <Card>
-                <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row gap-6 items-start">
-                        <Avatar className="h-24 w-24 border-4 border-background shadow-sm">
+            <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-sm overflow-hidden">
+                <div className="h-32 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20"></div>
+                <div className="px-6 pb-6">
+                    <div className="flex flex-col md:flex-row gap-6 items-start -mt-12">
+                        <Avatar className="h-32 w-32 border-4 border-white shadow-md bg-white">
                             <AvatarImage src={user.avatar} alt={user.name} />
-                            <AvatarFallback className="text-2xl">{user.name.charAt(0)}</AvatarFallback>
+                            <AvatarFallback className="text-4xl bg-primary/10 text-primary">{user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
 
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-2 pt-12 md:pt-0 md:mt-14">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div>
-                                    <h1 className="text-2xl font-bold">{user.name}</h1>
-                                    <p className="text-muted-foreground">@{user.username}</p>
+                                    <h1 className="text-3xl font-bold text-neutral-900">{user.name}</h1>
+                                    <p className="text-lg text-neutral-500 font-medium">@{user.username}</p>
                                 </div>
 
                                 <div className="flex gap-2">
                                     {user.friendStatus === 'none' && (
-                                        <Button onClick={() => sendRequestMutation.mutate()} disabled={sendRequestMutation.isPending}>
+                                        <Button
+                                            onClick={() => sendRequestMutation.mutate()}
+                                            disabled={sendRequestMutation.isPending}
+                                            className="bg-primary hover:bg-primary/90 shadow-sm"
+                                        >
                                             <UserPlus className="mr-2 h-4 w-4" />
                                             Add Friend
                                         </Button>
                                     )}
 
                                     {user.friendStatus === 'pending' && user.isRequester && (
-                                        <Button variant="secondary" disabled>
+                                        <Button variant="secondary" disabled className="bg-neutral-100 text-neutral-500">
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                             Request Sent
                                         </Button>
@@ -127,7 +132,7 @@ export default function UserProfilePage() {
                                         <div className="flex gap-2">
                                             <Button
                                                 onClick={() => respondMutation.mutate({ requestId: user.requestId!, status: 'accepted' })}
-                                                className="bg-green-600 hover:bg-green-700"
+                                                className="bg-green-600 hover:bg-green-700 shadow-sm text-white"
                                             >
                                                 <UserCheck className="mr-2 h-4 w-4" />
                                                 Accept
@@ -135,6 +140,7 @@ export default function UserProfilePage() {
                                             <Button
                                                 variant="outline"
                                                 onClick={() => respondMutation.mutate({ requestId: user.requestId!, status: 'rejected' })}
+                                                className="bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200"
                                             >
                                                 <UserX className="mr-2 h-4 w-4" />
                                                 Decline
@@ -144,12 +150,12 @@ export default function UserProfilePage() {
 
                                     {user.friendStatus === 'accepted' && (
                                         <div className="flex gap-2">
-                                            <Button variant="secondary">
+                                            <Button variant="secondary" className="bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">
                                                 <UserCheck className="mr-2 h-4 w-4" />
                                                 Friends
                                             </Button>
                                             <Link href={`/messages?user=${user.id}`}>
-                                                <Button variant="outline">
+                                                <Button variant="outline" className="bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 shadow-sm">
                                                     <MessageSquare className="mr-2 h-4 w-4" />
                                                     Message
                                                 </Button>
@@ -159,76 +165,76 @@ export default function UserProfilePage() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-4">
-                                <div className="flex items-center gap-1">
-                                    <GraduationCap className="h-4 w-4" />
-                                    {user.university}
+                            <div className="flex flex-wrap gap-6 text-sm text-neutral-600 mt-4">
+                                <div className="flex items-center gap-2 bg-neutral-50 px-3 py-1.5 rounded-full border border-neutral-100">
+                                    <GraduationCap className="h-4 w-4 text-primary" />
+                                    <span className="font-medium">{user.university}</span>
                                 </div>
-                                <div className="flex items-center gap-1">
-                                    <Trophy className="h-4 w-4" />
-                                    Level {user.level} • {user.points} Points
+                                <div className="flex items-center gap-2 bg-neutral-50 px-3 py-1.5 rounded-full border border-neutral-100">
+                                    <Trophy className="h-4 w-4 text-yellow-500" />
+                                    <span className="font-medium">Level {user.level} • {user.points} Points</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             {/* Skills & Content */}
             <Tabs defaultValue="skills" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="skills">Skills</TabsTrigger>
-                    <TabsTrigger value="posts">Posts</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-6 bg-neutral-100/50 p-1 rounded-xl">
+                    <TabsTrigger value="skills" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Skills</TabsTrigger>
+                    <TabsTrigger value="posts" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Posts</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="skills" className="space-y-6 mt-6">
+                <TabsContent value="skills" className="space-y-6">
                     <div className="grid gap-6 md:grid-cols-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Teaching</CardTitle>
-                                <CardDescription>Skills {user.name} can teach you</CardDescription>
-                            </CardHeader>
-                            <CardContent>
+                        <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+                            <div className="p-4 border-b border-neutral-100 bg-blue-50/50">
+                                <h3 className="font-bold text-lg text-neutral-900">Teaching</h3>
+                                <p className="text-sm text-neutral-500">Skills {user.name} can teach you</p>
+                            </div>
+                            <div className="p-6 flex-1">
                                 <div className="flex flex-wrap gap-2">
                                     {teachingSkills.length > 0 ? (
                                         teachingSkills.map(skill => (
-                                            <Badge key={skill.id} variant="default" className="text-sm py-1 px-3">
+                                            <Badge key={skill.id} variant="default" className="text-sm py-1.5 px-3 bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 shadow-none">
                                                 {skill.name}
                                                 {skill.isVerified && (
-                                                    <span className="ml-1 text-xs bg-white/20 rounded-full px-1">✓</span>
+                                                    <span className="ml-1.5 text-[10px] bg-blue-600 text-white rounded-full w-4 h-4 inline-flex items-center justify-center">✓</span>
                                                 )}
                                             </Badge>
                                         ))
                                     ) : (
-                                        <p className="text-sm text-muted-foreground">No teaching skills listed</p>
+                                        <p className="text-sm text-neutral-500 italic">No teaching skills listed</p>
                                     )}
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Learning</CardTitle>
-                                <CardDescription>Skills {user.name} wants to learn</CardDescription>
-                            </CardHeader>
-                            <CardContent>
+                        <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+                            <div className="p-4 border-b border-neutral-100 bg-purple-50/50">
+                                <h3 className="font-bold text-lg text-neutral-900">Learning</h3>
+                                <p className="text-sm text-neutral-500">Skills {user.name} wants to learn</p>
+                            </div>
+                            <div className="p-6 flex-1">
                                 <div className="flex flex-wrap gap-2">
                                     {learningSkills.length > 0 ? (
                                         learningSkills.map(skill => (
-                                            <Badge key={skill.id} variant="secondary" className="text-sm py-1 px-3">
+                                            <Badge key={skill.id} variant="secondary" className="text-sm py-1.5 px-3 bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-200 shadow-none">
                                                 {skill.name}
                                             </Badge>
                                         ))
                                     ) : (
-                                        <p className="text-sm text-muted-foreground">No learning skills listed</p>
+                                        <p className="text-sm text-neutral-500 italic">No learning skills listed</p>
                                     )}
                                 </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="posts" className="mt-6">
+                <TabsContent value="posts">
                     <UserPosts userId={user.id} />
                 </TabsContent>
             </Tabs>
@@ -282,31 +288,34 @@ function UserPosts({ userId }: { userId: number }) {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center p-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex justify-center p-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         );
     }
 
     if (!posts || posts.length === 0) {
         return (
-            <Card>
-                <CardContent className="p-8 text-center text-muted-foreground">
-                    No posts yet
-                </CardContent>
-            </Card>
+            <div className="bg-white/50 border border-dashed border-neutral-200 rounded-xl p-12 text-center">
+                <p className="text-neutral-500 text-lg">No posts yet</p>
+            </div>
         );
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {posts.map((post) => (
-                <Card key={post.id}>
-                    <CardHeader>
-                        <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                                <CardTitle className="text-lg">{post.title}</CardTitle>
-                                <CardDescription>
+                <div key={post.id} className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 p-6">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Badge variant={post.type === 'question' ? 'secondary' : 'default'} className={`
+                                    ${post.type === 'question' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}
+                                    border border-transparent shadow-none capitalize
+                                `}>
+                                    {post.type}
+                                </Badge>
+                                <span className="text-xs text-neutral-500">
                                     {(() => {
                                         try {
                                             return new Date(post.createdAt).toLocaleDateString();
@@ -314,31 +323,25 @@ function UserPosts({ userId }: { userId: number }) {
                                             return "Unknown date";
                                         }
                                     })()}
-                                </CardDescription>
+                                </span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Badge variant={post.type === 'question' ? 'secondary' : 'default'}>
-                                    {post.type}
-                                </Badge>
-                                {user && user.id === post.userId && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleDeletePost(post.id)}
-                                        disabled={deletePostMutation.isPending}
-                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                        title="Delete post"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                )}
-                            </div>
+                            <h3 className="text-xl font-bold text-neutral-900">{post.title}</h3>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="whitespace-pre-wrap">{post.content}</p>
-                    </CardContent>
-                </Card>
+                        {user && user.id === post.userId && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeletePost(post.id)}
+                                disabled={deletePostMutation.isPending}
+                                className="h-8 w-8 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-full"
+                                title="Delete post"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                    <p className="text-neutral-700 whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                </div>
             ))}
         </div>
     );

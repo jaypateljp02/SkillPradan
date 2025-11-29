@@ -9,18 +9,35 @@ interface SocketMessage {
   payload: any;
 }
 
+// Store connected clients with their user IDs at module level
+const clients = new Map<string, { ws: WebSocket, userId?: number }>();
+
+export function broadcastDirectMessage(message: any) {
+  const senderId = message.senderId;
+  const receiverId = message.receiverId;
+
+  clients.forEach((clientData) => {
+    if (clientData.ws.readyState === WebSocket.OPEN) {
+      // Only send to sender or receiver
+      if (clientData.userId === senderId || clientData.userId === receiverId) {
+        clientData.ws.send(JSON.stringify({
+          type: 'direct-message',
+          payload: message
+        }));
+      }
+    }
+  });
+}
+
 export function setupWebSockets(httpServer: Server) {
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  // Store connected clients with their user IDs
-  const clients = new Map<string, { ws: WebSocket, userId?: number }>();
-  
+
   // Track active sessions and their participants
   const activeSessions = new Map<number, Set<string>>();
-  
+
   wss.on('connection', async (ws, req) => {
     console.log('WebSocket client attempting to connect');
-    
+
     // Log connection information for debugging
     const connectionInfo = {
       url: req.url,
@@ -28,25 +45,25 @@ export function setupWebSockets(httpServer: Server) {
       method: req.method
     };
     console.log('WebSocket connection details:', JSON.stringify(connectionInfo, null, 2));
-    
+
     // We're keeping the connection open even without authentication
     // Authentication will be checked when users try to join sessions or perform actions
     console.log('WebSocket client connected');
-    
+
     // Generate a unique client ID
     const clientId = Math.random().toString(36).substring(2, 15);
     clients.set(clientId, { ws, userId: undefined });
-    
+
     // Send client their ID
     ws.send(JSON.stringify({
       type: 'connection',
       payload: { clientId }
     }));
-    
+
     ws.on('message', async (message) => {
       try {
         const { type, payload } = JSON.parse(message.toString()) as SocketMessage;
-        
+
         switch (type) {
           case 'authenticate': {
             const { userId } = payload;
@@ -59,23 +76,23 @@ export function setupWebSockets(httpServer: Server) {
             }
             break;
           }
-          
+
           case 'join-session': {
             const { sessionId, userId } = payload;
-            
+
             // Get or create session participant set
             if (!activeSessions.has(sessionId)) {
               activeSessions.set(sessionId, new Set());
             }
-            
+
             const participants = activeSessions.get(sessionId)!;
             participants.add(clientId);
-            
+
             // Notify all session participants about new user
             const user = await storage.getUser(userId);
             if (user) {
               const { password, ...userData } = user;
-              
+
               participants.forEach(participantId => {
                 const client = clients.get(participantId);
                 if (client && client.ws.readyState === WebSocket.OPEN && participantId !== clientId) {
@@ -86,17 +103,17 @@ export function setupWebSockets(httpServer: Server) {
                 }
               });
             }
-            
+
             break;
           }
-          
+
           case 'leave-session': {
             const { sessionId, userId } = payload;
-            
+
             if (activeSessions.has(sessionId)) {
               const participants = activeSessions.get(sessionId)!;
               participants.delete(clientId);
-              
+
               // If no participants left, clean up
               if (participants.size === 0) {
                 activeSessions.delete(sessionId);
@@ -113,22 +130,22 @@ export function setupWebSockets(httpServer: Server) {
                 });
               }
             }
-            
+
             break;
           }
-          
+
           case 'whiteboard-update': {
             const { sessionId, whiteboardData } = payload;
-            
+
             if (activeSessions.has(sessionId)) {
               const participants = activeSessions.get(sessionId)!;
-              
+
               // Save whiteboard data
               const session = await storage.getSession(sessionId);
               if (session) {
                 await storage.updateSession(sessionId, { whiteboardData });
               }
-              
+
               // Broadcast to all participants except sender
               participants.forEach(participantId => {
                 const client = clients.get(participantId);
@@ -140,23 +157,23 @@ export function setupWebSockets(httpServer: Server) {
                 }
               });
             }
-            
+
             break;
           }
-          
+
           case 'video-signal': {
             const { sessionId, target, signal } = payload;
-            
+
             if (activeSessions.has(sessionId)) {
               const participants = activeSessions.get(sessionId)!;
-              
+
               // Find target client
               participants.forEach((participantId: string) => {
                 const client = clients.get(participantId);
                 if (client && client.ws.readyState === WebSocket.OPEN && participantId !== clientId) {
                   client.ws.send(JSON.stringify({
                     type: 'video-signal',
-                    payload: { 
+                    payload: {
                       fromClientId: clientId,
                       signal,
                       sessionId
@@ -165,29 +182,29 @@ export function setupWebSockets(httpServer: Server) {
                 }
               });
             }
-            
+
             break;
           }
-          
+
           case 'chat-message': {
             const { sessionId, message, userId } = payload;
-            
+
             if (activeSessions.has(sessionId)) {
               const participants = activeSessions.get(sessionId)!;
-              
+
               // Get user info
               const user = await storage.getUser(userId);
               if (user) {
                 const { password, ...userData } = user;
-                
+
                 // Broadcast to all participants
                 participants.forEach(participantId => {
                   const client = clients.get(participantId);
                   if (client && client.ws.readyState === WebSocket.OPEN) {
                     client.ws.send(JSON.stringify({
                       type: 'chat-message',
-                      payload: { 
-                        message, 
+                      payload: {
+                        message,
                         userData,
                         timestamp: new Date().toISOString(),
                         sessionId
@@ -197,48 +214,38 @@ export function setupWebSockets(httpServer: Server) {
                 });
               }
             }
-            
+
             break;
           }
-          
+
           case 'direct-message': {
             const { receiverId, content } = payload;
-            
+
             // Get authenticated sender from client
             const client = clients.get(clientId);
             if (!client || !client.userId) {
               console.error('Unauthenticated client attempted to send message');
               return;
             }
-            
+
             const senderId = client.userId;
-            
+
             // Validate content
             if (!content || !content.trim()) {
               console.error('Empty message content');
               return;
             }
-            
+
             // Save message to storage
             const savedMessage = await storage.createDirectMessage({
               senderId,
               receiverId,
               content: content.trim()
             });
-            
-            // Send to sender and receiver only
-            clients.forEach((clientData, targetClientId) => {
-              if (clientData.ws.readyState === WebSocket.OPEN) {
-                // Only send to sender or receiver
-                if (clientData.userId === senderId || clientData.userId === receiverId) {
-                  clientData.ws.send(JSON.stringify({
-                    type: 'direct-message',
-                    payload: savedMessage
-                  }));
-                }
-              }
-            });
-            
+
+            // Use the broadcast function to send
+            broadcastDirectMessage(savedMessage);
+
             break;
           }
         }
@@ -246,19 +253,19 @@ export function setupWebSockets(httpServer: Server) {
         console.error('Error processing WebSocket message:', error);
       }
     });
-    
+
     ws.on('close', () => {
       console.log('WebSocket client disconnected');
-      
+
       // Remove from clients
       clients.delete(clientId);
-      
+
       // Remove from all active sessions
       // Convert entries to array to avoid iterator issues
       Array.from(activeSessions.entries()).forEach(([sessionId, participants]) => {
         if (participants.has(clientId)) {
           participants.delete(clientId);
-          
+
           // Notify other participants
           participants.forEach((participantId: string) => {
             const client = clients.get(participantId);
@@ -269,7 +276,7 @@ export function setupWebSockets(httpServer: Server) {
               }));
             }
           });
-          
+
           // If no participants left, clean up
           if (participants.size === 0) {
             activeSessions.delete(sessionId);
@@ -278,6 +285,6 @@ export function setupWebSockets(httpServer: Server) {
       });
     });
   });
-  
+
   return wss;
 }

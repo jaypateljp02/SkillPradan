@@ -1,5 +1,5 @@
 import { User, Repeat, CreditCard, GraduationCap, Trophy, Users, Newspaper, MessageCircle } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 
 interface MobileNavProps {
   setActiveTab: (tab: string) => void;
@@ -7,6 +7,8 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ setActiveTab, activeTab }: MobileNavProps) {
+  const [location, setLocation] = useLocation();
+
   const navItems = [
     {
       label: 'Profile',
@@ -58,31 +60,44 @@ export function MobileNav({ setActiveTab, activeTab }: MobileNavProps) {
     }
   ];
 
+  const handleNavigation = (target: string) => {
+    if (location === '/') {
+      setActiveTab(target);
+    } else {
+      setLocation(`/?tab=${target}`);
+    }
+  };
+
   return (
-    <div className="md:hidden fixed bottom-0 inset-x-0 bg-white shadow-lg">
-      <div className="flex justify-around">
+    <div className="md:hidden fixed bottom-0 inset-x-0 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 border-t border-neutral-100">
+      <div className="flex justify-start gap-2 overflow-x-auto py-2 px-4 no-scrollbar w-full">
         {navItems.map((item) => {
-          const isActive = item.isRoute ? false : activeTab === item.target;
-          return item.isRoute ? (
-            <Link key={item.label} to={item.target}>
-              <button
-                className="flex flex-col items-center p-3 text-neutral-500 hover:text-primary"
-              >
-                {item.icon}
-                <span className="text-xs mt-1">{item.label}</span>
-              </button>
-            </Link>
-          ) : (
+          const isActive = item.isRoute ? location === item.target : (location === '/' && activeTab === item.target);
+
+          if (item.isRoute) {
+            return (
+              <Link key={item.label} href={item.target}>
+                <button
+                  className={`flex flex-col items-center p-3 min-w-[64px] ${isActive ? 'text-primary' : 'text-neutral-500 hover:text-primary'}`}
+                >
+                  {item.icon}
+                  <span className="text-[10px] mt-1">{item.label}</span>
+                </button>
+              </Link>
+            );
+          }
+
+          return (
             <button
               key={item.label}
-              onClick={() => setActiveTab(item.target)}
-              className={`flex flex-col items-center p-3 ${isActive
-                  ? 'text-primary'
-                  : 'text-neutral-500 hover:text-primary'
+              onClick={() => handleNavigation(item.target)}
+              className={`flex flex-col items-center p-3 min-w-[64px] ${isActive
+                ? 'text-primary'
+                : 'text-neutral-500 hover:text-primary'
                 }`}
             >
               {item.icon}
-              <span className="text-xs mt-1">{item.label}</span>
+              <span className="text-[10px] mt-1">{item.label}</span>
             </button>
           );
         })}

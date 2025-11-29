@@ -1,4 +1,4 @@
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { LogOut, Home, User, Repeat, Video, Users, Trophy, Bell, Shield, MessageCircle } from 'lucide-react';
@@ -75,8 +75,11 @@ export function Navbar() {
     }, 500);
   };
 
+  const [location] = useLocation();
+  const isActive = location === '/messages' && window.location.search.includes('mode=find-friends');
+
   return (
-    <header className="bg-primary text-primary-foreground shadow-sm">
+    <header className="bg-primary/90 backdrop-blur-md shadow-lg border-b border-white/10 sticky top-0 z-50 text-primary-foreground">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -90,21 +93,6 @@ export function Navbar() {
             </div>
 
             <nav className="hidden md:ml-10 md:flex md:space-x-8">
-              <Link href="/feed">
-                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-white/80 border-b-2 border-transparent hover:border-white/50 transition-colors">
-                  Feed
-                </a>
-              </Link>
-              <Link href="/find-friends">
-                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-white/80 border-b-2 border-transparent hover:border-white/50 transition-colors">
-                  Find Friends
-                </a>
-              </Link>
-              <Link href="/groups">
-                <a className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-white/80 border-b-2 border-transparent hover:border-white/50 transition-colors">
-                  Communities
-                </a>
-              </Link>
               {user?.isAdmin && (
                 <Link to="/admin-dashboard">
                   <Button variant="outline" className="border-white/40 text-primary-foreground hover:bg-white/10 bg-yellow-500/20 hover:bg-yellow-500/30" data-testid="button-admin">
@@ -121,43 +109,26 @@ export function Navbar() {
               <>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <Link href="/find-friends">
-                      <button
-                        className="relative p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                        data-testid="button-notifications-bell"
-                        aria-label="Notifications"
-                        title="Notifications - View Friend Requests"
-                      >
-                        <Bell className="h-5 w-5" />
-                        {receivedRequests.length > 0 && (
-                          <Badge
-                            variant="destructive"
-                            className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center text-xs"
-                          >
-                            {receivedRequests.length > 9 ? '9+' : receivedRequests.length}
-                          </Badge>
-                        )}
-                      </button>
+                    <Link
+                      href="/messages?mode=find-friends"
+                      className={`relative p-2 rounded-full backdrop-blur-sm border border-white/10 transition-all duration-300 hover:scale-105 flex items-center justify-center text-white shadow-sm ${isActive ? 'bg-white/30 ring-2 ring-white/50' : 'bg-white/10 hover:bg-white/20'
+                        }`}
+                      data-testid="button-notifications-bell"
+                      aria-label="Notifications"
+                      title="Notifications - View Friend Requests"
+                    >
+                      <Bell className="h-5 w-5" />
+                      {receivedRequests.length > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center text-xs"
+                        >
+                          {receivedRequests.length > 9 ? '9+' : receivedRequests.length}
+                        </Badge>
+                      )}
                     </Link>
-                    <Link to="/messages">
-                      <button
-                        className="relative p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                        data-testid="button-notifications"
-                        aria-label="Messages"
-                        title="Messages - View your conversations"
-                      >
-                        <MessageCircle className="h-5 w-5" />
-                        {unreadCount > 0 && (
-                          <Badge
-                            variant="destructive"
-                            className="absolute -top-1 -right-1 h-5 min-w-5 px-1 flex items-center justify-center text-xs"
-                          >
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                          </Badge>
-                        )}
-                      </button>
-                    </Link>
-                    <span className="bg-white/20 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2">
+
+                    <span className="bg-white/10 backdrop-blur-sm border border-white/10 text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm">
                       📜 {user?.points || 0} Points
                     </span>
                   </div>
@@ -170,7 +141,7 @@ export function Navbar() {
                     <button
                       id="logout-button"
                       onClick={handleLogout}
-                      className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
+                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 transition-all duration-300 hover:scale-105 flex items-center justify-center shadow-sm"
                       aria-label="Log out"
                       title="Log out"
                     >

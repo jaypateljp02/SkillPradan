@@ -11,7 +11,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user } = useAuth();
   const [location] = useLocation();
-  
+
   // Redirect from old /admin path to the new /admin-dashboard path
   useEffect(() => {
     if (location === "/admin" && user?.isAdmin) {
@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
   }, [location, user]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
+    <div className="min-h-screen flex flex-col bg-premium-gradient font-sans">
       <Navbar />
       <div className="flex-1 flex flex-col">
         {/* Main content */}
@@ -29,7 +29,7 @@ export function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </div>
-      
+
       {/* Connection status - will only render when needed */}
       <ConnectionStatus />
     </div>

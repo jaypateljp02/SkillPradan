@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, storagePromise } from "./storage";
 import { WebSocketServer } from "ws";
-import { setupWebSockets } from "./socket";
+import { setupWebSockets, broadcastDirectMessage } from "./socket";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import {
@@ -792,6 +792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Ensure we have isTeamProject flag set appropriately
       const isTeamProject = req.body.isTeamProject === true;
+      console.log(`[DEBUG] Creating group. Name: ${req.body.name}, isTeamProject: ${isTeamProject}, Body isTeamProject: ${req.body.isTeamProject}`);
 
       // Validate with Zod schema
       const validatedData = insertGroupSchema.parse({
@@ -1370,6 +1371,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
   // Send a direct message
   app.post("/api/messages/:userId", isAuthenticatedEither, async (req, res) => {
     try {
@@ -1388,6 +1391,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const message = await storage.createDirectMessage(validatedData);
+
+      // Broadcast real-time update
+      broadcastDirectMessage(message);
 
       res.status(201).json(message);
     } catch (error) {

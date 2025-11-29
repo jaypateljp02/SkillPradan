@@ -73,15 +73,15 @@ export function AuthForm() {
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full glass-card border-0">
       <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
         <CardHeader>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 bg-neutral-100/50 p-1">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
           </TabsList>
           <CardDescription className="pt-4">
-            {activeTab === "login" 
+            {activeTab === "login"
               ? "Sign in to your Skill Pradan account"
               : "Create a new Skill Pradan account"}
           </CardDescription>
@@ -99,10 +99,10 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            className="pl-10" 
-                            placeholder="Enter your username" 
+                          <Input
+                            {...field}
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Enter your username"
                           />
                         </div>
                       </FormControl>
@@ -119,11 +119,11 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            type="password" 
-                            className="pl-10" 
-                            placeholder="Enter your password" 
+                          <Input
+                            {...field}
+                            type="password"
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Enter your password"
                           />
                         </div>
                       </FormControl>
@@ -131,9 +131,9 @@ export function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button 
-                  type="submit" 
-                  className="w-full" 
+                <Button
+                  type="submit"
+                  className="w-full"
                   disabled={loginMutation.isPending}
                 >
                   {loginMutation.isPending ? "Signing in..." : "Sign In"}
@@ -154,10 +154,10 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            className="pl-10" 
-                            placeholder="Choose a username" 
+                          <Input
+                            {...field}
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Choose a username"
                           />
                         </div>
                       </FormControl>
@@ -174,10 +174,10 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <User className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            className="pl-10" 
-                            placeholder="Enter your full name" 
+                          <Input
+                            {...field}
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Enter your full name"
                           />
                         </div>
                       </FormControl>
@@ -194,11 +194,11 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            type="email" 
-                            className="pl-10" 
-                            placeholder="Enter your email" 
+                          <Input
+                            {...field}
+                            type="email"
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Enter your email"
                           />
                         </div>
                       </FormControl>
@@ -215,10 +215,10 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <School className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            className="pl-10" 
-                            placeholder="Enter your university" 
+                          <Input
+                            {...field}
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Enter your university"
                           />
                         </div>
                       </FormControl>
@@ -235,10 +235,10 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <Image className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            className="pl-10" 
-                            placeholder="Enter avatar URL" 
+                          <Input
+                            {...field}
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Enter avatar URL"
                           />
                         </div>
                       </FormControl>
@@ -255,11 +255,11 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            type="password" 
-                            className="pl-10" 
-                            placeholder="Create a password" 
+                          <Input
+                            {...field}
+                            type="password"
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Create a password"
                           />
                         </div>
                       </FormControl>
@@ -276,11 +276,11 @@ export function AuthForm() {
                       <FormControl>
                         <div className="relative">
                           <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-500" />
-                          <Input 
-                            {...field} 
-                            type="password" 
-                            className="pl-10" 
-                            placeholder="Confirm your password" 
+                          <Input
+                            {...field}
+                            type="password"
+                            className="pl-10 bg-white/50 backdrop-blur-sm border-white/20 focus:bg-white/80 transition-all"
+                            placeholder="Confirm your password"
                           />
                         </div>
                       </FormControl>
@@ -288,8 +288,8 @@ export function AuthForm() {
                     </FormItem>
                   )}
                 />
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full"
                   disabled={registerMutation.isPending}
                 >
@@ -301,10 +301,10 @@ export function AuthForm() {
         </CardContent>
         <CardFooter className="flex flex-col space-y-4 border-t pt-4">
           <div className="text-sm text-neutral-500 text-center">
-            {activeTab === "login" 
-              ? "Don't have an account?" 
+            {activeTab === "login"
+              ? "Don't have an account?"
               : "Already have an account?"}
-            <button 
+            <button
               onClick={() => setActiveTab(activeTab === "login" ? "register" : "login")}
               className="ml-1 text-primary hover:underline"
             >

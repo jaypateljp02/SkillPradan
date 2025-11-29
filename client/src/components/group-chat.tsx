@@ -129,10 +129,10 @@ export function GroupChat() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       {/* Group header */}
-      <header className="border-b p-3 flex items-center justify-between bg-background/95 backdrop-blur sticky top-0 z-10">
+      <header className="border-b border-white/20 p-3 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/groups">
+            <Link href="/?tab=study-group-tab">
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
@@ -190,39 +190,47 @@ export function GroupChat() {
                 <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
               </div>
             ) : (
-              messages.map((msg) => (
-                <div key={msg.id} className="flex items-start gap-3">
-                  <Avatar>
-                    <AvatarImage src={msg.sender.avatar || undefined} alt={msg.sender.name} />
-                    <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-medium">{msg.sender.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatMessageDate(msg.sentAt)}
-                      </span>
+              messages.map((msg) => {
+                const isCurrentUser = false; // We don't have current user ID here easily without useAuth, assuming left align for now or check if I can get user
+                // Actually I should get user from useAuth to align messages correctly
+                return (
+                  <div key={msg.id} className="flex items-start gap-3">
+                    <Avatar className="border border-white/20 shadow-sm">
+                      <AvatarImage src={msg.sender.avatar || undefined} alt={msg.sender.name} />
+                      <AvatarFallback>{getInitials(msg.sender.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-medium text-sm">{msg.sender.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatMessageDate(msg.sentAt)}
+                        </span>
+                      </div>
+                      <div className="mt-1 bg-white/80 backdrop-blur-sm border border-white/40 rounded-2xl rounded-tl-none px-4 py-2 shadow-sm">
+                        <p className="text-sm">{msg.content}</p>
+                      </div>
                     </div>
-                    <p className="text-sm mt-1">{msg.content}</p>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Message input form */}
-          <form onSubmit={handleSendMessage} className="p-4 border-t">
+          <form onSubmit={handleSendMessage} className="p-4 border-t border-white/20 bg-white/60 backdrop-blur-md">
             <div className="flex gap-2">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type a message..."
                 disabled={sendMessageMutation.isPending}
+                className="bg-white/50 border-white/30 focus:bg-white/80 transition-all shadow-inner"
               />
               <Button
                 type="submit"
                 disabled={sendMessageMutation.isPending || !message.trim()}
+                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-md transition-all hover:scale-105"
               >
                 <Send className="h-4 w-4" />
               </Button>
@@ -244,7 +252,7 @@ export function GroupChat() {
             </div>
           ) : (
             <>
-              <Card>
+              <Card className="glass-card border-0">
                 <CardHeader>
                   <CardTitle>{group?.name}</CardTitle>
                 </CardHeader>

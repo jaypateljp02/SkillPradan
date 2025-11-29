@@ -80,7 +80,13 @@ function Router() {
 
       <ProtectedRoute path="/groups/:groupId/chat" component={GroupsPage} />
       <ProtectedRoute path="/groups/:groupId" component={GroupsPage} />
-      <ProtectedRoute path="/groups" component={GroupsPage} />
+      <Route path="/groups" component={() => {
+        const [, setLocation] = useLocation();
+        useEffect(() => {
+          setLocation("/?tab=study-group-tab");
+        }, [setLocation]);
+        return null;
+      }} />
       <ProtectedRoute path="/feed" component={FeedPage} />
       <ProtectedRoute path="/messages" component={MessagesPage} />
       <ProtectedRoute path="/find-friends" component={FindFriendsPage} />
@@ -104,7 +110,25 @@ function Router() {
   return showLayout ? <Layout>{routes}</Layout> : routes;
 }
 
+import logo from "./assets/logo.png";
+
 function App() {
+  useEffect(() => {
+    // Set favicon
+    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (!link) {
+      const newLink = document.createElement('link');
+      newLink.rel = 'icon';
+      newLink.href = logo;
+      document.head.appendChild(newLink);
+    } else {
+      link.href = logo;
+    }
+
+    // Set title if not set (though it is set in index.html)
+    document.title = "Skill प्रदान - Learning Platform";
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { 
-  Video, 
-  PencilRuler
+import {
+  Video,
+  PencilRuler,
+  Code
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface ToolCardProps {
   icon: React.ReactNode;
@@ -18,7 +20,7 @@ interface ToolCardProps {
 
 function ToolCard({ icon, title, description, buttonText, href, onClick }: ToolCardProps) {
   const button = (
-    <Button 
+    <Button
       className="w-full bg-purple text-white hover:bg-opacity-90"
       onClick={onClick}
     >
@@ -27,7 +29,7 @@ function ToolCard({ icon, title, description, buttonText, href, onClick }: ToolC
   );
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg p-5 hover:shadow-md transition-shadow">
+    <div className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-5 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
       <div className="flex items-center">
         <div className="flex-shrink-0">
           {icon}
@@ -64,22 +66,30 @@ interface Exchange {
 
 export function LearningTools() {
   const { user } = useAuth();
-  
+  const { toast } = useToast();
+
   const { data: exchanges = [] } = useQuery<Exchange[]>({
     queryKey: ["/api/exchanges"],
   });
-  
+
   const activeExchanges = exchanges.filter((exchange) => exchange.status === "active");
-  
+
   // Get the first active exchange to link to
   const firstActiveExchange = activeExchanges.length > 0 ? activeExchanges[0] : null;
-  const sessionLink = firstActiveExchange ? `/session/${firstActiveExchange.id}` : "";
+  // const sessionLink = firstActiveExchange ? `/session/${firstActiveExchange.id}` : "";
+
+  const handleComingSoon = (feature: string) => {
+    toast({
+      title: "Coming Soon",
+      description: `The ${feature} feature is currently in development.`,
+    });
+  };
 
   return (
     <div className="mt-8">
       <h4 className="text-md font-medium text-neutral-900">Learning Tools</h4>
-      
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <ToolCard
           icon={
             <div className="h-12 w-12 rounded-lg bg-purple-light flex items-center justify-center">
@@ -89,9 +99,9 @@ export function LearningTools() {
           title="Video Conference"
           description="Connect via video with screen sharing"
           buttonText="Start a Session"
-          href={sessionLink || undefined}
+          onClick={() => handleComingSoon("Video Conference")}
         />
-        
+
         <ToolCard
           icon={
             <div className="h-12 w-12 rounded-lg bg-emerald-500 bg-opacity-10 flex items-center justify-center">
@@ -101,7 +111,19 @@ export function LearningTools() {
           title="Interactive Whiteboard"
           description="Collaborate on a shared canvas"
           buttonText="Open Whiteboard"
-          href={sessionLink || undefined}
+          onClick={() => handleComingSoon("Interactive Whiteboard")}
+        />
+
+        <ToolCard
+          icon={
+            <div className="h-12 w-12 rounded-lg bg-blue-500 bg-opacity-10 flex items-center justify-center">
+              <Code className="text-lg text-blue-500" />
+            </div>
+          }
+          title="Live Coding"
+          description="Real-time collaborative code editor"
+          buttonText="Start Coding"
+          onClick={() => handleComingSoon("Live Coding")}
         />
       </div>
     </div>

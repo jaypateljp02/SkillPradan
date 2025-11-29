@@ -37,12 +37,28 @@ import {
   UserPlus
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { MobileNav } from "@/components/ui/mobile-nav";
 
 export default function HomePage() {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState("profile-tab");
+  const [location] = useLocation();
+
+  // Initialize activeTab from query parameter or default to "profile-tab"
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    return tab || "profile-tab";
+  });
+
+  // Update activeTab if query param changes (e.g. back button)
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [location]);
 
   // Use Challenge type from import at the top
 
@@ -99,33 +115,28 @@ export default function HomePage() {
       icon: <Users className="w-5 h-5 text-neutral-700" />,
       target: 'study-group-tab',
       isRoute: false
-    },
-    {
-      label: 'Find Friends',
-      icon: <UserPlus className="w-5 h-5 text-neutral-700" />,
-      target: '/find-friends',
-      isRoute: true
     }
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-neutral-100 font-sans">
+    <div className="min-h-screen flex flex-col bg-premium-gradient font-sans">
 
       {/* Main Content */}
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           {/* Icon-only navigation buttons */}
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-3 mb-8 justify-center sm:justify-start">
             {navItems.map((item) => {
               const isActive = item.isRoute ? false : activeTab === item.target;
               return item.isRoute ? (
                 <Link key={item.label} to={item.target}>
                   <button
-                    className="flex items-center justify-center w-12 h-12 rounded-md bg-white text-neutral-600 hover:bg-neutral-50"
+                    className="group flex items-center justify-center w-14 h-14 rounded-2xl bg-white/40 backdrop-blur-sm border border-white/40 text-neutral-700 hover:bg-white/60 hover:scale-110 hover:shadow-lg transition-all duration-300"
                     aria-label={item.label}
+                    title={item.label}
                   >
                     {React.cloneElement(item.icon as React.ReactElement, {
-                      className: "h-6 w-6"
+                      className: "h-6 w-6 group-hover:text-primary transition-colors"
                     })}
                   </button>
                 </Link>
@@ -133,14 +144,15 @@ export default function HomePage() {
                 <button
                   key={item.label}
                   onClick={() => setActiveTab(item.target)}
-                  className={`flex items-center justify-center w-12 h-12 rounded-md ${isActive
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'bg-white text-neutral-600 hover:bg-neutral-50'
+                  className={`group flex items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ${isActive
+                    ? 'bg-primary text-white shadow-lg scale-110 ring-4 ring-primary/20'
+                    : 'bg-white/40 backdrop-blur-sm border border-white/40 text-neutral-700 hover:bg-white/60 hover:scale-110 hover:shadow-lg'
                     }`}
                   aria-label={item.label}
+                  title={item.label}
                 >
                   {React.cloneElement(item.icon as React.ReactElement, {
-                    className: "h-6 w-6"
+                    className: `h-6 w-6 ${isActive ? 'text-white' : 'group-hover:text-primary'} transition-colors`
                   })}
                 </button>
               );
@@ -148,11 +160,11 @@ export default function HomePage() {
           </div>
 
           {/* Content area with no sidebar */}
-          <div className="pt-0 pb-12">
+          <div className="pt-0 pb-24">
             {/* Profile Tab */}
             <div
               id="profile-tab"
-              className={`bg-white shadow rounded-lg ${activeTab !== 'profile-tab' ? 'hidden' : ''}`}
+              className={`glass-card rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'profile-tab' ? 'hidden' : ''}`}
             >
               <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
                 <h3 className="text-lg font-medium leading-6 text-neutral-900">Your Profile</h3>
@@ -174,7 +186,7 @@ export default function HomePage() {
             {/* Barter Tab */}
             <div
               id="barter-tab"
-              className={`bg-white shadow rounded-lg ${activeTab !== 'barter-tab' ? 'hidden' : ''}`}
+              className={`glass-card rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'barter-tab' ? 'hidden' : ''}`}
             >
               <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
                 <h3 className="text-lg font-medium leading-6 text-neutral-900">Skill Exchange</h3>
@@ -189,7 +201,7 @@ export default function HomePage() {
             {/* Points Tab */}
             <div
               id="points-tab"
-              className={`bg-white shadow rounded-lg ${activeTab !== 'points-tab' ? 'hidden' : ''}`}
+              className={`glass-card rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'points-tab' ? 'hidden' : ''}`}
             >
               <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
                 <h3 className="text-lg font-medium leading-6 text-neutral-900">Points & Rewards</h3>
@@ -240,7 +252,7 @@ export default function HomePage() {
                   <h4 className="text-md font-medium text-neutral-900">Spend Your Points</h4>
 
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
                       <div className="flex">
                         <div className="flex-shrink-0">
                           <div className="h-14 w-14 rounded-lg bg-blue-500 bg-opacity-10 flex items-center justify-center">
@@ -258,7 +270,7 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    <div className="bg-white border border-neutral-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
                       <div className="flex">
                         <div className="flex-shrink-0">
                           <div className="h-14 w-14 rounded-lg bg-emerald-500 bg-opacity-10 flex items-center justify-center">
@@ -291,7 +303,7 @@ export default function HomePage() {
             {/* Learn Tab */}
             <div
               id="learn-tab"
-              className={`bg-white shadow rounded-lg ${activeTab !== 'learn-tab' ? 'hidden' : ''}`}
+              className={`glass-card rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'learn-tab' ? 'hidden' : ''}`}
             >
               <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
                 <h3 className="text-lg font-medium leading-6 text-neutral-900">Learning Center</h3>
@@ -313,7 +325,7 @@ export default function HomePage() {
             {/* Achievements Tab */}
             <div
               id="achievements-tab"
-              className={`bg-white shadow rounded-lg ${activeTab !== 'achievements-tab' ? 'hidden' : ''}`}
+              className={`glass-card rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'achievements-tab' ? 'hidden' : ''}`}
             >
               <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
                 <h3 className="text-lg font-medium leading-6 text-neutral-900">Achievements & Leaderboard</h3>
@@ -338,11 +350,11 @@ export default function HomePage() {
             {/* Community Tab */}
             <div
               id="study-group-tab"
-              className={`bg-white shadow rounded-lg ${activeTab !== 'study-group-tab' ? 'hidden' : ''}`}
+              className={`glass-card rounded-3xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 ${activeTab !== 'study-group-tab' ? 'hidden' : ''}`}
             >
               <div className="px-4 py-5 sm:px-6 border-b border-neutral-200">
-                <h3 className="text-lg font-medium leading-6 text-neutral-900">Study Groups</h3>
-                <p className="mt-1 max-w-2xl text-sm text-neutral-500">Create and join study groups with peers</p>
+                <h3 className="text-lg font-medium leading-6 text-neutral-900">Community</h3>
+                <p className="mt-1 max-w-2xl text-sm text-neutral-500">Connect with peers, join study groups, and form teams</p>
               </div>
 
               <div className="p-6">
